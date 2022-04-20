@@ -62,43 +62,23 @@ class AnalysisApp:
         self.master.state('zoomed')
         self.master.configure(bg=BG_COLOR)
 
-        # TODO: find a way to get window size in pixels instead of hard-coding
-        win_width = 2560
-        win_height = 1400
+        # Create 5 frames
+        self.leftFrame = Frame(self.master, relief='raised')
+        self.rTopFrame = Frame(self.master, relief='raised')
+        self.rBotFrame = Frame(self.master, relief='ridge')
 
-        # Set up frames on a grid. Left frame is for normalized viscosity plots
-        # Right frame is split into main universal plot (visc v N/g) on top, 
-        # and a parameter tweaking interface below. Both left and right frames
-        # have the matplotlib toolbar in the bottom 5% of the frame.
+        # Align 5 frames
+        self.leftFrame.grid(column=0, row=0, sticky=tk.NSEW, padx=8, pady=8, rowspan=2)
+        self.rTopFrame.grid(column=1, row=0, sticky=tk.NSEW, padx=8, pady=8)
+        self.rBotFrame.grid(column=1, row=1, sticky=tk.NSEW, padx=8, pady=8)
+
         self.master.columnconfigure(0, weight=1)
         self.master.columnconfigure(1, weight=1)
-        self.master.rowconfigure(0, weight=80)
-        self.master.rowconfigure(1, weight=15)
-        self.master.rowconfigure(2, weight=5)
+        self.master.rowconfigure(0, weight=4)
+        self.master.rowconfigure(1, weight=1)
 
-        self.leftFrame = Frame(self.master)
-        self.leftFrame.grid(column=0, row=0, rowspan=2, sticky=tk.NSEW)
-
-        self.rTopFrame = Frame(self.master)
-        self.rTopFrame.grid(column=1, row=0, sticky=[tk.N, tk.E, tk.W])
-
-        self.rBotFrame = Frame(self.master, borderwidth=3, relief='groove', takefocus=True)
-        self.rBotFrame.grid(column=1, row=1, sticky=[tk.N, tk.E, tk.W], padx=8)
-
-        self.lBarFrame = Frame(self.master)
-        self.lBarFrame.grid(column=0, row=2, sticky=tk.W)
-
-        self.rBarFrame = Frame(self.master)
-        self.rBarFrame.grid(column=1, row=2, sticky=tk.W)
-
-        # Left frame: normalized plots with plateaus
-        # TODO: again, find a better solution for figure size.
-        dpi = 100
-
-        norm_fig = Figure(
-            figsize=(win_width/dpi/2, win_height/dpi), 
-            dpi=dpi
-        )
+        # Left frame: six normalized plots
+        norm_fig = Figure(figsize=(0, 0))
         norm_fig.patch.set_facecolor(BG_COLOR)
         self.norm_axes = norm_fig.subplots(
             3, 2, 
@@ -116,19 +96,14 @@ class AnalysisApp:
         self.leftCanvas = FigureCanvasTkAgg(norm_fig, master=self.leftFrame)  
         self.leftCanvas.draw()
 
-        self.leftCanvas.get_tk_widget().pack()
-    
-        leftToolbar = NavigationToolbar2Tk(self.leftCanvas, self.lBarFrame)
+        leftToolbar = NavigationToolbar2Tk(self.leftCanvas, self.leftFrame)
         leftToolbar.update()
-
-        self.leftCanvas.get_tk_widget().pack()
+        
+        leftToolbar.pack(fill=tk.X, side=tk.BOTTOM, padx=5, pady=5)
+        self.leftCanvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Right frame: final plot and parameter textboxes
-        # TODO: again, find a better solution for figure size.
-        finalFig = Figure(
-            figsize=(win_width/dpi/2, win_height/dpi*0.80), 
-            dpi=dpi
-        )
+        finalFig = Figure(figsize=(0, 0))
         finalFig.patch.set_facecolor(BG_COLOR)
         self.finalAx = finalFig.add_subplot(
             111, 
@@ -139,13 +114,12 @@ class AnalysisApp:
         
         self.rightCanvas = FigureCanvasTkAgg(finalFig, master=self.rTopFrame)  
         self.rightCanvas.draw()
-
-        self.rightCanvas.get_tk_widget().pack()
     
-        rightToolbar = NavigationToolbar2Tk(self.rightCanvas, self.rBarFrame)
+        rightToolbar = NavigationToolbar2Tk(self.rightCanvas, self.rTopFrame)
         rightToolbar.update()
 
-        self.rightCanvas.get_tk_widget().pack()
+        rightToolbar.pack(fill=tk.X, side=tk.BOTTOM, padx=5, pady=5)
+        self.rightCanvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Right frame, bottom area for parameter tweaking. 
         # TODO: figure out how to spread out rows, make it look nice.
@@ -211,7 +185,7 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=1, column=0, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=1, column=0, padx=2, sticky=tk.NSEW, pady=10)
         self.Bpe_spinbox = Spinbox(
             self.rBotFrame, 
             width=10, 
@@ -221,7 +195,7 @@ class AnalysisApp:
             increment=0.1,
             state='disabled'
         )
-        self.Bpe_spinbox.grid(row=1, column=1, padx=2, sticky=tk.W, pady=10)
+        self.Bpe_spinbox.grid(row=1, column=1, padx=2, sticky=tk.NSEW, pady=10)
         self.Bpe_spinbox.configure(state='disabled')
 
         self.cD_value = tk.StringVar()
@@ -231,13 +205,13 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=2, column=0, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=2, column=0, padx=2, sticky=tk.NSEW, pady=10)
         Label(
             self.rBotFrame, 
             width=10, 
             font=16, 
             textvariable=self.cD_value
-        ).grid(row=2, column=1, padx=2, sticky=tk.W, pady=10)
+        ).grid(row=2, column=1, padx=2, sticky=tk.NSEW, pady=10)
 
         Label(
             self.rBotFrame, 
@@ -245,7 +219,7 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=1, column=2, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=1, column=2, padx=2, sticky=tk.NSEW, pady=10)
         self.Bg_spinbox = Spinbox(
             self.rBotFrame, 
             width=10, 
@@ -255,7 +229,7 @@ class AnalysisApp:
             increment=0.05,
             state='disabled'
         )
-        self.Bg_spinbox.grid(row=1, column=3, padx=2, sticky=tk.W, pady=10)
+        self.Bg_spinbox.grid(row=1, column=3, padx=2, sticky=tk.NSEW, pady=10)
 
         self.cth_value = tk.StringVar()
         Label(
@@ -264,13 +238,13 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=2, column=2, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=2, column=2, padx=2, sticky=tk.NSEW, pady=10)
         Label(
             self.rBotFrame, 
             width=10, 
             font=16, 
             textvariable=self.cth_value
-        ).grid(row=2, column=3, padx=2, sticky=tk.W, pady=10)
+        ).grid(row=2, column=3, padx=2, sticky=tk.NSEW, pady=10)
         
         Label(
             self.rBotFrame, 
@@ -278,7 +252,7 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=1, column=4, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=1, column=4, padx=2, sticky=tk.NSEW, pady=10)
         self.Bth_spinbox = Spinbox(
             self.rBotFrame, 
             width=10, 
@@ -288,7 +262,7 @@ class AnalysisApp:
             increment=0.01,
             state='disabled'
         )
-        self.Bth_spinbox.grid(row=1, column=5, padx=2, sticky=tk.W, pady=10)
+        self.Bth_spinbox.grid(row=1, column=5, padx=2, sticky=tk.NSEW, pady=10)
 
         self.c88_value = tk.StringVar()
         Label(
@@ -297,13 +271,13 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=2, column=4, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=2, column=4, padx=2, sticky=tk.NSEW, pady=10)
         Label(
             self.rBotFrame, 
             width=10, 
             font=16, 
             textvariable=self.c88_value
-        ).grid(row=2, column=5, padx=2, sticky=tk.W, pady=10)
+        ).grid(row=2, column=5, padx=2, sticky=tk.NSEW, pady=10)
 
         Label(
             self.rBotFrame, 
@@ -311,7 +285,7 @@ class AnalysisApp:
             width=6, 
             justify='right',
             font=16
-        ).grid(row=1, column=6, padx=2, sticky=tk.E, pady=10)
+        ).grid(row=1, column=6, padx=2, sticky=tk.NSEW, pady=10)
         self.Pe_spinbox = Spinbox(
             self.rBotFrame,
             width=10,
@@ -321,7 +295,7 @@ class AnalysisApp:
             increment=0.1,
             state='disabled'
         )
-        self.Pe_spinbox.grid(row=1, column=7, padx=2, sticky=tk.W, pady=10)
+        self.Pe_spinbox.grid(row=1, column=7, padx=2, sticky=tk.NSEW, pady=10)
 
         self.initialize_btn = Button(
             self.rBotFrame, 
@@ -331,7 +305,7 @@ class AnalysisApp:
             command=self.onInitialize,
             state='disabled'
         )
-        self.initialize_btn.grid(row=3, column=1, pady=10, sticky=tk.W)
+        self.initialize_btn.grid(row=3, column=1, pady=10, sticky=tk.NSEW)
         
         self.recalculate_btn = Button(
             self.rBotFrame, 
@@ -341,7 +315,7 @@ class AnalysisApp:
             command=self.onRecalculate,
             state='disabled'
         )
-        self.recalculate_btn.grid(row=3, column=3, pady=10, sticky=tk.W)
+        self.recalculate_btn.grid(row=3, column=3, pady=10, sticky=tk.NSEW)
         
         self.refit_btn = Button(
             self.rBotFrame, 
@@ -351,7 +325,7 @@ class AnalysisApp:
             command=self.onRefit,
             state='disabled'
         )
-        self.refit_btn.grid(row=3, column=5, pady=10, sticky=tk.W)
+        self.refit_btn.grid(row=3, column=5, pady=10, sticky=tk.NSEW)
         
         self.save_btn = Button(
             self.rBotFrame, 
@@ -361,7 +335,7 @@ class AnalysisApp:
             command=self.onSave,
             state='disabled'
         )
-        self.save_btn.grid(row=3, column=7, pady=10, sticky=tk.W)
+        self.save_btn.grid(row=3, column=7, pady=10, sticky=tk.NSEW)
 
         # File loading interactives
         fileFrame = Frame(self.rBotFrame)
@@ -374,54 +348,16 @@ class AnalysisApp:
             font=16
         ).pack(side=LEFT, padx=5, pady=10)
 
-        self.load_btn = Button(
-            fileFrame,
-            text='Load',
-            width=12,
-            command=self.onLoad
-        )
-        self.load_btn.pack(padx=5, pady=10, side=RIGHT)
-
-        self.browse_btn = Button(
+        Button(
             fileFrame, 
             text='Browse...', 
             width=12, 
             command=self.onBrowse
-        )
-        self.browse_btn.pack(padx=5, pady=10, side=RIGHT)
-        self.browse_btn.focus_force()
+        ).pack(padx=5, pady=10, side=RIGHT)
 
         self.filenameEntry = Entry(fileFrame, font=12)
         self.filenameEntry.pack(fill=tk.X, padx=5, expand=True)
 
-    def onBrowse(self):
-        # Execeuted with the 'Browse...' button
-        self.filepath = fd.askopenfilename(
-            initialdir='CSV_files', 
-            filetypes=(('CSV Files', '*.csv'),)
-        )
-        if self.filepath != '':
-            self.load_btn.focus()
-            self.filenameEntry.delete(0, END)
-            self.filenameEntry.insert(0, self.filepath)
-
-    def onLoad(self):
-        # Load data from file
-        self.filepath = self.filenameEntry.get()
-        self.df = pd.read_csv(self.filepath)
-        self.df = self.expandDataframe()
-
-        # Populate plots in both frames
-        self.plotNormalizedViscosity()
-        self.leftCanvas.draw()
-
-        self.plotOriginalViscosity()
-        self.rightCanvas.draw()
-
-        # Enabled analysis
-        self.initialize_btn.configure(state='active')
-        self.initialize_btn.focus()
-    
     def plotNormalizedViscosity(self):
         for i in range(3):
             for j in range(2):
@@ -504,6 +440,7 @@ class AnalysisApp:
         )
         self.finalAx.set_xlabel(r'$\mathit{cl^3}$', fontsize=36)
         self.finalAx.set_ylabel(r'$\mathit{\eta_{sp}}$', fontsize=36)
+        self.fit_curve, = self.finalAx.plot([], [], 'k-')
 
     def expandDataframe(self):
         self.df[f'visc_norm_0.5'] = (
@@ -529,26 +466,23 @@ class AnalysisApp:
         return self.df
 
     def getCrossoverConcentrations(self, csfz=0):
-        if csfz:
-            cD = brentq(
-                lambda c: (
-                    self.Bg**2 
-                    - c**0.412 * (self.Bpe * np.sqrt(1 + 2*csfz/c))**0.764
-                ),
-                0, 100
-            )
-        else:
-            cD = self.Bpe**3 * (self.Bg / self.Bpe)**(1/0.206)
-        cth = self.Bth**3 * (self.Bth / self.Bg)**(1/0.176)
-        c88 = self.Bth**4
-        b_l = self.Bth**-2
+        cD, cth, c88, b_l = 0, np.inf, np.inf, 0
+        if self.Bpe_on.get():
+            cD = scalingEqs.get_cD(Bpe=self.Bpe, Bg=self.Bg, csfz=csfz)
+        if self.Bth_on.get():
+            if self.Bg_on.get():
+                cth = scalingEqs.get_cth(Bg=self.Bg, Bth=self.Bth)
+            else:
+                cth = 0
+            c88 = scalingEqs.get_c88(Bth=self.Bth)
+            b_l = scalingEqs.get_Kuhn_length(Bth=self.Bth, l=1)
         return cD, cth, c88, b_l
 
     def correctForRC(self):
         cthb3 = self.cth * self.b_l**3
         c = self.df['c']
         lamda_g = np.ones_like(c)
-        if cthb3 > 0.9:
+        if cthb3 > 0.95:
             return lamda_g
         lamda_g[c>self.cth] = (c[c>self.cth]/self.cth)**(2/3)
         lamda_g[c>self.b_l**-3] = cthb3**(-2/3)
@@ -562,12 +496,58 @@ class AnalysisApp:
 
     def DPinCorrBlob(self):
         c = self.df['c']
-        g_pe = np.sqrt(self.Bpe**3/c)
-        g_good = (self.Bg**3/c)**(1/0.764)
-        g_th = (self.Bth**3/c)**2
-        g = np.amin(np.stack((g_pe, g_good, g_th), axis=0), axis=0)
+        g_pe = np.zeros_like(c) + np.inf
+        g_g = np.zeros_like(c) + np.inf
+        g_th = np.zeros_like(c) + np.inf
+        if self.Bpe_on.get():
+            g_pe = np.sqrt(self.Bpe**3/c)
+        if self.Bg_on.get():
+            g_g = (self.Bg**3/c)**(1/0.764)
+        if self.Bth_on.get():
+            g_th = (self.Bth**3/c)**2
+        g = np.amin(np.stack((g_pe, g_g, g_th), axis=0), axis=0)
         return g
 
+    def viscFunc1(self, N, Pe, g):
+        return N / g * (1 + N**2 / Pe**4 / g**2)
+
+    def viscFunc2(self, N, Pe, g):
+        return N / g * (1 + N / Pe**2 / g)**2
+
+    def fitFunction(self, params, c, N):
+        """Crossover viscosity function between Rouse (unentangled) and entangled
+        regimes, through different regimes reflecting fractal chain statistics.
+        """
+        Bpe, Bg, Bth, Pe = params
+        g = self.DPinCorrBlob()
+        visc = self.viscFunc1(N, Pe, g)
+        return visc
+        
+    def onBrowse(self):
+        # Execeuted with the 'Browse...' button
+        self.filepath = fd.askopenfilename(
+            initialdir='CSV_files', 
+            filetypes=(('CSV Files', '*.csv'),)
+        )
+        if self.filepath != '':
+            self.filenameEntry.delete(0, END)
+            self.filenameEntry.insert(0, self.filepath)
+
+        # Load data from file
+        self.df = pd.read_csv(self.filepath)
+        self.df = self.expandDataframe()
+
+        # Populate plots in both frames
+        self.plotNormalizedViscosity()
+        self.leftCanvas.draw()
+
+        self.plotOriginalViscosity()
+        self.rightCanvas.draw()
+
+        # Enabled analysis
+        self.initialize_btn.configure(state='active')
+        self.initialize_btn.focus()
+    
     def onToggleBpe(self):
         if self.Bpe_on.get():
             self.Bpe_spinbox.configure(state='active')
@@ -576,6 +556,7 @@ class AnalysisApp:
         elif (not self.Bg_on) and (not self.Bth_on):
             self.recalculate_btn.configure(state='disabled')
             self.refit_btn.configure(state='disabled')
+            self.Bpe_spinbox.configure(state='disabled')
         else:
             self.Bpe_spinbox.configure(state='disabled')
 
@@ -587,6 +568,7 @@ class AnalysisApp:
         elif (not self.Bpe_on) and (not self.Bth_on):
             self.recalculate_btn.configure(state='disabled')
             self.refit_btn.configure(state='disabled')
+            self.Bg_spinbox.configure(state='disabled')
         else:
             self.Bg_spinbox.configure(state='disabled')
 
@@ -598,16 +580,19 @@ class AnalysisApp:
         elif (not self.Bg_on) and (not self.Bpe_on):
             self.recalculate_btn.configure(state='disabled')
             self.refit_btn.configure(state='disabled')
+            self.Bth_spinbox.configure(state='disabled')
         else:
             self.Bth_spinbox.configure(state='disabled')
 
     def onTogglePe(self):
         if self.Pe_on.get():
-            #self.Pe_spinbox.configure(state='active')
             self.Pe_spinbox.configure(state='active')
+            self.refit_btn.configure(state='active')
+            self.fit_curve.set_visible(True)
         else:
-            #self.Pe_spinbox.configure(state='disabled')
             self.Pe_spinbox.configure(state='disabled')
+            self.refit_btn.configure(state='disabled')
+            self.fit_curve.set_visible(False)
 
     def onInitialize(self):
         self.Bpe = self.Bg = self.Bth = 1e9
@@ -626,7 +611,7 @@ class AnalysisApp:
         
         # Fit the big function
         res = least_squares(
-            lambda p: fitFunction(
+            lambda p: self.fitFunction(
                 p, 
                 self.df['c'], 
                 self.df['N']
@@ -649,13 +634,15 @@ class AnalysisApp:
 
         # If Rubinstein-Colby parameter indicates marginally good solvent, 
         # or if c > c** exists, then recalculate with lambda
-        lamda_g = self.correctForRC()
-        lamda = self.correctForConcentrated(lamda_g)
-        g = self.DPinCorrBlob() * lamda_g
+        self.df['lambda_g'] = self.correctForRC()
+        self.df['lambda'] = self.correctForConcentrated(self.df['lambda_g'])
+        self.df['g'] = self.DPinCorrBlob() * self.df['lambda_g']
 
         # Then refit Pe only
         res = least_squares(
-            lambda pe: viscFunc1(self.df['N'], pe, g) - lamda*self.df['visc'],
+            lambda pe: (self.viscFunc1(self.df['N'], pe, self.df['g']) 
+                    - self.df['lambda']*self.df['visc']
+            ),
             self.Pe,
             method='trf',
             jac='3-point',
@@ -742,14 +729,14 @@ class AnalysisApp:
         self.leftCanvas.draw()
 
         # Calculate N/g, redraw right figure
-        self.df['N/g'] = self.df['N'] / g
-        self.df['lamda*visc'] = lamda * self.df['visc']
+        self.df['N/g'] = self.df['N'] / self.df['g']
+        self.df['lamda*visc'] = self.df['lambda'] * self.df['visc']
         self.finalAx.clear()
 
         sns.scatterplot(
             data = self.df, 
             x='N/g', 
-            y = 'lamda*visc', 
+            y='lamda*visc', 
             hue='N', 
             palette='tab10',
             ax=self.finalAx,
@@ -757,16 +744,16 @@ class AnalysisApp:
         )
         self.finalAx.set_xscale('log')
         self.finalAx.set_yscale('log')
-            
-        x_geom = np.geomspace(1, max(self.df['N']/g), 100)
+        
+        x_geom = np.geomspace(1, max(self.df['N/g']), 100)
         self.fit_curve, = self.finalAx.plot(
-            x_geom, viscFunc1(x_geom, self.Pe, 1), 'k-'
+            x_geom, self.viscFunc1(x_geom, self.Pe, 1), 'k-'
         )
-        if (lamda_g == 1).all():
+        if (self.df['lambda_g'] == 1).all():
             self.finalAx.set_xlabel(r'$\mathit{N/g}$', fontsize=36)
         else:
             self.finalAx.set_xlabel(r'$\mathit{N/\tilde g}$', fontsize=36)
-        if (lamda == 1).all():
+        if (self.df['lambda'] == 1).all():
             self.finalAx.set_ylabel(r'$\mathit{\eta_{sp}}$', fontsize=36)
         else:
             self.finalAx.set_ylabel(
@@ -796,7 +783,7 @@ class AnalysisApp:
         if self.Pe_on.get() and self.Pe_spinbox.get() != f'{self.Pe:.2f}':
             changes.append(3)
 
-        print(changes)
+        #print(changes)
         if len(changes) == 0:
             return
         if len(changes) > 1:
@@ -838,29 +825,11 @@ class AnalysisApp:
         elif change == 3:
             self.Pe = float(self.Pe_spinbox.get())
 
-        # TODO: If pe regime exists, check for residual salt in c < cD
-
-        # If Rubinstein-Colby parameter indicates marginally good solvent, 
-        # or if c > c** exists, then recalculate with lambda
-        lamda_g = self.correctForRC()
-        lamda = self.correctForConcentrated(lamda_g)
-        g = self.DPinCorrBlob() * lamda_g
-
-        if change != 3:
-
-            # Then refit Pe only
-            res = least_squares(
-                lambda pe: viscFunc1(self.df['N'], pe, g) - lamda*self.df['visc'],
-                self.Pe,
-                method='trf',
-                jac='3-point',
-                bounds=(0, 100),
-                xtol=1e-10,
-                verbose=0,
-                loss='cauchy'
-            )
-            self.Pe, = res.x
-
+        if change == 3:
+            x_geom = np.geomspace(1, max(self.df['N/g']), 100)
+            self.fit_curve.set_data(x_geom, self.viscFunc1(x_geom, self.Pe, 1))
+            self.rightCanvas.draw()
+        else:
             # Draw plateaus and arrows on left figure
             if self.Bpe_on.get():
                 Bpe_plat = self.Bpe**-1.5
@@ -876,16 +845,24 @@ class AnalysisApp:
                 self.Bth_plat_line.set_ydata([Bth_plat, Bth_plat])
                 self.cth_arrow_2.set_xdata(self.cth)
                 self.c88_arrow_1.set_xdata(self.c88)
-            self.Pe_spinbox.delete(0, END)
-            self.Pe_spinbox.insert(0, f'{self.Pe:.2f}')
+            if self.Pe_on.get():
+                self.Pe_spinbox.delete(0, END)
+                self.Pe_spinbox.insert(0, f'{self.Pe:.2f}')
 
             self.leftCanvas.draw()
 
             # Recalculate N/g and Pe, redraw right figure
-            self.df['N/g'] = self.df['N'] / g
-            self.df['lamda*visc'] = lamda * self.df['visc']
-            self.finalAx.clear()
+            # TODO: If pe regime exists, check for residual salt in c < cD
 
+            # If Rubinstein-Colby parameter indicates marginally good solvent, 
+            # or if c > c** exists, then recalculate with lambda
+            self.df['lambda_g'] = self.correctForRC()
+            self.df['lambda'] = self.correctForConcentrated(self.df['lambda_g'])
+            self.df['g'] = self.DPinCorrBlob() * self.df['lambda_g']
+            self.df['N/g'] = self.df['N'] / self.df['g']
+            self.df['lamda*visc'] = self.df['lambda'] * self.df['visc']
+
+            self.finalAx.clear()
             sns.scatterplot(
                 data = self.df, 
                 x='N/g', 
@@ -898,38 +875,32 @@ class AnalysisApp:
             self.finalAx.set_xscale('log')
             self.finalAx.set_yscale('log')
             
-            x_geom = np.geomspace(1, max(self.df['N']/g), 100)
-        
-            self.fit_curve, = self.finalAx.plot(
-                x_geom, viscFunc1(x_geom, self.Pe, 1), 'k-'
-            )
-        self.fit_curve.set_data(x_geom, viscFunc1(x_geom, self.Pe, 1))
+            if self.Pe_on.get():
+                x_geom = np.geomspace(1, max(self.df['N/g']), 100)
+                self.fit_curve, = self.finalAx.plot(
+                    x_geom, self.viscFunc1(x_geom, self.Pe, 1), 'k-'
+                )
+                self.fit_curve.set_data(x_geom, self.viscFunc1(x_geom, self.Pe, 1))
 
-        if (lamda_g == 1).all():
-            self.finalAx.set_xlabel(r'$\mathit{N/g}$', fontsize=36)
-        else:
-            self.finalAx.set_xlabel(r'$\mathit{N/\tilde g}$', fontsize=36)
-        if (lamda == 1).all():
-            self.finalAx.set_ylabel(r'$\mathit{\eta_{sp}}$', fontsize=36)
-        else:
-            self.finalAx.set_ylabel(
-                r'$\mathit{\lambda\eta_{sp}}$', fontsize=36
-            )
+            if (self.df['lambda_g'] == 1).all():
+                self.finalAx.set_xlabel(r'$\mathit{N/g}$', fontsize=36)
+            else:
+                self.finalAx.set_xlabel(r'$\mathit{N/\tilde g}$', fontsize=36)
+            if (self.df['lambda'] == 1).all():
+                self.finalAx.set_ylabel(r'$\mathit{\eta_{sp}}$', fontsize=36)
+            else:
+                self.finalAx.set_ylabel(
+                    r'$\mathit{\lambda\eta_{sp}}$', fontsize=36
+                )
 
-        self.rightCanvas.draw()
+            self.rightCanvas.draw()
 
     def onRefit(self):
-        # TODO: If pe regime exists, check for residual salt in c < cD
-
-        # If Rubinstein-Colby parameter indicates marginally good solvent, 
-        # or if c > c** exists, then recalculate with lambda
-        lamda_g = self.correctForRC()
-        lamda = self.correctForConcentrated(lamda_g)
-        g = self.DPinCorrBlob() * lamda_g
-
         # Then refit Pe only
         res = least_squares(
-            lambda pe: viscFunc1(self.df['N'], pe, g) - lamda*self.df['visc'],
+            lambda pe: (self.viscFunc1(self.df['N'], pe, self.df['g']) 
+                - self.df['lambda']*self.df['visc']
+            ),
             self.Pe,
             method='trf',
             jac='3-point',
@@ -942,25 +913,22 @@ class AnalysisApp:
         self.Pe_spinbox.delete(0, END)
         self.Pe_spinbox.insert(0, f'{self.Pe:.2f}')
 
-        x_geom = np.geomspace(1, max(self.df['N']/g), 100)
-        self.fit_curve.set_data(x_geom, viscFunc1(x_geom, self.Pe, 1))
-        if (lamda_g == 1).all():
-            self.finalAx.set_xlabel(r'$\mathit{N/g}$', fontsize=36)
-        else:
-            self.finalAx.set_xlabel(r'$\mathit{N/\tilde g}$', fontsize=36)
-        if (lamda == 1).all():
-            self.finalAx.set_ylabel(r'$\mathit{\eta_{sp}}$', fontsize=36)
-        else:
-            self.finalAx.set_ylabel(
-                r'$\mathit{\lambda\eta_{sp}}$', 
-                fontsize=36
-            )
-
+        x_geom = np.geomspace(1, max(self.df['N/g']), 100)
+        self.fit_curve.set_data(x_geom, self.viscFunc1(x_geom, self.Pe, 1))
+        
         self.rightCanvas.draw()
 
     # TODO: build this with JSON? link to InfoDialog
     def onSave(self):
-        return
+        save_filename =  fd.asksaveasfile(
+            parent=self.master, 
+            initialdir='CSV_files', 
+            defaultextension='*.csv',
+            title='Save to CSV'
+        )
+        self.df.to_csv(save_filename, float_format='%.6e')
+
+
 
 # TODO: link to AnalysisApp.save(). Add M0 and l fields? (Maybe ask before
 # for dimensional analysis)
@@ -1033,275 +1001,6 @@ class InfoDialog:
         self.output = system
         
         self.master.quit()
-
-# Deprecated, program immediately starts with analysis app
-class MainDialog:
-
-    def __init__(self, master):
-        super().__init__()
-        # self allow the variable to be used anywhere in the class
-        self.master = master
-        self.frame = Frame(self.master)
-        self.filepath = ''
-        self.initUI()
-
-    def initUI(self):
-
-        self.master.title("Viscosity Scaling GUI")
-        self.frame.pack(fill=tk.BOTH, expand=True)
-        
-        # First line: file selection
-        self.frame1 = Frame(self.frame)
-        self.frame1.pack(fill=tk.X)
-        self.label1 = Label(self.frame1, text='Select File', width=10)
-        self.label1.pack(side=LEFT, padx=5, pady=10)
-        self.browse_btn = Button(
-            self.frame1, 
-            text='Browse...', 
-            width=12, 
-            command=self.onBrowse
-        )
-        self.browse_btn.pack(padx=5, pady=10, side=RIGHT)
-        self.entry1 = Entry(self.frame1, textvariable=self.filepath)
-        self.entry1.pack(fill=tk.X, padx=5, expand=True)
-            
-        # Second line: Analyze Button
-        frame2 = Frame(self.frame)
-        frame2.pack(fill=tk.X)
-        analyze_btn = Button(
-            frame2, 
-            text='Analyze', 
-            width=10, 
-            command=self.onAnalyze
-        )
-        analyze_btn.pack(padx=5, pady=10)
-
-    def onAnalyze(self):
-        runAnalysis(self.master, self.filepath)
-
-    def onBrowse(self):
-        # Execeuted with the 'Browse...' button
-        self.filepath = fd.askopenfilename(
-            initialdir='CSV_files', 
-            filetypes=(('CSV Files', '*.csv'),)
-        )
-        if self.filepath != '':
-            self.entry1.delete(0, END)
-            self.entry1.insert(0, self.filepath)
-
-def viscFunc1(N, Pe, g):
-    return N / g * (1 + N**2 / Pe**4 / g**2)
-
-def viscFunc2(N, Pe, g):
-    return N / g * (1 + N / Pe**2 / g)**2
-
-def fitFunction(params, c, N):
-    """Crossover viscosity function between Rouse (unentangled) and entangled
-    regimes, through different regimes reflecting fractal chain statistics.
-    """
-    Bpe, Bg, Bth, Pe = params
-    g = DPinCorrBlob(Bpe, Bg, Bth, c)
-    visc = viscFunc1(N, Pe, g)
-    return visc
-
-# Deprecated
-def DPinCorrBlob(Bpe, Bg, Bth, c, return_regimes=False):
-    g_pe = np.sqrt(Bpe**3/c)
-    g_good = (Bg**3/c)**(1/0.764)
-    g_th = (Bth**3/c)**2
-    g = np.amin(np.stack((g_pe, g_good, g_th), axis=0), axis=0)
-    if return_regimes:
-        regimes = np.argmin(np.stack((g_pe, g_good, g_th), axis=0), axis=0)
-        return g, regimes
-    else:
-        return g
-
-# Deprecated
-def correctForRC(c, cth, b_l):
-    cthb3 = cth * b_l**3
-    lamda_g = np.ones_like(c)
-    if cthb3 > 0.9:
-        return lamda_g
-    lamda_g[c>cth] = (c[c>cth]/cth)**(2/3)
-    lamda_g[c>b_l**-3] = cthb3**(-2/3)
-    return lamda_g
-
-# Deprecated
-def correctForConcentrated(c, c88, lamda_g):
-    lamda = 1 / lamda_g
-    lamda[c>c88] = c[c>c88] / c88
-    return lamda
-
-# Deprecated
-def getInitialGuesses(c, N, visc):
-    """Plots normalized viscosity as well as initial guess based on the
-    minimum values of the plots. If the minimum value corresponds to the
-    actual plateau (it constitutes a reasonable guess), then the user should
-    select 'Yes' in the pop-up dialog box. Otherwise, if this plateau should 
-    not exist for this system (e.g., Bpe does not exist for neutral systems)
-    then the user should select 'Ignore', and the guess will be sufficiently
-    large as to be inconsequential to the fit. Finally, if the user feels that
-    the guess should be elsewhere, they should select 'Let me pick', and
-    select a plateau via the interactive tool.
-    """
-
-    plt.ion()
-    fig, (ax0, ax1) = plt.subplots(1, 2)
-    fig.set_size_inches(12, 6)
-    t0, = ax0.plot([1], [1], 'ko')
-    t1, = ax1.plot([1], [1], 'ko')
-    ax0.set_xscale('log')
-    ax0.set_yscale('log')
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-
-    names = ['Bpe', 'Bg', 'Bth']
-    nu_values = [1, 0.588, 0.5]
-    p0 = np.zeros(4)
-    for i, (name, nu) in enumerate(zip(names, nu_values)):
-        fig.suptitle(name)
-    
-        plateau = visc / N / c**(1/(3*nu-1))
-        t0.set_data(c, plateau)
-        ax0.relim()
-        ax0.autoscale(enable=True)
-        
-        plateau3 = visc / N / c**(3/(3*nu-1))
-        t1.set_data(c, plateau3)
-        ax1.relim()
-        ax1.autoscale(enable=True)
-
-        use_plat = mb.askyesno(
-            title=f'{name} Plateau', 
-            message='Does this regime exist?'
-        )
-        if not use_plat:
-            p0[i] = 1e3
-        else:
-            p0[i] = min(plateau)**(1/3-nu)
-
-    p0[3] = 5
-    plt.close()
-    plt.ioff()
-    return p0
-
-# To be implemented under a 'Save' function
-def getSystemDescriptors(root, filepath):
-    """Returns pandas dataframe containing specific viscosity data for a
-    particular polymer/solvent pair. System identifiers should be requested
-    and recorded in a file (e.g., polymer, solvent, temperature, salt).
-    """
-    rootname, _ = re.match('(.*)\.([A-Za-z0-9]+)$', filepath).groups()
-    pickle_file = rootname + '.pickle'
-
-    overwrite = True
-    if os.path.exists(pickle_file):
-        overwrite = mb.askyesno(
-            title='File Exists', 
-            message='An associated file already exists.'
-            ' Do you want to overwrite it?'
-        )
-    if overwrite:
-        new_w = tk.Toplevel(root)
-        new_w.focus_force()
-        infoApp = InfoDialog(new_w)
-
-        system = infoApp.output
-        #system_params = dict(zip(infoApp.entryNames, infoApp.outputs))
-
-        try:
-            new_w.destroy()
-        except tk.TclError:
-            pass
-                
-        with open(pickle_file, 'w') as f:
-            print(asdict(system))
-            pickle.dump(asdict(system), f)
-    else:
-        with open(pickle_file, 'r') as f:
-            system = pickle.load(f)
-    return system
-
-# Deprecated
-def getCrossoverConcentrations(Bpe, Bg, Bth, csfz=0):
-    if csfz:
-        cD = brentq(
-            lambda c: Bg**2 - c**0.412 * (Bpe * np.sqrt(1 + 2*csfz/c))**0.764,
-            0, 100
-        )
-    else:
-        cD = Bpe**3 * (Bg / Bpe)**(1/0.206)
-    cth = Bth**3 * (Bth / Bg)**(1/0.176)
-    c88 = Bth**4
-    b_l = Bth**-2
-    return cD, cth, c88, b_l
-
-# Deprecated, this is all in AnalysisApp now
-def runAnalysis(root, filepath):
-
-    df = pd.read_csv(filepath)
-
-    analysis_w = tk.Toplevel(root)
-    analysis_w.focus_force()
-    analysisApp = AnalysisApp(analysis_w, df)
-    '''
-    # Clean data to semidilute only
-    df = df[df.visc >= 0.95]
-
-    c = df['c']
-    N = df['N']
-    visc = df['visc']
-
-    p0 = getInitialGuesses(c, N, visc)
-    
-    # First run
-    res = least_squares(
-        lambda p: fitFunction(p, c, N) - visc,
-        p0,
-        method='trf',
-        jac='3-point',
-        bounds=((0, 0, 0, 2), 
-                (1e10, 1e10, 1e10, 100)
-        ),
-        xtol=1e-10,
-        verbose=0,
-        loss='cauchy'
-    )
-    print(res.x)
-    Bpe, Bg, Bth, Pe = res.x
-    cD, cth, c88, b_l = getCrossoverConcentrations(Bpe, Bg, Bth) # c88 is c**
-    print(cth*b_l**3)
-
-    # TODO: If pe regime exists, check for residual salt in c < cD
-
-    # If Rubinstein-Colby parameter indicates marginally good solvent, 
-    # or if c > c** exists, then recalculate with lambda
-    lamda_g = correctForRC(c, cth, b_l)
-    lamda = correctForConcentrated(c, c88, lamda_g)
-
-    g, regimes = DPinCorrBlob(Bpe, Bg, Bth, c, return_regimes=True)
-    g *= lamda_g
-
-    # Then refit Pe only
-    res = least_squares(
-        lambda pe: viscFunc1(N, pe, g) - lamda*visc,
-        Pe,
-        method='trf',
-        jac='3-point',
-        bounds=(0, 100),
-        xtol=1e-10,
-        verbose=0,
-        loss='cauchy'
-    )
-    Pe, = res.x
-    
-    plt.plot(N/g/lamda_g, lamda*visc, 'ko')
-    x_lin = np.linspace(1, max(N/g), 100)
-    plt.plot(x_lin, viscFunc1(x_lin, Pe, 1), 'k-')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.show()
-    '''
 
 def main():
     root = tk.Tk()

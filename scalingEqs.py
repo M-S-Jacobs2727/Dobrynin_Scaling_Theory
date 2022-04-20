@@ -74,3 +74,12 @@ def get_c88(*, Bth=None):
             'Insufficient keyword arguments:'
             ' A call to this function must specify the Bth keyword.'
         )
+
+def get_Kuhn_length(*, Bth=None, l=1):
+    if Bth is not None:
+        return l / Bth**2
+    else:
+        raise ValueError(
+            'Insufficient keyword arguments:'
+            ' A call to this function must specify the Bth keyword.'
+        )
