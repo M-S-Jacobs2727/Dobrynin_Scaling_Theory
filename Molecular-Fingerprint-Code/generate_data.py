@@ -85,7 +85,7 @@ def generate_grid():
         None
 
     Returns:
-        grid: (dict) Values for each parameter input]   
+        grid: (dict) Values for each parameter input 
     '''
     grid = {"Bg" : np.round(np.linspace(0.3, 1.6, 131),2),  
 
@@ -93,7 +93,7 @@ def generate_grid():
 
     "Pe" : np.round(np.linspace(2,20,181),1), 
 
-    "Nw" : np.array(np.geomspace(10, 300000, 16).astype(int)),}
+    "Nw" : np.geomspace(10, 300000, 16).astype(int),}
     
     return grid
 
