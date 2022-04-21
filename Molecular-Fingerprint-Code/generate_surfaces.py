@@ -2,13 +2,14 @@ import collections
 import numpy as np
 import pandas as pd
 from scipy import interpolate
+import json
 from generate_data import generate_grid
 
 Bin = collections.namedtuple('Bin', ['min', 'max', 'num_bins'])
 
-def generate_surface_bins(): # Maybe make this a text file? Like a json?
+def generate_surface_bins(): # Maybe make this a text file? Like a json? DONE
     """
-    Define parameters to create (Nw, phi, eta_sp) surfaces. Adjust these parameters to tune the surfaces.
+    Read json file "surface_bins.json" to output bins to create (nw, phi, eta_sp) space
     
         Arguments:
             None
@@ -17,22 +18,13 @@ def generate_surface_bins(): # Maybe make this a text file? Like a json?
             Parameters: (dict) Dictionary of tuples. Number of bins [0], minimum bin [1] and maximum bin [2] for each coordinate of Nw, phi, and eta_sp
     """
 
-    nw_num_bins = 20
-    nw_min = 10
-    nw_max = 300000
-
-    phi_num_bins = 40
-    phi_min = 0.000001
-    phi_max = 0.1
-
-    eta_sp_num_bins = 40
-    eta_sp_min = 1.0
-    eta_sp_max = 1.5e15
+    with open('surface_bins.json') as f:
+        bin_data = json.load(f)
 
     bins = {}
-    bins['Nw'] = Bin(nw_min, nw_max, nw_num_bins)
-    bins['phi'] = Bin(phi_min, phi_max, phi_num_bins)
-    bins['eta_sp'] = Bin(eta_sp_min, eta_sp_max, eta_sp_num_bins)
+    bins['Nw'] = Bin(bin_data['Nw_min_bin'], bin_data['Nw_max_bin'], bin_data['Nw_num_bins'])
+    bins['phi'] = Bin(bin_data['phi_min_bin'], bin_data['phi_max_bin'], bin_data['phi_num_bins'])
+    bins['eta_sp'] = Bin(bin_data['eta_sp_min_bin'], bin_data['eta_sp_max_bin'], bin_data['eta_sp_num_bins'])
 
     return bins
 
@@ -50,36 +42,43 @@ def bin_data(df, bins, Bg, Bth):
     """
     df2 = df.copy()
    
+    # normalize (nw, phi, eta_sp) space to (0, 1)
     df2['Nw'] = (df2['Nw']-bins['Nw'].min)/(bins['Nw'].max-bins['Nw'].min)
     df2['phi'] = (df2['phi']-bins['phi'].min)/(bins['phi'].max-bins['phi'].min)
     df2['eta_sp'] = (df2['eta_sp']-bins['eta_sp'].min)/(bins['eta_sp'].max-bins['eta_sp'].min)
 
-    path1 = 'grid_data/'
+    # set path of save folder
+    path1 = 'grid_data\\'
     for k in np.unique(df2['Pe']):
-        test_data = df2[(df2['Bg']==Bg) & (df2['Bth']==Bth) & (df2['Pe']==k)]
-        x = test_data['Nw']
-        y = test_data['phi']
-        z = test_data['eta_sp']
-        xplotv = np.linspace(*bins['Nw'])
-        yplotv = np.linspace(*bins['phi'])
+        # take data for each Pe
+        data = df2[df2['Pe']==k]
+        x = data['Nw']
+        y = data['phi']
+        z = data['eta_sp']
+        # set up (0,1) mesh grid space, each bin represents a location of (nw, phi)
+        xplotv = np.linspace(0,1,bins['Nw'].num_bins)
+        yplotv = np.linspace(0,1,bins['phi'].num_bins)
         xplot, yplot = np.meshgrid(xplotv, yplotv)
+        # play with different methods (linear vs cubic)
+         
         zgriddata = interpolate.griddata(
             np.array([x.ravel(),y.ravel()]).T,
             z.ravel(),
             np.array([xplot.ravel(),yplot.ravel()]).T,
-            method='linear',
-            fill_value=0
-            )
+            method='cubic',
+            fill_value=0)
+        # each bin of data_save represents a value of normalized eta_sp given data of normalized (nw, phi)
         data_save = zgriddata.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
-        np.savetxt(f'{path1}Bg_{Bg}_Bth_{Bth}_Pe_{k}.txt', data_save)
+        np.savetxt(f'{path1}Bg_{Bg:.2f}_Bth_{Bth:.2f}_Pe_{k:.1f}.txt', data_save)
 
 # Main
 def main():
+    path_read = 'generated_data\\'
     grid = generate_grid()
     bins = generate_surface_bins()
     for a in grid['Bg']:
         for b in grid['Bth']:
-            df = pd.read_csv(f"generated_data\dataset_{a}_{b}.csv")
+            df = pd.read_csv(f"{path_read}dataset_{a:.2f}_{b:.2f}.csv")
             bin_data(df, bins, a, b)
 
 if __name__ == '__main__':
