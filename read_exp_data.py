@@ -23,11 +23,12 @@ def get_grid_single_nw_data(nw_val, xplotv, z):
     zgrid = np.zeros([len(xplotv),len(xplotv)])
     idx = (np.abs(xplotv-nw_val)).argmin()
     zgrid[:,idx] = z
+
     return zgrid
 
 def read_exp_data(df, path_save, bins):
     """
-    Reads in experimental datasets collected from our previous works. Obtains interpolated grid data and outputs each system to a text file in a designated folder. Another function will be created to take in a general input in the form (Nw, phi, eta_sp)
+    Reads in experimental datasets collected from our previous works. Obtains interpolated 32x32 grid data and outputs each system to a text file in a designated folder. Another function will be created to take in a general input in the form (Nw, phi, eta_sp)
 
         Arguments:
             df (DataFrame) Data regarding all of the data from papers used in our papers
@@ -41,9 +42,13 @@ def read_exp_data(df, path_save, bins):
 
     df2 = df.copy()
 
-    df2['Nw'] = (df2['Nw']-bins['Nw'].min)/(bins['Nw'].max-bins['Nw'].min)
-    df2['phi'] = (df2['phi']-bins['phi'].min)/(bins['phi'].max-bins['phi'].min)
-    df2['eta_sp'] = (df2['eta_sp']-bins['eta_sp'].min)/(bins['eta_sp'].max-bins['eta_sp'].min)
+    # log before normalizing (nw, phi, eta_sp) space
+    df2[features] = np.log10(df2[features])
+
+    # normalize (nw, phi, eta_sp) space to (0, 1)
+    df2['Nw'] = (df2['Nw']-np.log10(bins['Nw'].min))/(np.log10(bins['Nw'].max)-np.log10(bins['Nw'].min))
+    df2['phi'] = (df2['phi']-np.log10(bins['phi'].min))/(np.log10(bins['phi'].max)-np.log10(bins['phi'].min))
+    df2['eta_sp'] = (df2['eta_sp']-np.log10(bins['eta_sp'].min))/(np.log10(bins['eta_sp'].max)-np.log10(bins['eta_sp'].min))
 
     for i in np.unique(df['group']):
 
@@ -59,14 +64,12 @@ def read_exp_data(df, path_save, bins):
 
         if len(np.unique(data_slice['Nw'])) > 1:
 
-        # If there's more than one Nw, output is all zeros
-        # to fix
-        # How to deal with more than 1 Nw in same bin? Currently generating data of 64 phi over 64 Nw vals for training
-            zgriddata = interpolate.griddata(np.array([x.ravel(),y.ravel()]).T,z.ravel(),np.array([xplot.ravel(),yplot.ravel()]).T, method='cubic', fill_value=0)
+            zgriddata = interpolate.griddata(np.array([x.ravel(),y.ravel()]).T,z.ravel(),np.array([xplot.ravel(),yplot.ravel()]).T, method='linear', fill_value=0)
             data_save = zgriddata.copy()
+            data_save = data_save.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
 
         else:
-            f = interpolate.interp1d(y,z, fill_value='extrapolate')
+            f = interpolate.interp1d(y,z, bounds_error=False, fill_value=0)
             znew = f(yplotv)
             nw_val = np.unique(x)
             zgriddata = get_grid_single_nw_data(nw_val, xplotv, znew)
@@ -74,9 +77,9 @@ def read_exp_data(df, path_save, bins):
 
         polymer = np.unique(df[df['group']==i]['Polymer'])[0]
         solvent = np.unique(df[df['group']==i]['Solvent'])[0]
-        Bg = np.unique(df[df['group']==i]['Bg'])[0]
-        Bth = np.unique(df[df['group']==i]['Bth'])[0]
-        Pe = np.unique(df[df['group']==i]['Pe'])[0]
+        Bg = np.round(np.unique(df[df['group']==i]['Bg'])[0],2)
+        Bth = np.round(np.unique(df[df['group']==i]['Bth'])[0],2)
+        Pe = np.round(np.unique(df[df['group']==i]['Pe'])[0],2)
         np.savetxt(f"{path_save}{polymer}_{solvent}_{Bg}_{Bth}_{Pe}.txt", data_save)
 
 def main():

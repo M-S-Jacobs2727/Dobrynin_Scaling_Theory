@@ -4,6 +4,7 @@ import pandas as pd
 from scipy import interpolate
 import json
 from generate_data import generate_grid
+from grid_clean import surface_edge
 
 Bin = collections.namedtuple('Bin', ['min', 'max', 'num_bins'])
 
@@ -40,19 +41,19 @@ def bin_data(df, bins, Bg, Bth):
         Returns:
             None
     """
+
     df2 = df.copy()
     # define features
     features = ['Nw', 'phi', 'eta_sp']
     # log before normalizing (nw, phi, eta_sp) space
     df2[features] = np.log10(df2[features])
-
     # normalize (nw, phi, eta_sp) space to (0, 1)
     df2['Nw'] = (df2['Nw']-np.log10(bins['Nw'].min))/(np.log10(bins['Nw'].max)-np.log10(bins['Nw'].min))
     df2['phi'] = (df2['phi']-np.log10(bins['phi'].min))/(np.log10(bins['phi'].max)-np.log10(bins['phi'].min))
     df2['eta_sp'] = (df2['eta_sp']-np.log10(bins['eta_sp'].min))/(np.log10(bins['eta_sp'].max)-np.log10(bins['eta_sp'].min))
 
     # set path of save folder
-    path1 = 'grid_data\\'
+    path1 = 'grid_data_32x32\\'
     for k in np.unique(df2['Pe']):
         # take data for each Pe
         data = df2[df2['Pe']==k]
@@ -63,31 +64,37 @@ def bin_data(df, bins, Bg, Bth):
         xplotv = np.linspace(0,1,bins['Nw'].num_bins)
         yplotv = np.linspace(0,1,bins['phi'].num_bins)
         xplot, yplot = np.meshgrid(xplotv, yplotv)
-        # play with different methods (linear vs cubic)
-         
+
+        # 'linear' method gives values within [0,1]
          # Maybe deal with edges or zero values with nearest method?
-        #zgriddata_nn = interpolate.griddata(
-        #    np.array([x.ravel(),y.ravel()]).T,
-        #    z.ravel(),
-        #    np.array([xplot.ravel(),yplot.ravel()]).T,
-        #    method='nearest')
+        zgriddata_nn = interpolate.griddata(
+            np.array([x.ravel(),y.ravel()]).T,
+            z.ravel(),
+            np.array([xplot.ravel(),yplot.ravel()]).T,
+            method='nearest')
 
         zgriddata = interpolate.griddata(
             np.array([x.ravel(),y.ravel()]).T,
             z.ravel(),
             np.array([xplot.ravel(),yplot.ravel()]).T,
-            method='cubic',
+            method='linear',
             fill_value=0)
-        # for areas where fill_value = 0 (mostly edges), return value of data point closest to the point of interpolation
-        #zgriddata[np.where(zgriddata==0)] = zgriddata_nn[np.where(zgriddata==0)]
-        #zgriddata[np.where(zgriddata<0)] = 0
+
         # each bin of data_save represents a value of normalized eta_sp given data of normalized (nw, phi)
         data_save = zgriddata.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
+
+        # get values from high phi values using nearest method from griddata
+        data_save_nn = zgriddata_nn.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
+
+        # get edges of grid surface, define 1's in area where eta_sp at high nw and phi are labeled zeros
+        data_save = surface_edge(data_save, data_save_nn)
+
+        # save file
         np.savetxt(f'{path1}Bg_{Bg:.2f}_Bth_{Bth:.2f}_Pe_{k:.1f}.txt', data_save)
 
 # Main
 def main():
-    path_read = 'generated_data\\'
+    path_read = 'generated_data_64x64\\'
     grid = generate_grid()
     bins = generate_surface_bins()
     for a in grid['Bg']:
