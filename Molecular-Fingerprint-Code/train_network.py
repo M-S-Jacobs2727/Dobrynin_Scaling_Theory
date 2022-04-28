@@ -63,8 +63,8 @@ def train(dataloader, model, loss_fn, optimizer, device):
         loss.backward()
         optimizer.step()
 
-        if batch % 4 == 0:
-            loss, current = loss.item(), batch * len(X)
+        if batch_num % 4 == 0:
+            loss, current = loss.item(), batch_num * len(X)
             print(f'{loss = :>7f} [{current:>5d}/{size:>5d}]')
 
 def test(dataloader, model, loss_fn, device):
