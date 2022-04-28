@@ -17,9 +17,7 @@ class NeuralNet(torch.nn.Module):
             seq.append(torch.nn.Linear(l1, l2))
             seq.append(torch.nn.ReLU())
         seq.append(torch.nn.Linear(num_per_layer[-1], 3))
-
         self.linear_relu_stack = torch.nn.Sequential(*seq)
-    
     
     def forward(self, x):
         x = self.flatten(x)
@@ -52,11 +50,38 @@ class CustomDataLoader(torch.utils.data.Dataset):
         Pe /= 30
         return Bg, Bth, Pe
 
-def train(data_loader, model, loss_fn, optimizer, device):
+def train(dataloader, model, loss_fn, optimizer, device):
+    size = len(dataloader.dataset)
     model.train()
-    for batch_num, (X, y) in enumerate(data_loader):
+    for batch_num, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
+        
+        pred = model(X)
+        loss = loss_fn(pred, y)
 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if batch % 4 == 0:
+            loss, current = loss.item(), batch * len(X)
+            print(f'{loss = :>7f} [{current:>5d}/{size:>5d}]')
+
+def test(dataloader, model, loss_fn, device):
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    model.eval()
+    avg_loss, accuracy = 0, 0
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            pred = model(X)
+            avg_loss += loss_fn(pred, y).item()
+            accuracy += 1 - np.abs(pred - y) / y
+        
+    avg_loss /= num_batches
+    accuracy /= num_batches
+    print(f'Test Error:\n  {accuracy = :>0.3f}, {avg_loss = :>8f} \n')
 
 def get_num_start():
     with open('Molecular-Fingerprint-Code/surface_bins.json') as f:
@@ -93,6 +118,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
     train(train_dataloader, model, loss_fn, optimizer, device)
+    test(test_dataloader, model, loss_fn, device)
 
 if __name__ == '__main__':
     main()
