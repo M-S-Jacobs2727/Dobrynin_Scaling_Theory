@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import collections
-from scipy import interpolate
-from generate_surfaces import generate_surface_bins
+import scipy.interpolate
+import generate_surfaces
 
 Bin = collections.namedtuple('Bin', ['min', 'max', 'num_bins'])
 
@@ -64,12 +64,12 @@ def read_exp_data(df, path_save, bins):
 
         if len(np.unique(data_slice['Nw'])) > 1:
 
-            zgriddata = interpolate.griddata(np.array([x.ravel(),y.ravel()]).T,z.ravel(),np.array([xplot.ravel(),yplot.ravel()]).T, method='linear', fill_value=0)
+            zgriddata = scipy.interpolate.griddata(np.array([x.ravel(),y.ravel()]).T,z.ravel(),np.array([xplot.ravel(),yplot.ravel()]).T, method='linear', fill_value=0)
             data_save = zgriddata.copy()
             data_save = data_save.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
 
         else:
-            f = interpolate.interp1d(y,z, bounds_error=False, fill_value=0)
+            f = scipy.interpolate.interp1d(y,z, bounds_error=False, fill_value=0)
             znew = f(yplotv)
             nw_val = np.unique(x)
             zgriddata = get_grid_single_nw_data(nw_val, xplotv, znew)
@@ -85,7 +85,7 @@ def read_exp_data(df, path_save, bins):
 def main():
     path_read = "exp_data\\"
     path_save = "exp_data_gen\\"
-    bins = generate_surface_bins()
+    bins = generate_surfaces.generate_surface_bins()
     df = pd.read_csv(f"{path_read}new-df.csv")
     read_exp_data(df, path_save, bins)
 
