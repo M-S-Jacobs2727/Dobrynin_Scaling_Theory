@@ -1,10 +1,10 @@
 import collections
 import numpy as np
 import pandas as pd
-from scipy import interpolate
+import scipy.interpolate
 import json
-from generate_data import generate_grid
-from grid_clean import surface_edge
+import generate_data
+import grid_clean
 
 Bin = collections.namedtuple('Bin', ['min', 'max', 'num_bins'])
 
@@ -19,13 +19,13 @@ def generate_surface_bins():
             Parameters: (dict) Dictionary of tuples. Number of bins [0], minimum bin [1] and maximum bin [2] for each coordinate of Nw, phi, and eta_sp
     """
 
-    with open('surface_bins.json') as f:
+    with open('surface_bins_nested.json') as f:
         bin_data = json.load(f)
 
     bins = {}
-    bins['Nw'] = Bin(bin_data['Nw_min_bin'], bin_data['Nw_max_bin'], bin_data['Nw_num_bins'])
-    bins['phi'] = Bin(bin_data['phi_min_bin'], bin_data['phi_max_bin'], bin_data['phi_num_bins'])
-    bins['eta_sp'] = Bin(bin_data['eta_sp_min_bin'], bin_data['eta_sp_max_bin'], bin_data['eta_sp_num_bins'])
+    bins['Nw'] = Bin(bin_data['Nw']['min'], bin_data['Nw']['max'], bin_data['Nw']['len'])
+    bins['phi'] = Bin(bin_data['phi']['min'], bin_data['phi']['max'], bin_data['phi']['len'])
+    bins['eta_sp'] = Bin(bin_data['eta_sp']['min'], bin_data['eta_sp']['max'], bin_data['eta_sp']['len'])
 
     return bins
 
@@ -48,7 +48,7 @@ def bin_data(df, bins, Bg, Bth):
     # log before normalizing (nw, phi, eta_sp) space
     df2[features] = np.log10(df2[features])
     # normalize (nw, phi, eta_sp) space to (0, 1)
-    df2['Nw'] = (df2['Nw']-np.log10(bins['Nw'].min))/(np.log10(bins['Nw'].max)-np.log10(bins['Nw'].min))
+    df2['Nw'] = (df2['Nw']-np.log10(bins['Nw'].min)) / (np.log10(bins['Nw'].max)-np.log10(bins['Nw'].min))
     df2['phi'] = (df2['phi']-np.log10(bins['phi'].min))/(np.log10(bins['phi'].max)-np.log10(bins['phi'].min))
     df2['eta_sp'] = (df2['eta_sp']-np.log10(bins['eta_sp'].min))/(np.log10(bins['eta_sp'].max)-np.log10(bins['eta_sp'].min))
 
@@ -67,13 +67,13 @@ def bin_data(df, bins, Bg, Bth):
 
         # 'linear' method gives values within [0,1]
          # Maybe deal with edges or zero values with nearest method?
-        zgriddata_nn = interpolate.griddata(
+        zgriddata_nn = scipy.interpolate.griddata(
             np.array([x.ravel(),y.ravel()]).T,
             z.ravel(),
             np.array([xplot.ravel(),yplot.ravel()]).T,
             method='nearest')
 
-        zgriddata = interpolate.griddata(
+        zgriddata = scipy.interpolate.griddata(
             np.array([x.ravel(),y.ravel()]).T,
             z.ravel(),
             np.array([xplot.ravel(),yplot.ravel()]).T,
@@ -87,7 +87,7 @@ def bin_data(df, bins, Bg, Bth):
         data_save_nn = zgriddata_nn.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
 
         # get edges of grid surface, define 1's in area where eta_sp at high nw and phi are labeled zeros
-        data_save = surface_edge(data_save, data_save_nn)
+        data_save = grid_clean.surface_edge(data_save, data_save_nn)
 
         # save file
         np.savetxt(f'{path1}Bg_{Bg:.2f}_Bth_{Bth:.2f}_Pe_{k:.1f}.txt', data_save)
@@ -95,7 +95,7 @@ def bin_data(df, bins, Bg, Bth):
 # Main
 def main():
     path_read = 'generated_data_64x64\\'
-    grid = generate_grid()
+    grid = generate_data.generate_grid()
     bins = generate_surface_bins()
     for a in grid['Bg']:
         for b in grid['Bth']:

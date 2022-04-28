@@ -1,10 +1,7 @@
-import collections
 import numpy as np
 import pandas as pd
 import json
 import warnings
-
-Bin = collections.namedtuple('Bin', ['min', 'max', 'inc'])
 
 def create_curves(Bg, Bth, Pe):
     '''
@@ -20,16 +17,14 @@ def create_curves(Bg, Bth, Pe):
     '''
 
     # generate range of nw, necessary to calculate phi_star
-    num_nw_vals = 64
-    Nw = np.geomspace(10, 300000, num_nw_vals).astype(int)
+    num_nw_vals = 64 ## should be read from file
+    Nw = np.geomspace(10, 300000, num_nw_vals).astype(int) ## should be read from file
 
     # define number of data points for each nw
-    num_data_points_one_nw = 64
+    num_data_points_one_nw = 64 ## should be read from file
 
     # define concentration threshold where anything past seems unreasonable (towards bulk polymer concentration)
-    phi_star_threshold = 0.01
-    # init output array, each nw will have x number of data points data points of (phi,eta_sp)
-    arr = np.zeros((num_data_points_one_nw*num_nw_vals,4))
+    phi_max = 0.01 ## should be read from file
 
     # calculate crossover concentrations
     phi_star = (Bg ** 3) * (Nw ** (1-3*0.588))
@@ -39,7 +34,7 @@ def create_curves(Bg, Bth, Pe):
     phi_star[phi_star > phi_th] = (Bth ** 3) * (Nw[phi_star > phi_th] ** (1-3*0.5))
 
     # generate phi space
-    phi = np.geomspace(phi_star,phi_star_threshold,num_data_points_one_nw)
+    phi = np.geomspace(phi_star,phi_max,num_data_points_one_nw)
 
     # calculate g
     g_g = Bg**(3/(3*0.588-1))*(phi)**(1/(1-3*0.588))
@@ -58,26 +53,22 @@ def create_curves(Bg, Bth, Pe):
     eta_sp_2 = Nw * (1+(Nw/Ne)**2)*phi/Bth**2
     eta_sp = np.minimum(eta_sp_1, eta_sp_2)
 
-    # format nw, phi, eta_sp to return to array
-    nw_data = np.sort(np.tile(Nw,num_data_points_one_nw))
-    phi_data = np.concatenate((np.hsplit(phi.T,1)), axis=None)
-    eta_sp_data = np.concatenate((np.hsplit(eta_sp.T,1)), axis=None)
-
-    # return array of data
+    # init output array, each nw will have x number of data points data points of (phi,eta_sp)
+    arr = np.zeros((num_data_points_one_nw*num_nw_vals,4))
     arr[:,0] = Pe
-    arr[:,1] = nw_data
-    arr[:,2] = phi_data
-    arr[:,3] = eta_sp_data
+    arr[:,1] = np.sort(np.tile(Nw,num_data_points_one_nw))
+    arr[:,2] = phi.T.flatten()
+    arr[:,3] = eta_sp.T.flatten()
 
     # Apply 5% noise from gaussian distribution to phi and eta_sp data
     percentage = 0.05
     noise = np.random.normal(0,1, len(arr)) * percentage
-    arr[:,2] = arr[:,2] + noise*arr[:,2]
+    arr[:,2] += noise*arr[:,2]
     noise = np.random.normal(0,1, len(arr)) * percentage
-    arr[:,3] = arr[:,3] + noise*arr[:,3]
+    arr[:,3] += noise*arr[:,3]
 
     # delete rows where phi > threshold or eta_sp < 1 or eta_sp > 3.5x10^6
-    arr = np.delete(arr, np.where((arr[:,3]<1) | (arr[:,2]>0.01) | (arr[:,3]>3500000)),axis=0)
+    arr = np.delete(arr, np.where((arr[:,2]>phi_max) | (arr[:,3]<1) | (arr[:,3]>3500000)),axis=0)  ## should be read from file
 
     return arr
 
@@ -91,19 +82,12 @@ def generate_grid():
     Returns:
         grid: (dict) Values for Bg, Bth, Pe 
     '''
-    with open('Bg_Bth_Pe_range.json') as f:
+    with open('Bg_Bth_Pe_range_nested.json') as f:
         range_data = json.load(f)
 
-    params = {}
-    params['Bg'] = Bin(range_data['Bg_min'], range_data['Bg_max'], range_data['Bg_inc'])
-    params['Bth'] = Bin(range_data['Bth_min'], range_data['Bth_max'], range_data['Bth_inc'])
-    params['Pe'] = Bin(range_data['Pe_min'], range_data['Pe_max'], range_data['Pe_inc'])
-
-    grid = {"Bg" : np.round(np.arange(params['Bg'].min, params['Bg'].max+params['Bg'].inc, params['Bg'].inc),2),  
-
-    "Bth" : np.round(np.arange(params['Bth'].min, params['Bth'].max+params['Bth'].inc, params['Bth'].inc),2), 
-
-    "Pe" : np.round(np.arange(params['Pe'].min, params['Pe'].max+params['Pe'].inc, params['Pe'].inc),2),}                               
+    grid = {"Bg" : np.round(np.arange(range_data['Bg']['min'], range_data['Bg']['max'], range_data['Bg']['inc']),2),  
+            "Bth" : np.round(np.arange(range_data['Bth']['min'], range_data['Bth']['max'], range_data['Bth']['inc']),2), 
+            "Pe" : np.round(np.arange(range_data['Pe']['min'], range_data['Pe']['max'], range_data['Pe']['inc']),2)}                               
 
     return grid
 
