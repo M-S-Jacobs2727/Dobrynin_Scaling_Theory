@@ -4,9 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 import json
-import torch.nn
-
-import generate_surfaces
+import torch
 
 class NeuralNet(torch.nn.Module):
     def __init__(self, *num_per_layer):
