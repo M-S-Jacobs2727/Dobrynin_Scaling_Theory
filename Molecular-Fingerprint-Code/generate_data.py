@@ -20,11 +20,12 @@ def create_curves(Bg, Bth, Pe):
     '''
 
     # generate range of nw, necessary to calculate phi_star
-    num_nw_vals = 16
+    num_nw_vals = 64
     Nw = np.geomspace(10, 300000, num_nw_vals).astype(int)
 
     # define number of data points for each nw
-    num_data_points_one_nw = 16
+    num_data_points_one_nw = 64
+
     # define concentration threshold where anything past seems unreasonable (towards bulk polymer concentration)
     phi_star_threshold = 0.01
     # init output array, each nw will have x number of data points data points of (phi,eta_sp)
@@ -68,15 +69,15 @@ def create_curves(Bg, Bth, Pe):
     arr[:,2] = phi_data
     arr[:,3] = eta_sp_data
 
-    # delete rows where phi > threshold or eta_sp < 1
-    arr = np.delete(arr, np.where((arr[:,3]<1) | (arr[:,2]>0.01)),axis=0)
-
     # Apply 5% noise from gaussian distribution to phi and eta_sp data
     percentage = 0.05
     noise = np.random.normal(0,1, len(arr)) * percentage
     arr[:,2] = arr[:,2] + noise*arr[:,2]
     noise = np.random.normal(0,1, len(arr)) * percentage
     arr[:,3] = arr[:,3] + noise*arr[:,3]
+
+    # delete rows where phi > threshold or eta_sp < 1 or eta_sp > 3.5x10^6
+    arr = np.delete(arr, np.where((arr[:,3]<1) | (arr[:,2]>0.01) | (arr[:,3]>3500000)),axis=0)
 
     return arr
 
