@@ -70,7 +70,7 @@ def train(dataloader, model, loss_fn, optimizer, device):
 
         if batch_num % 4 == 0:
             loss, current = loss.item(), (batch_num + 1) * len(X)
-            print(f'{loss = :>7f} [{current:>5d}/{size:>5d}]')
+            print(f'{loss:.7f} [{current:.5d}/{size:.5d}]')
 
 def test(dataloader, model, loss_fn, device):
     size = len(dataloader.dataset)
@@ -87,7 +87,7 @@ def test(dataloader, model, loss_fn, device):
     avg_loss /= num_batches
     avg_error /= num_batches
     avg_error = torch.mean(avg_error, 0)
-    print(f'{avg_error[0]:>3f}, {avg_error[1]:>3f}, {avg_error[2]:>3f}, {avg_loss = :>3f}')
+    print(f'{avg_error[0]:.3f}, {avg_error[1]:.3f}, {avg_error[2]:.3f}, {avg_loss:.3f}')
 
 def main():
     random.seed(5)
