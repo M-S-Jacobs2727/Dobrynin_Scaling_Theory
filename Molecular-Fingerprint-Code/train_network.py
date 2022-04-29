@@ -69,7 +69,7 @@ def train(dataloader, model, loss_fn, optimizer, device):
         optimizer.step()
 
         if batch_num % 4 == 0:
-            loss, current = loss.item(), batch_num * len(X)
+            loss, current = loss.item(), (batch_num + 1) * len(X)
             print(f'{loss = :>7f} [{current:>5d}/{size:>5d}]')
 
 def test(dataloader, model, loss_fn, device):
@@ -86,15 +86,18 @@ def test(dataloader, model, loss_fn, device):
         
     avg_loss /= num_batches
     avg_error /= num_batches
-    print(f'Test Error:  {avg_error = :.3f}, {avg_loss = :>8f}')
+    avg_error = torch.mean(avg_error, 0)
+    print(f'{avg_error = :>5f}, {avg_loss = :>5f}')
 
 def main():
     random.seed(5)
-    batch_size = 16
-    train_size = 256
-    test_size = 64
+    batch_size = 64
+    train_size = 8192
+    test_size = 256
     
+    print('Loading dataset...')
     my_dataset = CustomDataset('../grid_data')
+    print('Done.')
     first_layer_shape = my_dataset[0][0].shape
     first_layer_len = first_layer_shape[0] * first_layer_shape[1]
     num_per_layer = [first_layer_len, 64, 64]
@@ -102,6 +105,7 @@ def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     model = NeuralNet(*num_per_layer).to(device)
+    print('Loaded model.')
 
     num_samples = len(my_dataset)
     samples = random.sample(list(np.arange(num_samples)), train_size+test_size)
@@ -111,18 +115,23 @@ def main():
     for s in train_samples:
         train_data.append(my_dataset[s])
     train_dataloader = DataLoader(train_data, batch_size=batch_size)
+    print('Set training data.')
 
     test_data = []
     test_samples = samples[train_size:]
     for s in test_samples:
         test_data.append(my_dataset[s])
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
-    
+    print('Set testing data.')
+
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
+    print('Training...')
     train(train_dataloader, model, loss_fn, optimizer, device)
+    print('Done.\nTesting...')
     test(test_dataloader, model, loss_fn, device)
+    print('Done.')
 
 if __name__ == '__main__':
     main()
