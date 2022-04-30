@@ -106,7 +106,7 @@ def test(dataloader, model, loss_fn, device):
             X, y = X.to(device), y.to(device)
             pred = model(X)
             avg_loss += loss_fn(pred, y).item()
-            avg_error += abs(pred - y) / y
+            avg_error += torch.abs(pred - y) / y
         
     avg_loss /= num_batches
     avg_error /= num_batches
