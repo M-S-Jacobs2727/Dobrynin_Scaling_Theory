@@ -56,17 +56,15 @@ class Processor:
             np.log(data_ranges['eta_sp_max_bin'])
         )
     
-    # TODO:
-    def add_noise(self, eta_sp):
-        eta_sp += np.random.normal(0, 0.05, eta_sp.shape) * eta_sp
+    def add_noise(self, eta_sp, noise_pctge=5):
+        eta_sp += np.random.normal(0, 1, eta_sp.shape) * eta_sp * 0.01 * noise_pctge
         return eta_sp
 
-    # TODO:
     def cap(self, eta_sp):
         """Limit eta_sp to range [self.eta_sp.min, self.eta_sp.max]
         """
-        eta_sp[eta_sp < self.eta_sp.min] = self.eta_sp.min
-        eta_sp[eta_sp > self.eta_sp.max] = self.eta_sp.min # All OOB values are set to min
+        eta_sp[eta_sp < 0] = 0
+        eta_sp[eta_sp > 1] = 0 # All OOB values are set to min
         return eta_sp
 
     def normalize_params(self, Bg, Bth, Pe):

@@ -4,6 +4,38 @@ import torch
 import mike_torch_lib as mike
 
 class NeuralNet(torch.nn.Module):   
+    """The classic, fully connected neural network.
+    TODO: Make hyperparameters accessible and tune.
+    """
+    def __init__(self):
+        """Input:
+                np.array of size 32x32 of type np.float32
+        
+        Three fully connected layers. 
+        Shape of data progresses as follows:
+
+                Input:          (32, 32)
+                Flatten:        (1024),) [ = 32*32]
+                FCL:            (64,)
+                FCL:            (64,)
+                FCL:            (3,)
+        """
+        super(NeuralNet, self).__init__()
+
+        self.conv_stack = torch.nn.Sequential(
+            # Fully connected layers
+            torch.nn.Flatten(),
+            torch.nn.Linear(32*32, 64), 
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 64), 
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 3)
+        )
+    
+    def forward(self, x):
+        return self.conv_stack(x)
+
+class ConvNeuralNet(torch.nn.Module):   
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
@@ -24,7 +56,7 @@ class NeuralNet(torch.nn.Module):
                 FCL:            (64,)
                 FCL:            (3,)
         """
-        super(NeuralNet, self).__init__()
+        super(ConvNeuralNet, self).__init__()
 
         self.conv_stack = torch.nn.Sequential(
             # Convolutional layers
@@ -72,8 +104,8 @@ def train(generator, processor,
         loss.backward()
         optimizer.step()
 
-        if b % 1 == 0:
-            loss, current = loss.item(), (b + 1) * batch_size
+        if b % 10 == 0:
+            loss, current = loss.item(), (b + 10) * batch_size
             print(f'{loss = :>7f} [{current:>5d}/{num_samples:>5d}]')
 
 def test(generator, processor, 
@@ -81,7 +113,7 @@ def test(generator, processor,
         num_samples, batch_size):
     model.eval()
     avg_loss = 0
-    avg_error = torch.zeros((3,))
+    avg_error = 0
     num_batches = num_samples // batch_size
     with torch.no_grad():
         for b in range(num_batches):
@@ -97,7 +129,9 @@ def test(generator, processor,
     avg_loss /= num_batches
     avg_error /= num_batches
 
-    print(f'Accuracy:\n\t{avg_loss = :>5f}\n\t{avg_error = :>5f}')
+    print(f'Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
+        f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
+    )
 
 def main():
     
@@ -117,10 +151,11 @@ def main():
     model = NeuralNet().to(device)
     print('Loaded model.')
 
-    loss_fn = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+    loss_fn = torch.nn.MSELoss()
+    # loss_fn = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
-    for i in range(10):
+    for i in range(5):
         print(f'*** Epoch {i+1} ***')
         print('Training')
         train(generator, processor, 
