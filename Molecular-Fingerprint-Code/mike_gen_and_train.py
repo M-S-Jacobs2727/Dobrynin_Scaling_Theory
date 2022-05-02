@@ -104,9 +104,9 @@ def train(generator, processor,
         loss.backward()
         optimizer.step()
 
-        if b % 10 == 0:
-            loss, current = loss.item(), (b + 10) * batch_size
-            print(f'{loss = :>7f} [{current:>5d}/{num_samples:>5d}]')
+        if b % 5 == 0:
+            loss, current = loss.item(), b * batch_size
+            print(f'{loss = :>7f} [{current:>7d}/{num_samples:>7d}]')
 
 def test(generator, processor, 
         model, loss_fn, device,
@@ -135,7 +135,7 @@ def test(generator, processor,
 
 def main():
     
-    batch_size = 10000
+    batch_size = 20000
     train_size = 500000
     test_size = 100000
 
@@ -148,15 +148,20 @@ def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     print(f'{device = }')
 
-    model = NeuralNet().to(device)
+    model = ConvNeuralNet().to(device)
     print('Loaded model.')
 
     loss_fn = torch.nn.MSELoss()
     # loss_fn = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
     for i in range(5):
-        print(f'*** Epoch {i+1} ***')
+        print(f'\n*** Epoch {i+1} ***')
+        optimizer = torch.optim.SGD(
+            model.parameters(), 
+            lr=0.1, 
+            momentum=0.9/(i+1)
+        )
+
         print('Training')
         train(generator, processor, 
             model, loss_fn, optimizer, device,
