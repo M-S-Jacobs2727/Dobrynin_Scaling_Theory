@@ -15,7 +15,7 @@ class NeuralNet(torch.nn.Module):
         Shape of data progresses as follows:
 
                 Input:          (32, 32)
-                Flatten:        (1024),) [ = 32*32]
+                Flatten:        (1024,) [ = 32*32]
                 FCL:            (64,)
                 FCL:            (64,)
                 FCL:            (3,)
@@ -105,7 +105,7 @@ def train(generator, processor,
         optimizer.step()
 
         if b % 5 == 0:
-            loss, current = loss.item(), b * batch_size
+            loss, current = loss.item(), (b + 1) * batch_size
             print(f'{loss = :>7f} [{current:>7d}/{num_samples:>7d}]')
 
 def test(generator, processor, 
