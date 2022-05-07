@@ -1,0 +1,13 @@
+{
+    "Nw_num_bins": 64,
+    "Nw_min_bin": 10,
+    "Nw_max_bin": 300000,
+
+    "phi_num_bins": 64,
+    "phi_min_bin": 0.000001,
+    "phi_max_bin": 0.01,
+
+    "eta_sp_num_bins": 32,
+    "eta_sp_min_bin": 1.0,
+    "eta_sp_max_bin": 3.5e6
+}

@@ -1,0 +1,13 @@
+{
+    "Bg_inc": 0.01,
+    "Bg_min": 0.30,
+    "Bg_max": 1.60,
+
+    "Bth_inc": 0.01,
+    "Bth_min": 0.20,
+    "Bth_max": 0.90,
+
+    "Pe_inc": 0.1,
+    "Pe_min": 2.0,
+    "Pe_max": 20.0
+}
