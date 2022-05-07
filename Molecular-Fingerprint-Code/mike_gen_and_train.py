@@ -90,7 +90,7 @@ def get_data(generator, processor, batch_size):
 
 def train(generator, processor, 
         model, loss_fn, optimizer, device,
-        num_samples, batch_size, lambda_term):
+        num_samples, batch_size):
     model.train()
     num_batches = num_samples // batch_size
     for b in range(num_batches):
@@ -103,8 +103,8 @@ def train(generator, processor,
         pred = model(X)
         loss = loss_fn(pred, y)
         # try regularization
-        loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters())
-        loss = loss + lambda_term * loss_norm
+        #loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters())
+        #loss = loss + lambda_term * loss_norm
         # end try regularization
 
         optimizer.zero_grad()
@@ -119,11 +119,12 @@ def train(generator, processor,
         avg_error += torch.mean(torch.abs(y - pred) / y, 0)
     avg_loss/=num_batches
     avg_error/=num_batches
-    print(f'Training Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}')
+    #print(f'Training Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}')
+    print(f'Train, {avg_loss = :>5f}\taverage errors ='f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}')
 
 def test(generator, processor, 
         model, loss_fn, device,
-        num_samples, batch_size, lambda_term):
+        num_samples, batch_size):
     model.eval()
     avg_loss = 0
     avg_error = 0
@@ -135,9 +136,9 @@ def test(generator, processor,
 
             pred = model(X)
             loss = loss_fn(pred, y)
-            # try regularization
-            loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters()) # try
-            loss = loss + lambda_term * loss_norm # try
+            # try regularization, implemented with L1
+            #loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters()) # try
+            #loss = loss + lambda_term * loss_norm # try
             # end try regularization
 
             avg_loss += loss.item()
@@ -146,13 +147,14 @@ def test(generator, processor,
     avg_loss /= num_batches
     avg_error /= num_batches
 
-    print(f'Testing Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
-        f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
-    )
+    #print(f'Testing Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
+    #    f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
+    #)
+    print(f'Test, {avg_loss = :>5f}\taverage errors ='f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}')
 
 def main():
     
-    batch_size = 50
+    batch_size = 2000
     train_size = 70000 
     test_size = 30000
 
@@ -165,8 +167,10 @@ def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     print(f'{device = }')
 
-    loss_fn = torch.nn.L1Loss()
-    lambda_term = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 10.14]
+    #loss_fn = torch.nn.L1Loss()
+    loss_fn = torch.nn.MSELoss()
+    
+    lambda_term = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.14]
     
     for lam in lambda_term:
 
@@ -174,23 +178,24 @@ def main():
         print('Loaded model.')
 
         for i in range(32):
-            print(f'\n*** Epoch {i+1} ***')
+            print(f'\n*** Epoch {i+1}, {lam = :.2f} ***')
             optimizer = torch.optim.SGD(
                 model.parameters(), 
                 lr=0.1, 
-                momentum=0.9/(i+1)
+                momentum=0.9/(i+1),
+                weight_decay=lam
             )
 
-            print(f'Training with {lam = :.2f}')
+            #print(f'Training with {lam = :.2f}')
             train(generator, processor, 
                 model, loss_fn, optimizer, device,
-                train_size, batch_size, lam
+                train_size, batch_size
             )
 
-            print(f'Testing with {lam = :.2f}')
+            #print(f'Testing with {lam = :.2f}')
             test(generator, processor,
                 model, loss_fn, device,
-                test_size, batch_size, lam
+                test_size, batch_size
             )
 
 if __name__ == '__main__':
