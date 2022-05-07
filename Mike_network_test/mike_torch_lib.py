@@ -84,8 +84,13 @@ def yield_surfaces(batch_size, num_batches, resolution=None, device=None):
         return Bg, Bth, Pe
     
     def normalize_visc(eta_sp):
-        """Cap the values, then take the log, then normalize.
+        """Add noise, cap the values, then take the log, then normalize.
         """
+        eta_sp += eta_sp * 0.05 * torch.normal(
+            torch.zeros(1), 
+            torch.ones(1),
+            eta_sp.size()
+        )
         eta_sp = torch.fmin(eta_sp, torch.tensor([eta_sp_max], device=device))
         eta_sp = torch.fmax(eta_sp, torch.tensor([eta_sp_min], device=device))
         return (torch.log(eta_sp) - torch.log(eta_sp_min)) / \
