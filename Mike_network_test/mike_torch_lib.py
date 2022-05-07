@@ -3,8 +3,131 @@ import json
 import numba
 import numpy as np
 import multiprocessing as mpr
+import torch
 
 Param = collections.namedtuple('Param', ('min', 'max'))
+
+def yield_surfaces(batch_size, num_batches, resolution=None, device=None):
+    """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and 
+    `Pe`, to be used in a `for` loop. 
+
+    It defines the resolution of the surface based on either user input 
+    (keyword argument `resolution`) or the definitions in the file
+    `surface_bins.json` (default). It then generates random values for `Bg`, 
+    `Bth`, and `Pe`, evaluates the `(phi, Nw, eta_sp)` surface, and normalizes
+    the result. The normalized values of `eta_sp` and `(Bg, Bth, Pe)` are 
+    yielded as `X` and `y` for use in a neural network.
+
+    Input:
+        `batch_size` (`int`) : The length of the generated values.
+        `resolution` (`tuple` of `int`s) : The shape of the last two dimensions
+            of the generated values
+
+    Output:
+        `X` (`torch.Tensor` of size `(batch_size, *resolution)`) : Generated 
+            values of `eta_sp`.
+        `y` (`torch.Tensor` of size `(batch_size, 3)`) : Generated values of
+            `(Bg, Bth, Pe)`.
+    """
+    with open('surface_bins.json') as f:
+        ranges = json.load(f)
+    
+    if resolution is None:
+        resolution = (ranges['phi_num_bins'], ranges['Nw_num_bins'])
+
+    if device is None:
+        device = torch.device('cuda')
+    
+    phi_min = ranges['phi_min_bin']
+    phi_max = ranges['phi_max_bin']
+    Nw_min = ranges['Nw_min_bin']
+    Nw_max = ranges['Nw_max_bin']
+    eta_sp_min = torch.tensor([ranges['eta_sp_min_bin']], device=device)
+    eta_sp_max = torch.tensor([ranges['eta_sp_max_bin']], device=device)
+
+    # Create tensors for phi (concentration) and Nw (chain length)
+    phi = np.geomspace(
+        phi_min,
+        phi_max,
+        resolution[0],
+        endpoint=True
+    )
+
+    Nw = np.geomspace(
+        Nw_min,
+        Nw_max,
+        resolution[1],
+        endpoint=True
+    )
+
+    phi, Nw = np.meshgrid(phi, Nw)
+    phi = torch.tile(torch.tensor(phi, device=device), (batch_size, 1, 1))
+    Nw = torch.tile(torch.tensor(Nw, device=device), (batch_size, 1, 1))
+
+    # Set up normalization for Bg, Bth, Pe
+    with open('Bg_Bth_Pe_range.json') as f:
+        ranges = json.load(f)
+    
+    Bg_min = ranges['Bg_min']
+    Bg_max = ranges['Bg_max']
+    Bth_min = ranges['Bth_min']
+    Bth_max = ranges['Bth_max']
+    Pe_min = ranges['Pe_min']
+    Pe_max = ranges['Pe_max']
+
+    def unnormalize_params(y):
+        """Simple linear normalization.
+        """
+        Bg = y[:, 0] * (Bg_max - Bg_min) + Bg_min
+        Bth = y[:, 1] * (Bth_max - Bth_min) + Bth_min
+        Pe = y[:, 2] * (Pe_max - Pe_min) + Pe_min
+        return Bg, Bth, Pe
+    
+    def normalize_visc(eta_sp):
+        """Cap the values, then take the log, then normalize.
+        """
+        eta_sp = torch.fmin(eta_sp, torch.tensor([eta_sp_max], device=device))
+        eta_sp = torch.fmax(eta_sp, torch.tensor([eta_sp_min], device=device))
+        return (torch.log(eta_sp) - torch.log(eta_sp_min)) / \
+            (torch.log(eta_sp_max) - torch.log(eta_sp_min))
+
+    def generate_surfaces(Bg, Bth, Pe):
+        shape = torch.Size((1, *(phi.size()[1:])))
+        Bg = torch.tile(Bg.reshape((batch_size, 1, 1)), shape)
+        Bth = torch.tile(Bth.reshape((batch_size, 1, 1)), shape)
+        Pe = torch.tile(Pe.reshape((batch_size, 1, 1)), shape)
+
+        # Only defined for c < c**
+        # Minimum accounts for crossover at c = c_th
+        g = torch.fmin(
+            Bg**(3/0.764) / phi**(1/0.764),
+            Bth**6 / phi**2
+        )
+
+        # Universal definition of Ne accounts for both 
+        # Kavassalis-Noolandi and Rubinstein-Colby scaling
+        Ne = Pe**2 * g * torch.fmin(
+            torch.tensor([1], device=device), torch.fmin(
+                (Bth / Bg)**(2/(6*0.588 - 3)) / Bth**2,
+                Bth**4 * phi**(2/3)
+            )
+        )
+
+        # Viscosity crossover function for entanglements
+        # Minimum accounts for crossover at c = c**
+        eta_sp = Nw * (1 + (Nw / Ne)**2) * torch.fmin(
+            1/g,
+            phi / Bth**2
+        )
+
+        return eta_sp
+
+    for _ in range(num_batches):
+        y = torch.rand((batch_size, 3), device=device, dtype=torch.float)
+        Bg, Bth, Pe = unnormalize_params(y)
+        eta_sp = generate_surfaces(Bg, Bth, Pe)
+        X = normalize_visc(eta_sp).to(torch.float)
+        yield X, y
 
 class Processor:
     """Before use in the neural network, the generated data should have noise
@@ -61,7 +184,9 @@ class Processor:
         return eta_sp
 
     def cap(self, eta_sp):
-        """Limit eta_sp to range [self.eta_sp.min, self.eta_sp.max]
+        """Limit eta_sp to range [0, 1]. To be called after normalization.
+        TODO: do this before normalization. self.eta_sp should not be logged
+        ahead of time. This will avoid taking the log of a value in (-inf, 0].
         """
         eta_sp[eta_sp < 0] = 0
         eta_sp[eta_sp > 1] = 0 # All OOB values are set to min
@@ -100,6 +225,12 @@ class Processor:
         return np.exp([phi, Nw, eta_sp])
 
 class SurfaceGenerator:
+    """Simple class with two attributes `self.phi` and `self.Nw`, which are
+    meshgrids of concentration and strand length values, respectively.
+    
+    Probably shouldn't be a class, but a generator function, yielding a 
+    batch of predetermined size upon a call of `next(generator)`.
+    """
     def __init__(self, data_file):
         with open(data_file) as f:
             ranges = json.load(f)
@@ -125,11 +256,10 @@ class SurfaceGenerator:
             Bg, Bth, Pe : 1-dimensional numpy arrays of equal length.
         
         Output:
-            phi : Numpy array with shape (32, 32) of concentration values
-            Nw  : Numpy array with shape (32, 32) of chain length values
-            eta_sp : Numpy array with shape (Bg.shape[0], 32, 32) of viscosity 
-                values, where the first dimension corresponds to the different
-                values of Bg, Bth, and Pe.
+            eta_sp : Numpy array with shape 
+                `(Bg.shape[0], self.phi.shape[0], self.Nw.shape[1])` of 
+                viscosity values, where the first dimension corresponds to the 
+                different values of Bg, Bth, and Pe.
         """
         if not (Bg.shape == Bth.shape == Pe.shape):
             raise ValueError('Arguments `Bg`, `Bth`, and `Pe` should have'
@@ -189,8 +319,9 @@ def fast_gen_surface(phi : float, Nw : float,
 def main():
     """For testing only.
     """
-    surf = SurfaceGenerator('Molecular-Fingerprint-Code/surface_bins.json')
-    print(surf.generate(np.array([0.8]), np.array([0.5]), np.array([10])))
+    for i, surf in enumerate(yield_surfaces(100, 2, (64, 64))):
+        X, y = surf
+        print(X.size(), y.size())
 
 if __name__ == '__main__':
     main()
