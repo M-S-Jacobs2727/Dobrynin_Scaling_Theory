@@ -6,20 +6,21 @@ The ultimate goal of this project is for the user to load a web app, upload thei
 values of scaling parameters $B_g$ and $B_{th}$ and entanglement packing number $P_e$, as well as moleucular 
 characteristics such as Kuhn length, excluded volume, and thermal blob size.
 
-## Folder *CSV_files*
+## Folders
+### *CSV_files*
 This contains a few .csv files of real, experimental data with three columns: concentration $\varphi$, $N_w$, and $\eta_{sp}$.
 
-## Folder *Data* 
+###  *Data* 
 This contains theoretically generated data as well as all experimental data studied in refs [1-5].
 
-## Folder *Mike gui test*
+### *Mike gui test*
 Mike's first attempt at creating a standalone gui for piecewise fitting of data to be loaded by the user. 
 Will likely be scrapped for a web version?
 
-## Folder *Mike_network_test*
+### *Mike_network_test*
 Mike's attempt at generating theoretical data as needed while training a neural net.
 
-## Folder *Molecular-Fingerprint-Code*
+### *Molecular-Fingerprint-Code*
 Ryan's libraries for building and running over 1.6 million ($\varphi$, $N_w$, $\eta_{sp}$) surfaces to load and train on.
 
 ## Glossary
@@ -27,7 +28,7 @@ Ryan's libraries for building and running over 1.6 million ($\varphi$, $N_w$, $\
 | ---------------- | ---------------- |
 | $\varphi=cl^3$ | reduced polymer concentration |
 | $c$ | polymer repeat unit concentration (units of mass/volume, number/volume, etc.)|
-| $l$ | repeat unit projection length (units of nm, Angstrom, etc.) |
+| $l$ | repeat unit projection length (units of nm, $\text\AA$, etc.) |
 | $N_w$ | degree of polymerization (number of repeat units per chain) |
 | $\eta_{sp}$ | specific viscosity |
 | $B_g$ | good solvent scaling parameter |
