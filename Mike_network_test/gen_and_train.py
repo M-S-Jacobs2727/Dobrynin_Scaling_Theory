@@ -1,6 +1,6 @@
 import torch
 
-import mike_torch_lib as mike
+import scaling_torch_lib as scaling
 
 class NeuralNet(torch.nn.Module):   
     """The classic, fully connected neural network.
@@ -83,7 +83,7 @@ def train(model, loss_fn, optimizer, device,
     model.train()
     num_batches = num_samples // batch_size
     print_every = 10
-    for b, (X, y) in enumerate(mike.surface_generator(
+    for b, (X, y) in enumerate(scaling.surface_generator(
             num_batches, 
             batch_size, 
             device,
@@ -110,7 +110,7 @@ def test(model, loss_fn, device,
     avg_error = 0
     num_batches = num_samples // batch_size
     with torch.no_grad():
-        for b, (X, y) in enumerate(mike.surface_generator(
+        for b, (X, y) in enumerate(scaling.surface_generator(
             num_batches, 
             batch_size, 
             device,
