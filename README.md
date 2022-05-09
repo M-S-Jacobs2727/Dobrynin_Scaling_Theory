@@ -3,11 +3,11 @@ Code that applies the polymer solution scaling theory outlined in the works of
 Dobrynin, Jacobs, and Sayko [1-5] to polymer solution viscosity data over a wide concentration range.
 
 The ultimate goal of this project is for the user to load a web app, upload their data, and receive accurate
-values of scaling parameters *Bg* and *Bth* and entanglement packing number *Pe*, as well as moleucular 
+values of scaling parameters $B_g$ and $B_{th}$ and entanglement packing number $P_e$, as well as moleucular 
 characteristics such as Kuhn length, excluded volume, and thermal blob size.
 
 ## Folder *CSV_files*
-This contains a few .csv files of real, experimental data with three columns: concentration *phi*, *Nw*, and *eta_sp*.
+This contains a few .csv files of real, experimental data with three columns: concentration $\varphi$, $N_w$, and $\eta_{sp}$.
 
 ## Folder *Data* 
 This contains theoretically generated data as well as all experimental data studied in refs [1-5].
@@ -20,19 +20,19 @@ Will likely be scrapped for a web version?
 Mike's attempt at generating theoretical data as needed while training a neural net.
 
 ## Folder *Molecular-Fingerprint-Code*
-Ryan's libraries for building and running over 1.6 million (*phi*, *Nw*, *eta_sp*) surfaces to load and train on.
+Ryan's libraries for building and running over 1.6 million ($\varphi$, $N_w$, $\eta_{sp}$) surfaces to load and train on.
 
 ## Glossary
-| Term | Explanation |
+| Term      | Explanation |
 | ---------------- | ---------------- |
-| *c* | polymer repeat unit concentration (units of mass/volume, number/volume, etc.)|
-| *l* | repeat unit projection length (units of nm, Angstrom, etc.) |
-| *phi* = *cl<sup>3</sup>* | reduced polymer concentration |
-| *Nw* | degree of polymerization (number of repeat units per chain) |
-| *eta_sp* | specific viscosity |
-| *Bg* | good solvent scaling parameter |
-| *Bth* | thermal blob scaling parameter |
-| *Pe* | entanglement packing number[6-8] |
+| $\varphi=cl^3$ | reduced polymer concentration |
+| $c$ | polymer repeat unit concentration (units of mass/volume, number/volume, etc.)|
+| $l$ | repeat unit projection length (units of nm, Angstrom, etc.) |
+| $N_w$ | degree of polymerization (number of repeat units per chain) |
+| $\eta_{sp}$ | specific viscosity |
+| $B_g$ | good solvent scaling parameter |
+| $B_{th}$ | thermal blob scaling parameter |
+| $P_e$ | entanglement packing number[6-8] |
 
 
 ## Refs

@@ -12,7 +12,7 @@ BG = Param(0.3, 1.6)
 BTH = Param(0.2, 0.9)
 PE = Param(2, 20)
 
-def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
+def surface_generator(num_batches, batch_size, device, resolution=(32, 32)):
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and 
     `Pe`, to be used in a `for` loop. 
 
@@ -38,6 +38,8 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
     ETA_SP.max.to(dtype=torch.float, device=device)
     
     # Create tensors for phi (concentration) and Nw (chain length)
+    # Both are meshed and tiled to cover a 3D tensor of size 
+    # (batch_size, *resolution) for simple, element-wise operations
     phi = np.geomspace(
         PHI.min,
         PHI.max,
@@ -65,7 +67,7 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
         return Bg, Bth, Pe
     
     def normalize_visc(eta_sp):
-        """Add noise, cap the values, then take the log, then normalize.
+        """Add noise, cap the values, take the log, then normalize.
         """
         eta_sp += eta_sp * 0.05 * torch.normal(
             torch.zeros_like(eta_sp), 
@@ -77,11 +79,14 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
             (torch.log(ETA_SP.max) - torch.log(ETA_SP.min))
 
     def generate_surfaces(Bg, Bth, Pe):
+        # First, tile params to match shape of phi and Nw for simple,
+        # element-wise operations
         shape = torch.Size((1, *(phi.size()[1:])))
         Bg = torch.tile(Bg.reshape((batch_size, 1, 1)), shape)
         Bth = torch.tile(Bth.reshape((batch_size, 1, 1)), shape)
         Pe = torch.tile(Pe.reshape((batch_size, 1, 1)), shape)
 
+        # Number of repeat units per correlation blob
         # Only defined for c < c**
         # Minimum accounts for crossover at c = c_th
         g = torch.fmin(
@@ -89,6 +94,7 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
             Bth**6 / phi**2
         )
 
+        # Number of repeat units per entanglement strand
         # Universal definition of Ne accounts for both 
         # Kavassalis-Noolandi and Rubinstein-Colby scaling
         Ne = Pe**2 * g * torch.fmin(
@@ -98,6 +104,7 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
             )
         )
 
+        # Specific viscosity crossover function from Rouse to entangled regimes
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover at c = c**
         eta_sp = Nw * (1 + (Nw / Ne)**2) * torch.fmin(
@@ -117,7 +124,7 @@ def yield_surfaces(num_batches, batch_size, device, resolution=(32, 32)):
 def main():
     """For testing only.
     """
-    for i, surf in enumerate(yield_surfaces(100, 2, (64, 64))):
+    for i, surf in enumerate(surface_generator(100, 2, (64, 64))):
         X, y = surf
         print(X.size(), y.size())
 

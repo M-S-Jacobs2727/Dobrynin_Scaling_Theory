@@ -15,7 +15,7 @@ BG = Param(0.3, 1.6)
 BTH = Param(0.2, 0.9)
 PE = Param(2, 20)
 
-def yield_surfaces(batch_size, num_batches, resolution=(32, 32), device=None):
+def surface_generator(batch_size, num_batches, resolution=(32, 32), device=None):
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and 
     `Pe`, to be used in a `for` loop. 
 
@@ -307,7 +307,7 @@ def fast_gen_surface(phi : float, Nw : float,
 def main():
     """For testing only.
     """
-    for i, surf in enumerate(yield_surfaces(100, 2, (64, 64))):
+    for i, surf in enumerate(surface_generator(100, 2, (64, 64))):
         X, y = surf
         print(X.size(), y.size())
 
