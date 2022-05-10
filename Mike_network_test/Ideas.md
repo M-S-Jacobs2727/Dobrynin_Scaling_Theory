@@ -18,3 +18,5 @@ in transferring the data across the bus, in addition to the raw speedup that
 the GPU provides. With 32 CPU cores, I was generating, transferring, and 
 learning the data at ~1M surfaces every 5 minutes at a resolution of (32, 32). 
 With torch, I can do the same at around ~1M surfaces every 3-5 seconds.
+5. For the voxel method, we'll have to be careful about defining the edge
+of the voxel vs. the center of the voxel.
