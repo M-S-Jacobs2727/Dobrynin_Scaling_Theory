@@ -45,8 +45,8 @@ class ConvNeuralNet(torch.nn.Module):
                 Two convolutional layers, three fully connected layers. 
                 Shape of data progresses as follows:
 
-                Input:          (32, 32)
-                Unflatten:      ( 1, 32, 32)
+                Input:          (64, 64)
+                Unflatten:      ( 1, 64, 64)
                 Conv2d:         ( 6, 30, 30)
                 Pool:           ( 6, 15, 15)
                 Conv2d:         (16, 13, 13)
@@ -60,20 +60,31 @@ class ConvNeuralNet(torch.nn.Module):
 
         self.conv_stack = torch.nn.Sequential(
             # Convolutional layers
-            torch.nn.Unflatten(1, (1, 32)),
-            torch.nn.Conv2d(1, 6, 3), 
-            torch.nn.ReLU(), 
+            torch.nn.Unflatten(1, (1, 128)),
+            torch.nn.Conv2d(1, 16, 3), 
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(16, 16, 3),
+            torch.nn.ReLU(),
             torch.nn.MaxPool2d(2),
-            torch.nn.Conv2d(6, 16, 3), 
-            torch.nn.ReLU(), 
+            torch.nn.Conv2d(16, 32, 3),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 32, 3),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 64, 3),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(2),
+            torch.nn.Conv2d(64, 32, 3),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 32, 3),
+            torch.nn.ReLU(),
             torch.nn.MaxPool2d(2),
             # Fully connected layers
             torch.nn.Flatten(),
-            torch.nn.Linear(16*6*6, 64), 
+            torch.nn.Linear(32*12*12, 32*12*12), 
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 64), 
+            torch.nn.Linear(32*12*12, 32*12*12), 
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 3)
+            torch.nn.Linear(32*12*12, 3)
         )
     
     def forward(self, x):
@@ -154,9 +165,15 @@ def test(generator, processor,
 
 def main():
     
-    batch_size = 2000
-    train_size = 70000 
-    test_size = 30000
+    #batch_size = 2000
+    #train_size = 70000
+    #test_size = 30000
+
+    batch_size = 100
+    train_size = [14000, 28000, 56000, 112000]
+    test_size = [6000, 12000, 24000, 48000]
+    #train_size = [14000, 28000, 56000, 112000, 224000, 448000, 896000, 1792000, 3584000]
+    #test_size = [6000, 12000, 24000, 48000, 96000, 192000, 384000, 768000, 1536000]
 
     generator = mike.SurfaceGenerator('surface_bins.json')
     processor = mike.Processor(
@@ -170,32 +187,32 @@ def main():
     #loss_fn = torch.nn.L1Loss()
     loss_fn = torch.nn.MSELoss()
     
-    lambda_term = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.14]
+    lambda_term = 20.48
     
-    for lam in lambda_term:
+    for m in range(0,len(train_size)):
 
         model = ConvNeuralNet().to(device)
         print('Loaded model.')
 
-        for i in range(32):
-            print(f'\n*** Epoch {i+1}, {lam = :.2f} ***')
+        for i in range(2):
+            print(f'\n*** Epoch {i+1}, {train_size[m]:.0f} ***')
             optimizer = torch.optim.SGD(
                 model.parameters(), 
-                lr=0.01, 
+                lr=0.1, 
                 momentum=0.9/(i+1),
-                weight_decay=lam
+                weight_decay=lambda_term
             )
 
             #print(f'Training with {lam = :.2f}')
             train(generator, processor, 
                 model, loss_fn, optimizer, device,
-                train_size, batch_size
+                train_size[m], batch_size
             )
 
             #print(f'Testing with {lam = :.2f}')
             test(generator, processor,
                 model, loss_fn, device,
-                test_size, batch_size
+                test_size[m], batch_size
             )
 
 if __name__ == '__main__':
