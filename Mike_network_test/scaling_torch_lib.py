@@ -178,9 +178,7 @@ def voxel_image_generator(num_batches : int, batch_size : int,
             dtype=torch.float,
             device=device
         )
-        # print(torch.sum(image))
-
-       
+        
         yield image, y
 
 def main():

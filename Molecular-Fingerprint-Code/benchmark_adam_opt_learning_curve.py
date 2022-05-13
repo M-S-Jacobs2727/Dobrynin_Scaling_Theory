@@ -105,6 +105,10 @@ def train(generator, processor,
 
         pred = model(X)
         loss = loss_fn(pred, y)
+        # try regularization
+        #loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters())
+        #loss = loss + lambda_term * loss_norm
+        # end try regularization
 
         optimizer.zero_grad()
         loss.backward()
@@ -135,6 +139,10 @@ def test(generator, processor,
 
             pred = model(X)
             loss = loss_fn(pred, y)
+            # try regularization, implemented with L1
+            #loss_norm = sum(torch.linalg.norm(p, dim=None) for p in model.parameters()) # try
+            #loss = loss + lambda_term * loss_norm # try
+            # end try regularization
 
             avg_loss += loss.item()
             avg_error += torch.mean(torch.abs(y - pred) / y, 0)
@@ -165,9 +173,10 @@ def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     print(f'{device = }')
 
+    #loss_fn = torch.nn.L1Loss()
     loss_fn = torch.nn.MSELoss()
     
-    lambda_term = [1.28, 2.56, 5.12, 10.24, 20.48]
+    lambda_term = [0.64, 1.28, 2.56, 5.12, 10.24, 20.48]
     
     for m in range(0,len(lambda_term)):
 
@@ -177,9 +186,15 @@ def main():
         for i in range(32):
             print(f'\n*** Epoch {i+1}, {lambda_term[m]:.2f} ***')
             optimizer = torch.optim.Adam(model.parameters(),
-            lr=0.001,betas=(0.9,0.999),
+            lr=0.01,
             weight_decay=lambda_term[m]
             )
+            #optimizer = torch.optim.SGD(
+            #    model.parameters(), 
+            #    lr=0.1, 
+            #    momentum=0.9/(i+1),
+            #    weight_decay=lambda_term
+            #)
 
             #print(f'Training with {lam = :.2f}')
             train(generator, processor, 
