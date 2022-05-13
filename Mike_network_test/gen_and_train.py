@@ -197,12 +197,12 @@ def main():
             print(f'* Epoch {j} *')
 
             print('Training')
-            train_2D(model, loss_fn, optimizer, device,
+            train_3D(model, loss_fn, optimizer, device,
                      train_size, batch_size, resolution
                      )
 
             print('Testing')
-            test_2D(model, loss_fn, device,
+            test_3D(model, loss_fn, device,
                     test_size, batch_size, resolution
                     )
 
