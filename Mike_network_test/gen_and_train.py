@@ -81,8 +81,8 @@ class ConvNeuralNet(torch.nn.Module):
         return self.conv_stack(x)
 
 
-def train(model, loss_fn, optimizer, device,
-          num_samples, batch_size, resolution):
+def train_2D(model, loss_fn, optimizer, device,
+             num_samples, batch_size, resolution):
     model.train()
     num_batches = num_samples // batch_size
     # print_every = 10
@@ -104,19 +104,61 @@ def train(model, loss_fn, optimizer, device,
         #     print(f'\t{loss = :>7f}')
 
 
-def test(model, loss_fn, device,
-         num_samples, batch_size, resolution):
+def test_2D(model, loss_fn, device,
+            num_samples, batch_size, resolution):
     model.eval()
     avg_loss = 0
     avg_error = 0
     num_batches = num_samples // batch_size
     with torch.no_grad():
         for b, (X, y) in enumerate(scaling.surface_generator(
-            num_batches,
-            batch_size,
-            device,
-            resolution=resolution
-        )):
+                num_batches, batch_size, device, resolution=resolution)):
+            pred = model(X)
+            loss = loss_fn(pred, y)
+
+            avg_loss += loss.item()
+            avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+
+    avg_loss /= num_batches
+    avg_error /= num_batches
+
+    print(f'Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
+          f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
+          )
+
+
+def train_3D(model, loss_fn, optimizer, device,
+             num_samples, batch_size, resolution):
+    model.train()
+    num_batches = num_samples // batch_size
+    # print_every = 10
+    for b, (X, y) in enumerate(scaling.voxel_image_generator(
+            num_batches, batch_size, device, resolution=resolution)):
+        pred = model(X)
+        loss = loss_fn(pred, y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # if (b + 1) % print_every == 0:
+        #     loss, current = loss.item(), (b + 1) * batch_size
+        #     print(f'[{current:>7d}/{num_samples:>7d}]')
+        #     mean_error = torch.mean(torch.abs(y - pred) / y, 0)
+        #     print(f'\tmean_error = {mean_error[0]:.3f} {mean_error[1]:.3f}'
+        #           ' {mean_error[2]:.3f}')
+        #     print(f'\t{loss = :>7f}')
+
+
+def test_3D(model, loss_fn, device,
+            num_samples, batch_size, resolution):
+    model.eval()
+    avg_loss = 0
+    avg_error = 0
+    num_batches = num_samples // batch_size
+    with torch.no_grad():
+        for b, (X, y) in enumerate(scaling.surface_generator(
+                num_batches, batch_size, device, resolution=resolution)):
             pred = model(X)
             loss = loss_fn(pred, y)
 
@@ -142,30 +184,27 @@ def main():
 
     loss_fn = torch.nn.MSELoss()
 
-    for i, resolution in enumerate([(32, 32), (64, 64), (96, 96)]):
+    for i, resolution in enumerate([
+            (32, 32, 32), (64, 64, 64), (96, 96, 96)]):
         print(f'\n*** Resolution {resolution} ***')
 
         model = NeuralNet(resolution).to(device)
         print('Loaded model.')
 
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
         for j in range(10):
             print(f'* Epoch {j} *')
 
-            optimizer = torch.optim.SGD(
-                        model.parameters(),
-                        lr=0.1,
-                        momentum=0.9/(j+1)
-            )
-
             print('Training')
-            train(model, loss_fn, optimizer, device,
-                  train_size, batch_size, resolution
-                  )
+            train_2D(model, loss_fn, optimizer, device,
+                     train_size, batch_size, resolution
+                     )
 
             print('Testing')
-            test(model, loss_fn, device,
-                 test_size, batch_size, resolution
-                 )
+            test_2D(model, loss_fn, device,
+                    test_size, batch_size, resolution
+                    )
 
 
 if __name__ == '__main__':
