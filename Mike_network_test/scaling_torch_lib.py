@@ -158,8 +158,9 @@ def voxel_image_generator(num_batches : int, batch_size : int,
         device=device
     ))
 
-    for X, y in surface_generator(num_batches, batch_size, device, resolution=s_res):
-        # # Full loop-tard. Never go full loop-tard. For verification only.
+    for X, y in surface_generator(num_batches, batch_size, device, 
+            resolution=s_res):
+        # Full loop-tard. Never go full loop-tard. For verification only.
         # image = torch.zeros((batch_size, *resolution))
         # for b, i, j, k in it.product(range(batch_size), range(resolution[0]), 
         #         range(resolution[1]), range(resolution[2])):
@@ -170,14 +171,16 @@ def voxel_image_generator(num_batches : int, batch_size : int,
         # print(torch.sum(torch.logical_and(X<1, X>0)))
         # print(torch.sum(image))
 
-        surf = torch.tile(X.reshape((batch_size, *s_res, 1)), (1, 1, 1, resolution[2]+1))
+        surf = torch.tile(
+            X.reshape((batch_size, *s_res, 1)), 
+            (1, 1, 1, resolution[2]+1)
+        )
+
+        # if <= or >=, we would include capped values, which we don't want
         image = torch.logical_and(
             surf[:, :-1, :-1, :-1] < eta_sp[1:],
-            surf[:, 1:, 1:, 1:] > eta_sp[:-1]
-        ).to(
-            dtype=torch.float,
-            device=device
-        )
+            surf[:, 1:, 1:, 1:] > eta_sp[:-1] 
+        ).to(dtype=torch.float, device=device)
         
         yield image, y
 
