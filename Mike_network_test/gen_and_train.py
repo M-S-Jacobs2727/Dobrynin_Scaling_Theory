@@ -1,5 +1,6 @@
+from contextlib import ExitStack
 import math
-from typing import Callable, Optional
+from typing import Callable
 import tqdm
 import torch
 import sys
@@ -135,12 +136,12 @@ def get_final_len(res: 'tuple[int]',
 def run(
     model: torch.nn.Module,
     loss_fn: torch.nn.Module,
-    optimizer: Optional[torch.optim.Optimizer],
     device: torch.device,
     num_batches: int,
     batch_size: int,
     resolution: 'tuple[int]',
     generator: Callable,
+    optimizer: torch.optim.Optimizer = None,
     disable_prog_bar: bool = False
 ) -> None:
     if optimizer:
@@ -149,20 +150,25 @@ def run(
         model.eval()
 
     avg_loss, avg_error = 0, 0
-    for X, y in tqdm.tqdm(generator(
-            num_batches, batch_size, device, resolution),
-            desc='batches', total=num_batches, ncols=80,
-            disable=disable_prog_bar):
-        pred = model(X)
-        loss = loss_fn(pred, y)
+    # Fancy way of using no_grad with testing only, if optimizer is not def
+    with ExitStack() as stack:
+        if not optimizer:
+            stack.enter_context(torch.no_grad())
 
-        avg_loss += loss.item()
-        avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+        for X, y in tqdm.tqdm(generator(
+                num_batches, batch_size, device, resolution),
+                desc='batches', total=num_batches, ncols=80,
+                disable=disable_prog_bar):
+            pred = model(X)
+            loss = loss_fn(pred, y)
 
-        if optimizer:
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            avg_loss += loss.item()
+            avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+
+            if optimizer:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
     avg_loss /= num_batches
     avg_error /= num_batches
@@ -202,8 +208,8 @@ def main():
             print(f'* Epoch {j+1} *')
 
             print('Training')
-            run(model, loss_fn, optimizer, device, train_size, batch_size,
-                resolution, scaling.voxel_image_generator,
+            run(model, loss_fn, device, train_size, batch_size,
+                resolution, scaling.voxel_image_generator, optimizer=optimizer,
                 disable_prog_bar=disable_prog_bar)
 
             print('Testing')
