@@ -1,4 +1,5 @@
 import math
+from typing import Any, Callable, Optional
 import tqdm
 import torch
 
@@ -114,104 +115,49 @@ def get_final_len(res: 'tuple[int]',
     return final_len
 
 
-def train_2D(model, loss_fn, optimizer, device,
-             num_samples, batch_size, resolution):
-    model.train()
-    num_batches = num_samples // batch_size
-    # print_every = 10
-    for b, (X, y) in enumerate(scaling.surface_generator(
-            num_batches, batch_size, device, resolution=resolution)):
+def run(
+    model: torch.nn.Module,
+    loss_fn: Any,
+    optimizer: Optional[torch.optim.Optimizer],
+    device: torch.device,
+    num_batches: int,
+    batch_size: int,
+    resolution: 'tuple[int]',
+    generator: Callable,
+    disable_prog_bar: bool = False
+) -> None:
+    if optimizer:
+        model.train()
+    else:
+        model.eval()
+
+    avg_loss, avg_error = 0, 0
+    for X, y in tqdm.tqdm(generator(
+            num_batches, batch_size, device, resolution),
+            desc='batches', total=num_batches, ncols=80,
+            disable=disable_prog_bar):
         pred = model(X)
         loss = loss_fn(pred, y)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        avg_loss += loss.item()
+        avg_error += torch.mean(torch.abs(y - pred) / y, 0)
 
-        # if (b + 1) % print_every == 0:
-        #     loss, current = loss.item(), (b + 1) * batch_size
-        #     print(f'[{current:>7d}/{num_samples:>7d}]')
-        #     mean_error = torch.mean(torch.abs(y - pred) / y, 0)
-        #     print(f'\tmean_error = {mean_error[0]:.3f} {mean_error[1]:.3f}'
-        #           ' {mean_error[2]:.3f}')
-        #     print(f'\t{loss = :>7f}')
-
-
-def test_2D(model, loss_fn, device,
-            num_samples, batch_size, resolution):
-    model.eval()
-    avg_loss = 0
-    avg_error = 0
-    num_batches = num_samples // batch_size
-    with torch.no_grad():
-        for b, (X, y) in enumerate(scaling.surface_generator(
-                num_batches, batch_size, device, resolution=resolution)):
-            pred = model(X)
-            loss = loss_fn(pred, y)
-
-            avg_loss += loss.item()
-            avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+        if optimizer:
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
     avg_loss /= num_batches
     avg_error /= num_batches
-
-    print(f'Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
-          f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
-          )
-
-
-def train_3D(model, loss_fn, optimizer, device,
-             num_samples, batch_size, resolution):
-    model.train()
-    num_batches = num_samples // batch_size
-    # print_every = 10
-    for b, (X, y) in tqdm.tqdm(enumerate(scaling.voxel_image_generator(
-            num_batches, batch_size, device, resolution=resolution)),
-            total=num_batches, ncols=100, disable=True):
-        pred = model(X)
-        loss = loss_fn(pred, y)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # if (b + 1) % print_every == 0:
-        #     loss, current = loss.item(), (b + 1) * batch_size
-        #     print(f'[{current:>7d}/{num_samples:>7d}]')
-        #     mean_error = torch.mean(torch.abs(y - pred) / y, 0)
-        #     print(f'\tmean_error = {mean_error[0]:.3f} {mean_error[1]:.3f}'
-        #           ' {mean_error[2]:.3f}')
-        #     print(f'\t{loss = :>7f}')
-
-
-def test_3D(model, loss_fn, device,
-            num_samples, batch_size, resolution):
-    model.eval()
-    avg_loss = 0
-    avg_error = 0
-    num_batches = num_samples // batch_size
-    with torch.no_grad():
-        for b, (X, y) in tqdm.tqdm(enumerate(scaling.voxel_image_generator(
-                num_batches, batch_size, device, resolution=resolution)),
-                total=num_batches, ncols=100, disable=True):
-            pred = model(X)
-            loss = loss_fn(pred, y)
-
-            avg_loss += loss.item()
-            avg_error += torch.mean(torch.abs(y - pred) / y, 0)
-
-    avg_loss /= num_batches
-    avg_error /= num_batches
-
-    print(f'Accuracy:\n\t{avg_loss = :>5f}\n\taverage errors ='
-          f' {avg_error[0]:>5f} {avg_error[1]:>5f} {avg_error[2]:>5f}'
-          )
+    print(f'avg_error = {avg_error[0]:.5f} {avg_error[1]:.5f}'
+          f' {avg_error[2]:.5f}')
+    print(f'{loss = :.5f}')
 
 
 def main():
     batch_size = 100
-    train_size = 50000
-    test_size = 10000
+    train_size = 500
+    test_size = 100
 
     device = torch.device('cuda') if torch.cuda.is_available() else \
         torch.device('cpu')
@@ -233,14 +179,14 @@ def main():
             print(f'* Epoch {j+1} *')
 
             print('Training')
-            train_3D(model, loss_fn, optimizer, device,
-                     train_size, batch_size, resolution
-                     )
+            run(model, loss_fn, optimizer, device, train_size, batch_size,
+                resolution, scaling.voxel_image_generator,
+                disable_prog_bar=False)
 
             print('Testing')
-            test_3D(model, loss_fn, device,
-                    test_size, batch_size, resolution
-                    )
+            run(model, loss_fn, device, test_size, batch_size,
+                resolution, scaling.voxel_image_generator,
+                disable_prog_bar=False)
 
 
 if __name__ == '__main__':
