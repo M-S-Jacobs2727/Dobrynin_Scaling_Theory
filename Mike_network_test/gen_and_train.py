@@ -1,3 +1,5 @@
+import math
+import tqdm
 import torch
 
 import scaling_torch_lib as scaling
@@ -25,7 +27,7 @@ class NeuralNet(torch.nn.Module):
         self.conv_stack = torch.nn.Sequential(
             # Fully connected layers
             torch.nn.Flatten(),
-            torch.nn.Linear(shape[0]*shape[1], 128),
+            torch.nn.Linear(shape[0]*shape[1]*shape[2], 128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
@@ -36,7 +38,7 @@ class NeuralNet(torch.nn.Module):
         return self.conv_stack(x)
 
 
-class ConvNeuralNet(torch.nn.Module):
+class ConvNeuralNet2D(torch.nn.Module):
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
@@ -44,18 +46,6 @@ class ConvNeuralNet(torch.nn.Module):
         """Input:
                 np.array of size 32x32 of type np.float32
                 Two convolutional layers, three fully connected layers.
-                Shape of data progresses as follows:
-
-                Input:          (32, 32)
-                Unflatten:      ( 1, 32, 32)
-                Conv2d:         ( 6, 30, 30)
-                Pool:           ( 6, 15, 15)
-                Conv2d:         (16, 13, 13)
-                Pool:           (16,  6,  6)
-                Flatten:        (576,) [ = 16*6*6]
-                FCL:            (64,)
-                FCL:            (64,)
-                FCL:            (3,)
         """
         super(ConvNeuralNet, self).__init__()
 
@@ -79,6 +69,49 @@ class ConvNeuralNet(torch.nn.Module):
 
     def forward(self, x):
         return self.conv_stack(x)
+
+
+class ConvNeuralNet3D(torch.nn.Module):
+    """The convolutional neural network.
+    TODO: Make hyperparameters accessible and tune.
+    """
+    def __init__(self, res):
+        """Input:
+        """
+        super(ConvNeuralNet3D, self).__init__()
+
+        final_len = get_final_len(res)
+
+        self.conv_stack = torch.nn.Sequential(
+            # Convolutional layers
+            torch.nn.Unflatten(1, (1, res[0])),
+            torch.nn.Conv3d(1, 6, 3),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool3d(2),
+            torch.nn.Conv3d(6, 16, 3),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool3d(2),
+            torch.nn.Flatten(),
+            # Fully connected layers
+            torch.nn.Linear(16*final_len, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 3)
+        )
+
+    def forward(self, x):
+        return self.conv_stack(x)
+
+
+def get_final_len(resolution: 'tuple[int]', 
+                  k_size: int = 3, p_size: int = 2) -> int:
+    r_2 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in resolution)
+    r_3 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in r_2)
+    final_len = 1
+    for r in r_3:
+        final_len *= r
+    return final_len
 
 
 def train_2D(model, loss_fn, optimizer, device,
@@ -132,8 +165,9 @@ def train_3D(model, loss_fn, optimizer, device,
     model.train()
     num_batches = num_samples // batch_size
     # print_every = 10
-    for b, (X, y) in enumerate(scaling.voxel_image_generator(
-            num_batches, batch_size, device, resolution=resolution)):
+    for b, (X, y) in tqdm.tqdm(enumerate(scaling.voxel_image_generator(
+            num_batches, batch_size, device, resolution=resolution)),
+            total=num_batches, ncols=100, disable=True):
         pred = model(X)
         loss = loss_fn(pred, y)
 
@@ -157,8 +191,9 @@ def test_3D(model, loss_fn, device,
     avg_error = 0
     num_batches = num_samples // batch_size
     with torch.no_grad():
-        for b, (X, y) in enumerate(scaling.surface_generator(
-                num_batches, batch_size, device, resolution=resolution)):
+        for b, (X, y) in tqdm.tqdm(enumerate(scaling.voxel_image_generator(
+                num_batches, batch_size, device, resolution=resolution)),
+                total=num_batches, ncols=100, disable=True):
             pred = model(X)
             loss = loss_fn(pred, y)
 
@@ -174,9 +209,9 @@ def test_3D(model, loss_fn, device,
 
 
 def main():
-    batch_size = 1000
-    train_size = 500000
-    test_size = 100000
+    batch_size = 100
+    train_size = 50000
+    test_size = 10000
 
     device = torch.device('cuda') if torch.cuda.is_available() else \
         torch.device('cpu')
@@ -184,17 +219,18 @@ def main():
 
     loss_fn = torch.nn.MSELoss()
 
-    for i, resolution in enumerate([
-            (32, 32, 32), (64, 64, 64), (96, 96, 96)]):
-        print(f'\n*** Resolution {resolution} ***')
+    resolution = (64, 64, 64)
 
-        model = NeuralNet(resolution).to(device)
-        print('Loaded model.')
+    model = ConvNeuralNet3D(resolution).to(device)
+    print('Loaded model.')
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    for i, lr in enumerate([0.1, 0.03, 0.01, 0.003, 0.001, 0.0003, 0.0001]):
+        print(f'\n*** Learning rate {lr} ***')
+
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
         for j in range(10):
-            print(f'* Epoch {j} *')
+            print(f'* Epoch {j+1} *')
 
             print('Training')
             train_3D(model, loss_fn, optimizer, device,
