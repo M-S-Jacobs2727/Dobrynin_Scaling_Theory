@@ -2,6 +2,7 @@ import math
 from typing import Callable, Optional
 import tqdm
 import torch
+import sys
 
 import scaling_torch_lib as scaling
 
@@ -171,6 +172,11 @@ def run(
 
 
 def main():
+    if len(sys.argv) >= 3 and sys.argv[2] == 'v':
+        disable_prog_bar = True
+    else:
+        disable_prog_bar = False
+
     batch_size = 100
     train_size = 500
     test_size = 100
@@ -198,12 +204,12 @@ def main():
             print('Training')
             run(model, loss_fn, optimizer, device, train_size, batch_size,
                 resolution, scaling.voxel_image_generator,
-                disable_prog_bar=False)
+                disable_prog_bar=disable_prog_bar)
 
             print('Testing')
             run(model, loss_fn, device, test_size, batch_size,
                 resolution, scaling.voxel_image_generator,
-                disable_prog_bar=False)
+                disable_prog_bar=disable_prog_bar)
 
 
 if __name__ == '__main__':
