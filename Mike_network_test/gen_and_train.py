@@ -47,7 +47,7 @@ class ConvNeuralNet2D(torch.nn.Module):
                 np.array of size 32x32 of type np.float32
                 Two convolutional layers, three fully connected layers.
         """
-        super(ConvNeuralNet, self).__init__()
+        super(ConvNeuralNet2D, self).__init__()
 
         self.conv_stack = torch.nn.Sequential(
             # Convolutional layers
@@ -104,9 +104,9 @@ class ConvNeuralNet3D(torch.nn.Module):
         return self.conv_stack(x)
 
 
-def get_final_len(resolution: 'tuple[int]', 
+def get_final_len(res: 'tuple[int]',
                   k_size: int = 3, p_size: int = 2) -> int:
-    r_2 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in resolution)
+    r_2 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in res)
     r_3 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in r_2)
     final_len = 1
     for r in r_3:
