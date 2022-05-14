@@ -1,9 +1,25 @@
 import math
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 import tqdm
 import torch
 
 import scaling_torch_lib as scaling
+
+
+def log_cosh_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    def _log_cosh(x: torch.Tensor) -> torch.Tensor:
+        return x + torch.nn.functional.softplus(-2. * x) - math.log(2.0)
+    return torch.mean(_log_cosh(y_pred - y_true))
+
+
+class LogCoshLoss(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(
+        self, y_pred: torch.Tensor, y_true: torch.Tensor
+    ) -> torch.Tensor:
+        return log_cosh_loss(y_pred, y_true)
 
 
 class NeuralNet(torch.nn.Module):
@@ -117,7 +133,7 @@ def get_final_len(res: 'tuple[int]',
 
 def run(
     model: torch.nn.Module,
-    loss_fn: Any,
+    loss_fn: torch.nn.Module,
     optimizer: Optional[torch.optim.Optimizer],
     device: torch.device,
     num_batches: int,
@@ -163,7 +179,8 @@ def main():
         torch.device('cpu')
     print(f'{device = }')
 
-    loss_fn = torch.nn.MSELoss()
+    loss_fn = LogCoshLoss()
+    # loss_fn = torch.nn.MSELoss()
 
     resolution = (64, 64, 64)
 
