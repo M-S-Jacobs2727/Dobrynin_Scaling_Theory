@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #import numpy as np
 from torch import flatten
 #from torch.autograd import Variable
@@ -55,7 +54,7 @@ class Net(Module):
         output = self.LogSoftmax(x)
 
         return output
-=======
+
 #import numpy as np
 from torch import flatten
 #from torch.autograd import Variable
@@ -112,4 +111,3 @@ class Net(Module):
         output = self.LogSoftmax(x)
 
         return output
->>>>>>> e55fca987c7909fbfce2b0223005c5fd029fdc5b
