@@ -13,11 +13,6 @@ BTH = Param(0.2, 0.9)
 PE = Param(2, 20)
 
 
-# TODO: implement modified surface_generator to create correlated Bg, Bth
-# This reflects experimental data, where we see Bg \approx Bth + constant
-# for systems with both Bg and Bth (all systems have Bg and Bth, but for
-# some we can only see one regime).
-
 def unnormalize_params(y):
     """Simple linear normalization.
     """
@@ -168,18 +163,39 @@ def voxel_image_generator(num_batches: int, batch_size: int,
         device=device
     ))
 
-    for X, y in surface_generator(
-        num_batches, batch_size, device, resolution=s_res
-    ):
+    for X, y in surface_generator(num_batches, batch_size, device,
+                                  resolution=s_res):
+        # # Full loop-tard. Never go full loop-tard. For verification only.
+        # image = torch.zeros((batch_size, *resolution))
+        # for b, i, j, k in it.product(range(batch_size), range(resolution[0]),
+        #         range(resolution[1]), range(resolution[2])):
+        #     image[b, i, j, k] = 1 if (
+        #         eta_sp[k+1] > X[b, i, j]
+        #         and eta_sp[k] < X[b, i+1, j+1]
+        #     ) else 0
+        # print(torch.sum(torch.logical_and(X<1, X>0)))
+        # print(torch.sum(image))
+
         surf = torch.tile(
-            X.reshape((batch_size, *s_res, 1)),
+            X.reshape((batch_size, *s_res, 1)), 
             (1, 1, 1, resolution[2]+1)
         )
 
         # if <= or >=, we would include capped values, which we don't want
         image = torch.logical_and(
             surf[:, :-1, :-1, :-1] < eta_sp[1:],
-            surf[:, 1:, 1:, 1:] > eta_sp[:-1]
+            surf[:, 1:, 1:, 1:] > eta_sp[:-1] 
         ).to(dtype=torch.float, device=device)
-
+        
         yield image, y
+
+
+def main():
+    """For testing only.
+    """
+    for surf in voxel_image_generator(8, 1, torch.device('cpu')):
+        X, y = surf
+
+
+if __name__ == '__main__':
+    main()
