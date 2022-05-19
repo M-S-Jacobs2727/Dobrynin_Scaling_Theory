@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 import math
-from typing import Callable
+from typing import Callable, Tuple
 import tqdm
 import torch
 import sys
@@ -15,7 +15,7 @@ def log_cosh_loss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
 
 
 class LogCoshLoss(torch.nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def forward(
@@ -28,7 +28,7 @@ class NeuralNet(torch.nn.Module):
     """The classic, fully connected neural network.
     TODO: Make hyperparameters accessible and tune.
     """
-    def __init__(self, shape):
+    def __init__(self, shape: Tuple[int]) -> None:
         """Input:
                 np.array of size 32x32 of type np.float32
 
@@ -53,7 +53,7 @@ class NeuralNet(torch.nn.Module):
             torch.nn.Linear(64, 3)
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv_stack(x)
 
 
@@ -61,7 +61,7 @@ class ConvNeuralNet2D(torch.nn.Module):
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
-    def __init__(self, shape):
+    def __init__(self, shape: Tuple[int]) -> None:
         """Input:
                 np.array of size 32x32 of type np.float32
                 Two convolutional layers, three fully connected layers.
@@ -86,7 +86,7 @@ class ConvNeuralNet2D(torch.nn.Module):
             torch.nn.Linear(64, 3)
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv_stack(x)
 
 
@@ -94,7 +94,7 @@ class ConvNeuralNet3D(torch.nn.Module):
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
-    def __init__(self, res):
+    def __init__(self, res: Tuple[int]) -> None:
         """Input:
         """
         super(ConvNeuralNet3D, self).__init__()
@@ -119,12 +119,13 @@ class ConvNeuralNet3D(torch.nn.Module):
             torch.nn.Linear(64, 3)
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv_stack(x)
 
 
-def get_final_len(res: 'tuple[int]',
-                  k_size: int = 3, p_size: int = 2) -> int:
+def get_final_len(
+    res: 'tuple[int]', k_size: int = 3, p_size: int = 2
+) -> int:
     r_2 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in res)
     r_3 = (math.floor(((r - k_size + 1) - p_size) / p_size + 1) for r in r_2)
     final_len = 1
@@ -139,8 +140,9 @@ def run(
     device: torch.device,
     num_batches: int,
     batch_size: int,
-    resolution: 'tuple[int]',
-    generator: Callable,
+    resolution: Tuple[int],
+    generator: Callable[[int, int, torch.device, Tuple[int]],
+                        Tuple[torch.Tensor]],
     optimizer: torch.optim.Optimizer = None,
     disable_prog_bar: bool = False
 ) -> None:
@@ -177,7 +179,7 @@ def run(
     print(f'{loss = :.5f}')
 
 
-def main():
+def main() -> None:
     if len(sys.argv) >= 3 and sys.argv[2] == 'v':
         disable_prog_bar = True
     else:

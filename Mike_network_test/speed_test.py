@@ -4,7 +4,9 @@ import torch
 import scaling_torch_lib as scaling
 
 
-def main():
+def main() -> None:
+    # TODO: the same for the voxel_image_generator
+    print('Begin\n')
     device = torch.device('cuda')
     num_samples = 40_960_000
 
@@ -15,12 +17,12 @@ def main():
     start = time.perf_counter()
     for i, res in enumerate(resolutions):
         print(f'{res = }')
-        resolution = (res, res)
+        resolution = (res, res, res)
         for j, batch_size in enumerate(batches):
             print(f'{batch_size = }')
             num_batches = num_samples // batch_size
             start_batch = time.perf_counter()
-            for surf in scaling.surface_generator(
+            for surf in scaling.voxel_image_generator(
                     num_batches, batch_size, device, resolution):
                 X, y = surf
             elapsed = time.perf_counter() - start_batch
@@ -37,3 +39,7 @@ def main():
         for bs, t in zip(batches, time_list):
             print(f'  {bs:10d}  |  ({r:3d}, {r:3d})  |  {t:.2e}  |'
                   f'  {num_samples/t:.1f}')
+
+
+if __name__ == '__main__':
+    main()

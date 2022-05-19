@@ -1,4 +1,5 @@
 import collections
+from typing import Tuple
 import numpy as np
 import torch
 
@@ -18,7 +19,7 @@ PE = Param(2, 20)
 # for systems with both Bg and Bth (all systems have Bg and Bth, but for
 # some we can only see one regime).
 
-def unnormalize_params(y):
+def unnormalize_params(y: torch.Tensor) -> Tuple[torch.Tensor]:
     """Simple linear normalization.
     """
     Bg = y[:, 0] * (BG.max - BG.min) + BG.min
@@ -27,7 +28,7 @@ def unnormalize_params(y):
     return Bg, Bth, Pe
 
 
-def normalize_visc(eta_sp: torch.Tensor):
+def normalize_visc(eta_sp: torch.Tensor) -> torch.Tensor:
     """Add noise, cap the values, take the log, then normalize.
     """
     eta_sp += eta_sp * 0.05 * torch.normal(
@@ -40,9 +41,10 @@ def normalize_visc(eta_sp: torch.Tensor):
         (torch.log(ETA_SP.max) - torch.log(ETA_SP.min))
 
 
-def surface_generator(num_batches: int, batch_size: int,
-                      device: torch.device,
-                      resolution: 'tuple[int]' = (32, 32)):
+def surface_generator(
+    num_batches: int, batch_size: int, device: torch.device,
+    resolution: Tuple[int] = (32, 32)
+) -> Tuple[torch.Tensor]:
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
     `Pe`, to be used in a `for` loop.
 
@@ -90,7 +92,9 @@ def surface_generator(num_batches: int, batch_size: int,
     phi = torch.tile(phi, (batch_size, 1, 1))
     Nw = torch.tile(Nw, (batch_size, 1, 1))
 
-    def generate_surfaces(Bg, Bth, Pe):
+    def generate_surfaces(
+            Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
+    ) -> torch.Tensor:
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
         shape = torch.Size((1, *(phi.size()[1:])))
@@ -134,9 +138,10 @@ def surface_generator(num_batches: int, batch_size: int,
         yield X, y
 
 
-def voxel_image_generator(num_batches: int, batch_size: int,
-                          device: torch.device,
-                          resolution: 'tuple[int]' = (32, 32, 32)):
+def voxel_image_generator(
+    num_batches: int, batch_size: int, device: torch.device,
+    resolution: Tuple[int] = (32, 32, 32)
+) -> Tuple[torch.Tensor]:
     """Uses surface_generator to generate a surface with a resolution one more,
     then generates a 3D binary array dictating whether or not the surface
     passes through a given voxel. This is determined using the facts that:
