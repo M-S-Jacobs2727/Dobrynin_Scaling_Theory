@@ -11,7 +11,7 @@ ETA_SP = Param(torch.tensor(1), torch.tensor(3.5e6))
 
 BG = Param(0.3, 1.6)
 BTH = Param(0.2, 0.9)
-PE = Param(2, 20)
+PE = Param(8, 20)
 
 
 # TODO: implement modified surface_generator to create correlated Bg, Bth
@@ -22,9 +22,9 @@ PE = Param(2, 20)
 def unnormalize_params(y: torch.Tensor) -> Tuple[torch.Tensor]:
     """Simple linear normalization.
     """
-    Bg = y[:, 0] * (BG.max - BG.min) + BG.min
-    Bth = y[:, 1] * (BTH.max - BTH.min) + BTH.min
-    Pe = y[:, 2] * (PE.max - PE.min) + PE.min
+    Bg = y[:, 0] * (BG.max - BG.min) + BG.min + 1e-4
+    Bth = y[:, 1] * (BTH.max - BTH.min) + BTH.min + 1e-4
+    Pe = y[:, 2] * (PE.max - PE.min) + PE.min + 1e-4
     return Bg, Bth, Pe
 
 
