@@ -201,7 +201,6 @@ def test(
 
     num_batches = num_samples // batch_size
     avg_loss, avg_error = 0, 0
-    # Fancy way of using no_grad with testing only, if optimizer is not def
     with torch.no_grad():
         for X, y in generator(num_batches, batch_size, device, resolution):
             pred = model(X)
@@ -256,6 +255,9 @@ def train_test_model(
             resolution=conf['resolution'],
             generator=scaling.voxel_image_generator
         )
+        bg_err = bg_err.cpu()
+        bth_err = bth_err.cpu()
+        pe_err = pe_err.cpu()
 
         with tune.checkpoint_dir(epoch) as checkpoint_dir:
             path = Path(checkpoint_dir, "checkpoint")
@@ -284,8 +286,8 @@ def main():
 
     config = {
         'batch_size': tune.choice([10, 20, 50, 100]),
-        'train_size': 70000,
-        'test_size': 30000,
+        'train_size': 10000,
+        'test_size': 5000,
         'lr': tune.loguniform(1e-4, 1e-1),
         'resolution': (128, 32, 128),
         'c1': 6,
@@ -298,7 +300,7 @@ def main():
         'l2': 128,
     }
 
-    scheduler = ASHAScheduler(metric='pe_err', mode='min')
+    scheduler = ASHAScheduler(metric='pe_err', mode='min', grace_period=5)
     reporter = CLIReporter(
         parameter_columns=['batch_size', 'resolution', 'lr'],
         metric_columns=['loss', 'bg_err', 'bth_err', 'pe_err'],
@@ -327,7 +329,9 @@ def main():
         local_dir=RAY_PATH,
     )
 
-    best_trial = result.get_best_trial('pe_err', 'min', 'last')
+    best_trial = result.get_best_trial(
+        'pe_err', 'min', filter_nan_and_inf=True
+    )
     print(f'Best trial config: {best_trial.config}')
     print(f'Best trial final loss: {best_trial.last_result["loss"]}')
 
