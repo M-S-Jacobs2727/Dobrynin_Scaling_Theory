@@ -16,9 +16,9 @@ PE = Param(2, 20)
 def unnormalize_params(y):
     """Simple linear normalization.
     """
-    Bg = y[:, 0] * (BG.max - BG.min) + BG.min
-    Bth = y[:, 1] * (BTH.max - BTH.min) + BTH.min
-    Pe = y[:, 2] * (PE.max - PE.min) + PE.min
+    Bg = y[:, 0] * (BG.max - BG.min) + BG.min + 1e-4
+    Bth = y[:, 1] * (BTH.max - BTH.min) + BTH.min + 1e-4
+    Pe = y[:, 2] * (PE.max - PE.min) + PE.min + 1e-4
     return Bg, Bth, Pe
 
 
