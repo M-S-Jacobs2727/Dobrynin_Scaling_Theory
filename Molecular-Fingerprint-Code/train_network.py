@@ -1,13 +1,12 @@
-import re
-import os
-import random
 import numpy as np
-import pandas as pd
-import json
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.nn.parallel import DistributedDataParallel
+import torch.distributed as dist
+import scaling_torch_lib as mike
+import time
+import math
 
-class NeuralNet(torch.nn.Module):
+class ConvNeuralNet(torch.nn.Module):   
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
@@ -17,147 +16,149 @@ class NeuralNet(torch.nn.Module):
                 Two convolutional layers, three fully connected layers. 
                 Shape of data progresses as follows:
 
-                Input:          (32, 32)
-                Unflatten:      ( 1, 32, 32)
-                Conv2d:         ( 6, 30, 30)
-                Pool:           ( 6, 15, 15)
-                Conv2d:         (16, 13, 13)
-                Pool:           (16,  6,  6)
-                Flatten:        (576,) [ = 16*6*6]
+                Input:          (128, 128)
+                Unflatten:      ( 1, 128, 128)
+                Conv2d:         ( 6, 124, 124)
+                Pool:           ( 6, 62, 62)
+                Conv2d:         (16, 60, 60)
+                Pool:           (16, 30, 30)
+                Conv2d:         (64, 28, 28)
+                Pool:           (64, 14, 14)
+                Flatten:        (12544,) [ = 64*14*14]
                 FCL:            (64,)
                 FCL:            (64,)
                 FCL:            (3,)
-        """
-        super(NeuralNet, self).__init__()
+                """
+        super(ConvNeuralNet, self).__init__()
 
-        self.forward = torch.nn.Sequential(
+        fc0 = 4*get_final_len((128,128),5, 3, 2, 2)
+
+        self.conv_stack = torch.nn.Sequential(
             # Convolutional layers
-            torch.nn.Unflatten(1, (1, 32)),
-            torch.nn.Conv2d(1, 6, 3), 
-            torch.nn.ReLU(), 
+            torch.nn.Unflatten(1, (1, 128)),
+            torch.nn.Conv2d(1, 4, 5), 
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(4),
             torch.nn.MaxPool2d(2),
-            torch.nn.Conv2d(6, 16, 3), 
-            torch.nn.ReLU(), 
+            torch.nn.Conv2d(4, 4, 3), 
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(4),
             torch.nn.MaxPool2d(2),
             # Fully connected layers
             torch.nn.Flatten(),
-            torch.nn.Linear(16*6*6, 64), 
+            torch.nn.Linear(fc0, 256), 
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 64), 
+            torch.nn.Linear(256, 64), 
             torch.nn.ReLU(),
             torch.nn.Linear(64, 3)
         )
+    
+    def forward(self, x):
+        return self.conv_stack(x)
 
-class CustomDataset(Dataset):
-    """Pixelated viscosity plots dataset. Each datum is a 32x32 grid of values
-    0 <= x <= 1. 
+def get_final_len(res, k1, k2, p1, p2):
+    """Compute final output size of two sets of (conv3d, maxpool3d) layers
+    using conv kernel_size and pool kernel_size of each layer.
     """
-    def __init__(self, path):
-        """Args: 
-                path (string): Path to dataset
-        """
-        self.path = path
-        self.filenames = os.listdir(self.path)
-    
-    def __len__(self):
-        return len(self.filenames)
-    
-    def __getitem__(self, idx):
-        filename = self.filenames[idx]
-        data = np.loadtxt(os.path.join(self.path, filename)).astype(np.float32)
 
-        m = re.match(r'Bg_([0-9.]+)_Bth_([0-9.]+)_Pe_([0-9.]+)\.txt', filename)
-        if not m:
-            raise ValueError(f'Could not read parameter values from file'
-                    ' {os.path.join(self.path, filename)}')
-        params = np.array([float(i) for i in m.groups()])
-        params = self.normalize(*params).astype(np.float32)
+    res2 = (math.floor(((r - k1 + 1) - p1) / p1 + 1) for r in res)
+    res3 = (math.floor(((r - k2 + 1) - p2) / p2 + 1) for r in res2)
+    final_len = 1
+    for r in res3:
+        final_len *= r
+    return final_len
 
-        return data, params
 
-    def normalize(self, Bg, Bth, Pe):
-        Bg /= 2
-        Pe /= 30
-        return np.array([Bg, Bth, Pe])
-
-def train(dataloader, model, loss_fn, optimizer, device):
-    size = len(dataloader.dataset)
+def train( 
+        model, loss_fn, optimizer, device,
+        num_samples, batch_size, resolution):
     model.train()
-    for batch_num, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
-        
+    num_batches = num_samples // batch_size
+    avg_loss = 0
+    avg_error = 0
+
+    for b, (X, y) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
+        optimizer.zero_grad()
         pred = model(X)
         loss = loss_fn(pred, y)
-
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch_num % 4 == 0:
-            loss, current = loss.item(), (batch_num + 4) * len(X)
-            print(f'{loss = :>7f} [{current:>5d}/{size:>5d}]')
+        avg_loss += loss
+        avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+    avg_loss/=num_batches
+    avg_error/=num_batches
+    
+    return avg_loss, avg_error
 
-def test(dataloader, model, loss_fn, device):
-    num_batches = len(dataloader)
+def test( 
+        model, loss_fn, device,
+        num_samples, batch_size, resolution):
     model.eval()
-    avg_loss, avg_error = 0, 0
+    avg_loss = 0
+    avg_error = 0
+    num_batches = num_samples // batch_size
     with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
+        for b, (X, y) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
             pred = model(X)
-            avg_loss += loss_fn(pred, y).item()
-            avg_error += torch.abs(pred - y) / y
-        
+            loss = loss_fn(pred, y)
+
+            avg_loss += loss.item()
+            #avg_loss += loss
+            avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+    
     avg_loss /= num_batches
     avg_error /= num_batches
-    avg_error = torch.mean(avg_error, 0)
-    print(f'{avg_error[0]:>3f}, {avg_error[1]:>3f}, {avg_error[2]:>3f}, {avg_loss = :>3f}')
 
-def main():
-    """Load dataset, then train and test network over several epochs.
-    TODO: Simplify data generation, record only Bg, Bth, Pe values, then
-    generate data on the fly, perhaps with GPU.
-    """
-    random.seed(5)
-    batch_size = 1000
-    train_size = 50000
-    test_size = 10000
-    
-    my_dataset = CustomDataset('../grid_data')
-    print('Loaded dataset.')
+    return avg_loss, avg_error
+
+def main(): 
+
+    batch_size = 100
+
+    train_size = 700000
+    test_size = 300000
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    model = NeuralNet().to(device)
-    print('Loaded model.')
+    print(f'{device = }')
 
-    num_samples = len(my_dataset)
-    for i in range(5):
-        print(f'\n****Epoch #{i}****\n')
-        samples = random.sample(list(np.arange(num_samples)), train_size+test_size)
+    loss_fn = torch.nn.MSELoss()
 
-        train_data = []
-        train_samples = samples[:train_size]
-        for s in train_samples:
-            train_data.append(my_dataset[s])
-        train_dataloader = DataLoader(train_data, batch_size=batch_size)
-        print(f'Set training data, length {len(train_dataloader):d}.')
+    val = 0
 
-        test_data = []
-        test_samples = samples[train_size:]
-        for s in test_samples:
-            test_data.append(my_dataset[s])
-        test_dataloader = DataLoader(test_data, batch_size=batch_size)
-        print(f'Set testing data, length {len(test_dataloader)}.')
+    for m in range(3):
 
-        loss_fn = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+        model = ConvNeuralNet().to(device)
 
-        print('Training...')
-        train(train_dataloader, model, loss_fn, optimizer, device)
-        print('Done.\nTesting...')
-        test(test_dataloader, model, loss_fn, device)
-        print('Done.')
+        print(f'Epoch\tbatch_size\ttrain_loss\ttrain_err[0]\ttrain_err[1]\ttrain_err[2]\ttest_loss\ttest_err[0]\ttest_err[1]\ttest_err[2]\ttime')
+
+        for i in range(100):
+
+            t_start = time.perf_counter()
+
+            optimizer = torch.optim.Adam(model.parameters(),
+            lr=0.001,
+            weight_decay=0
+            )
+            train_loss, train_error = train( 
+                model, loss_fn, optimizer, device,
+                train_size, batch_size, resolution=(128, 128)
+            )
+
+            test_loss, test_error = test(
+                model, loss_fn, device,
+                test_size, batch_size, resolution=(128, 128)
+            )
+
+            elapsed = time.perf_counter() - t_start
+            print(f'{i+1}\t{train_loss:>5f}\t{train_error[0]:.4f}\t{train_error[1]:.4f}\t{train_error[2]:.4f}\t{test_loss:>5f}\t{test_error[0]:.4f}\t{test_error[1]:.4f}\t{test_error[2]:.4f}\t{elapsed:.2f}')
+
+            if (np.sum(train_error.cpu().detach().numpy()<0.1)==3) and (np.sum(test_error.cpu().detach().numpy()<0.1)==3):
+                torch.save(model.state_dict(), "model.pt")
+                print("Model saved!")
+                break
 
 if __name__ == '__main__':
+
     main()

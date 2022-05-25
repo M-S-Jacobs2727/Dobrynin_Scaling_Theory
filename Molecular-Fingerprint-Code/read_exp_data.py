@@ -3,6 +3,7 @@ import pandas as pd
 import collections
 import scipy.interpolate
 import generate_surfaces
+import torch
 
 Bin = collections.namedtuple('Bin', ['min', 'max', 'num_bins'])
 
@@ -26,6 +27,21 @@ def get_grid_single_nw_data(nw_val, xplotv, z):
 
     return zgrid
 
+def normalize_labels(y):
+    """Simple linear normalization.
+    """
+    Bg_min = 0.30
+    Bg_max = 1.60
+    Bth_min = 0.20
+    Bth_max = 0.90
+    Pe_min = 2.0
+    Pe_max = 20.0
+
+    y[:, 0] = (y[:, 0] - Bg_min)/(Bg_max-Bg_min)
+    y[:, 1] = (y[:, 1] - Bth_min)/(Bth_max-Bth_min)
+    y[:, 2] = (y[:, 2] - Pe_min)/(Pe_max-Pe_min)
+    return y
+
 def read_exp_data(df, path_save, bins):
     """
     Reads in experimental datasets collected from our previous works. Obtains interpolated 32x32 grid data and outputs each system to a text file in a designated folder. Another function will be created to take in a general input in the form (Nw, phi, eta_sp)
@@ -41,7 +57,7 @@ def read_exp_data(df, path_save, bins):
     features = ['Nw', 'phi', 'eta_sp']
 
     df2 = df.copy()
-
+    #df2 = df2[(df2['Bth']!= 0) & (df2['Bg'] != 0)]
     # log before normalizing (nw, phi, eta_sp) space
     df2[features] = np.log10(df2[features])
 
@@ -49,9 +65,12 @@ def read_exp_data(df, path_save, bins):
     df2['Nw'] = (df2['Nw']-np.log10(bins['Nw'].min))/(np.log10(bins['Nw'].max)-np.log10(bins['Nw'].min))
     df2['phi'] = (df2['phi']-np.log10(bins['phi'].min))/(np.log10(bins['phi'].max)-np.log10(bins['phi'].min))
     df2['eta_sp'] = (df2['eta_sp']-np.log10(bins['eta_sp'].min))/(np.log10(bins['eta_sp'].max)-np.log10(bins['eta_sp'].min))
+    counter = 0
 
-    for i in np.unique(df['group']):
+    label_output = torch.zeros(len(np.unique(df2['group'])),3)
 
+    for i in np.unique(df2['group']):
+        
         data_slice = df2[df2['group']==i][features]
 
         x = data_slice['Nw']
@@ -75,12 +94,19 @@ def read_exp_data(df, path_save, bins):
             zgriddata = get_grid_single_nw_data(nw_val, xplotv, znew)
             data_save = zgriddata.reshape(bins['phi'].num_bins,bins['Nw'].num_bins)
 
-        polymer = np.unique(df[df['group']==i]['Polymer'])[0]
-        solvent = np.unique(df[df['group']==i]['Solvent'])[0]
+        #polymer = np.unique(df[df['group']==i]['Polymer'])[0]
+        #solvent = np.unique(df[df['group']==i]['Solvent'])[0]
         Bg = np.round(np.unique(df[df['group']==i]['Bg'])[0],2)
         Bth = np.round(np.unique(df[df['group']==i]['Bth'])[0],2)
         Pe = np.round(np.unique(df[df['group']==i]['Pe'])[0],2)
-        np.savetxt(f"{path_save}{polymer}_{solvent}_{Bg}_{Bth}_{Pe}.txt", data_save)
+        np.savetxt(f"{path_save}{counter}_res64_{Bg}_{Bth}_{Pe}_surface.txt", data_save)
+        label_output[counter,0] = Bg
+        label_output[counter,1] = Bth
+        label_output[counter,2] = Pe
+        counter = counter + 1
+
+    labels_norm = normalize_labels(label_output)
+    torch.save(labels_norm, "labels_normalized.pt")
 
 def main():
     path_read = "exp_data\\"
