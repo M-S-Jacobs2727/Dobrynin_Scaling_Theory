@@ -19,6 +19,7 @@ def test_accuracy(
 
     model.eval()
 
+    cum_loss = 0
     with torch.no_grad():
         for b, (X, y) in enumerate(scaling.voxel_image_generator(
             num_batches, batch_size, device, res
@@ -29,7 +30,9 @@ def test_accuracy(
             all_y[b] = y
             all_pred[b] = pred
 
-    return all_y, all_pred, loss
+            cum_loss += loss.item()
+
+    return all_y, all_pred, cum_loss/num_samples
 
 
 def main() -> None:
@@ -43,6 +46,9 @@ def main() -> None:
     y, pred, loss = test_accuracy(
         model, nn.log_cosh_loss, device, 2000, 100, (128, 32, 128)
     )
+
+    print(loss)
+    print(torch.abs(y-pred)/y)
 
     bg_true = y[:, :, 0]
     bth_true = y[:, :, 1]

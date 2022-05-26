@@ -1,6 +1,7 @@
 import math
 from pathlib import Path
-from typing import Any, Callable, Dict, Tuple
+import random
+from typing import Any, Dict, Optional, Tuple
 import torch
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
@@ -30,11 +31,13 @@ class LogCoshLoss(torch.nn.Module):
         return log_cosh_loss(y_pred, y_true)
 
 
-class NeuralNet(torch.nn.Module):
+class LinearNeuralNet(torch.nn.Module):
     """The classic, fully connected neural network.
     TODO: Make hyperparameters accessible and tune.
     """
-    def __init__(self, shape: Tuple[int]) -> None:
+    def __init__(
+        self, res: Tuple[int], l1: int, l2: int, l3: Optional[int] = None
+    ) -> None:
         """Input:
                 np.array of size 32x32 of type np.float32
 
@@ -49,15 +52,30 @@ class NeuralNet(torch.nn.Module):
         """
         super().__init__()
 
-        self.conv_stack = torch.nn.Sequential(
-            # Fully connected layers
-            torch.nn.Flatten(),
-            torch.nn.Linear(shape[0]*shape[1]*shape[2], 128),
-            torch.nn.ReLU(),
-            torch.nn.Linear(128, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 3)
-        )
+        l0 = 1
+        for r in res:
+            l0 *= r
+
+        if l3:
+            self.conv_stack = torch.nn.Sequential(
+                torch.nn.Flatten(),
+                torch.nn.Linear(l0, l1),
+                torch.nn.ReLU(),
+                torch.nn.Linear(l1, l2),
+                torch.nn.ReLU(),
+                torch.nn.Linear(l2, l3),
+                torch.nn.ReLU(),
+                torch.nn.Linear(l3, 3)
+            )
+        else:
+            self.conv_stack = torch.nn.Sequential(
+                torch.nn.Flatten(),
+                torch.nn.Linear(l0, l1),
+                torch.nn.ReLU(),
+                torch.nn.Linear(l1, l2),
+                torch.nn.ReLU(),
+                torch.nn.Linear(l2, 3)
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.conv_stack(x)
@@ -158,29 +176,35 @@ def train(
     num_samples: int,
     batch_size: int,
     resolution: Tuple[int],
-    generator: Callable[[int, int, torch.device, Tuple[int]],
-                        Tuple[torch.Tensor]],
     optimizer: torch.optim.Optimizer
 ) -> None:
 
     model.train()
 
+    if len(resolution) == 2:
+        generator = scaling.surface_generator
+    elif len(resolution) == 3:
+        generator = scaling.voxel_image_generator
+    else:
+        raise ValueError('Parameter `resolution` should be of length 2 or 3,'
+                         f' not {len(resolution)}.')
+
     num_batches = num_samples // batch_size
-    avg_loss, avg_error = 0, 0
+    # avg_loss, avg_error = 0, 0
 
     for X, y in generator(num_batches, batch_size, device, resolution):
         pred = model(X)
         loss = loss_fn(pred, y)
 
-        avg_loss += loss.item()
-        avg_error += torch.mean(torch.abs(y - pred) / y, 0)
+        # avg_loss += loss.item()
+        # avg_error += torch.mean(torch.abs(y - pred) / y, 0)
 
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
 
-    avg_loss /= num_batches
-    avg_error /= num_batches
+    # avg_loss /= num_batches
+    # avg_error /= num_batches
     # print(f'avg_error = {avg_error[0]:.5f} {avg_error[1]:.5f}'
     #       f' {avg_error[2]:.5f}')
     # print(f'{loss = :.5f}')
@@ -193,11 +217,17 @@ def test(
     num_samples: int,
     batch_size: int,
     resolution: Tuple[int],
-    generator: Callable[[int, int, torch.device, Tuple[int]],
-                        Tuple[torch.Tensor]]
 ) -> Tuple[torch.Tensor, torch.nn.Module]:
 
     model.eval()
+
+    if len(resolution) == 2:
+        generator = scaling.surface_generator
+    elif len(resolution) == 3:
+        generator = scaling.voxel_image_generator
+    else:
+        raise ValueError('Parameter `resolution` should be of length 2 or 3,'
+                         f' not {len(resolution)}.')
 
     num_batches = num_samples // batch_size
     avg_loss, avg_error = 0, 0
@@ -224,11 +254,14 @@ def train_test_model(
 
     device = torch.device('cuda:0')  # if torch.cuda.is_available() else 'cpu'
 
-    model = ConvNeuralNet3D(
-        c1=conf['c1'], c2=conf['c2'], k1=conf['k1'], k2=conf['k2'],
-        p1=conf['p1'], p2=conf['p2'], l1=conf['l1'], l2=conf['l2'],
-        res=conf['resolution']
+    model = LinearNeuralNet(
+        res=conf['resolution'], l1=conf['l1'], l2=conf['l2'], l3=conf['l3']
     ).to(device)
+    # model = ConvNeuralNet3D(
+    #     c1=conf['c1'], c2=conf['c2'], k1=conf['k1'], k2=conf['k2'],
+    #     p1=conf['p1'], p2=conf['p2'], l1=conf['l1'], l2=conf['l2'],
+    #     res=conf['resolution']
+    # ).to(device)
 
     # loss_fn = torch.nn.MSELoss()
     loss_fn = LogCoshLoss()
@@ -244,16 +277,13 @@ def train_test_model(
         train(
             model=model, loss_fn=loss_fn, device=device,
             num_samples=conf['train_size'], batch_size=conf['batch_size'],
-            resolution=conf['resolution'],
-            generator=scaling.voxel_image_generator,
-            optimizer=optimizer
+            resolution=conf['resolution'], optimizer=optimizer
         )
 
         (bg_err, bth_err, pe_err), loss = test(
             model=model, loss_fn=loss_fn, device=device,
             num_samples=conf['test_size'], batch_size=conf['batch_size'],
             resolution=conf['resolution'],
-            generator=scaling.voxel_image_generator
         )
         bg_err = bg_err.cpu()
         bth_err = bth_err.cpu()
@@ -285,28 +315,37 @@ def main():
     # }
 
     config = {
-        'batch_size': tune.choice([10, 20, 50, 100]),
+        'batch_size': 200,
         'train_size': 10000,
         'test_size': 5000,
-        'lr': tune.loguniform(1e-4, 1e-1),
-        'resolution': (128, 32, 128),
-        'c1': 6,
-        'c2': 32,
-        'k1': 7,
-        'k2': 5,
-        'p1': 2,
-        'p2': 2,
-        'l1': 256,
-        'l2': 128,
+        'lr': 1e-3,
+        'resolution': (64, 64, 64),
+        'l1': tune.sample_from(lambda _: 2**random.randint(6, 10)),
+        'l2': tune.sample_from(lambda _: 2**random.randint(5, 10)),
+        'l3': tune.sample_from(lambda _: 2**random.randint(5, 10)),  # or None
     }
+    # config = {
+    #     'batch_size': tune.choice([10, 20, 50, 100]),
+    #     'train_size': 10000,
+    #     'test_size': 5000,
+    #     'lr': tune.loguniform(1e-4, 1e-1),
+    #     'resolution': (128, 32, 128),
+    #     'c1': 6,
+    #     'c2': 32,
+    #     'k1': 7,
+    #     'k2': 5,
+    #     'p1': 2,
+    #     'p2': 2,
+    #     'l1': 256,
+    #     'l2': 128,
+    # }
 
-    scheduler = ASHAScheduler(metric='pe_err', mode='min', grace_period=5)
+    scheduler = ASHAScheduler(metric='loss', mode='min', grace_period=10)
     reporter = CLIReporter(
-        parameter_columns=['batch_size', 'resolution', 'lr'],
-        metric_columns=['loss', 'bg_err', 'bth_err', 'pe_err'],
+        parameter_columns=['l1', 'l2', 'l3'],
+        metric_columns=['bg_err', 'bth_err', 'pe_err', 'loss'],
         max_report_frequency=60,
         max_progress_rows=50,
-        print_intermediate_tables=True
     )
     # reporter = CLIReporter(
     #     parameter_columns=[
@@ -329,9 +368,8 @@ def main():
         local_dir=RAY_PATH,
     )
 
-    best_trial = result.get_best_trial(
-        'pe_err', 'min', filter_nan_and_inf=True
-    )
+    best_trial = result.get_best_trial('loss', 'min')
+    print(f'Best trial: {best_trial.trial_id}')
     print(f'Best trial config: {best_trial.config}')
     print(f'Best trial final loss: {best_trial.last_result["loss"]}')
 

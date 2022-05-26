@@ -5,13 +5,13 @@ import torch
 
 Param = collections.namedtuple('Param', ('min', 'max'))
 
-PHI = Param(1e-6, 1e-2)
-NW = Param(10, 3e5)
-ETA_SP = Param(torch.tensor(1), torch.tensor(3.5e6))
+PHI = Param(1e-5, 1e-2)
+NW = Param(100, 3e5)
+ETA_SP = Param(torch.tensor(1), torch.tensor(1e8))
 
-BG = Param(0.3, 1.6)
-BTH = Param(0.2, 0.9)
-PE = Param(8, 20)
+BG = Param(0.3, 1.1)
+BTH = Param(0.2, 0.7)
+PE = Param(10, 18)
 
 
 # TODO: implement modified surface_generator to create correlated Bg, Bth
@@ -68,9 +68,6 @@ def surface_generator(
             values of `(Bg, Bth, Pe)`.
     """
 
-    ETA_SP.min.to(dtype=torch.float, device=device)
-    ETA_SP.max.to(dtype=torch.float, device=device)
-
     # Create tensors for phi (concentration) and Nw (chain length)
     # Both are meshed and tiled to cover a 3D tensor of size
     # (batch_size, *resolution) for simple, element-wise operations
@@ -124,7 +121,7 @@ def surface_generator(
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover at c = c**
         eta_sp = Nw * (1 + (Nw / Ne)**2) * torch.fmin(
-            1/g,
+            1 / g,
             phi / Bth**2
         )
 
@@ -188,3 +185,26 @@ def voxel_image_generator(
         ).to(dtype=torch.float, device=device)
 
         yield image, y
+
+
+def main() -> None:
+    num_batches = 100
+    batch_size = 100
+    frac = torch.zeros(num_batches*batch_size)
+    for b, (X, _) in enumerate(surface_generator(
+        num_batches, batch_size, torch.device('cuda'), (64, 64)
+    )):
+        frac[b*batch_size:(b+1)*batch_size] = torch.sum(X == 0, dim=(1, 2))
+
+    frac /= 64*64
+    print(frac.mean())
+
+    import matplotlib.pyplot as plt
+
+    plt.hist(frac.numpy(), bins=40)
+
+    plt.show()
+
+
+if __name__ == '__main__':
+    main()
