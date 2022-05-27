@@ -1,31 +1,50 @@
 import collections
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 import torch
 
 Param = collections.namedtuple('Param', ('min', 'max'))
 
-PHI = Param(1e-5, 1e-2)
+PHI = Param(1e-6, 1e-3)
 NW = Param(100, 3e5)
-ETA_SP = Param(torch.tensor(1), torch.tensor(1e8))
+ETA_SP = Param(torch.tensor(1), torch.tensor(4e6))
 
 BG = Param(0.3, 1.1)
 BTH = Param(0.2, 0.7)
 PE = Param(10, 18)
 
+SHIFT = 1e-4
 
-# TODO: implement modified surface_generator to create correlated Bg, Bth
-# This reflects experimental data, where we see Bg \approx Bth + constant
-# for systems with both Bg and Bth (all systems have Bg and Bth, but for
-# some we can only see one regime).
 
-def unnormalize_params(y: torch.Tensor) -> Tuple[torch.Tensor]:
+def get_Bth(Bg: torch.Tensor) -> torch.Tensor:
+    Bth = 0.54 * Bg + 0.05
+    Bth += Bth * 0.05 * torch.normal(
+        torch.zeros_like(Bth),
+        torch.ones_like(Bth)
+    )
+    return Bth
+
+
+def normalize_params(
+    tensors: torch.Tensor, params: List[Param]
+) -> Tuple[torch.Tensor]:
     """Simple linear normalization.
     """
-    Bg = y[:, 0] * (BG.max - BG.min) + BG.min + 1e-4
-    Bth = y[:, 1] * (BTH.max - BTH.min) + BTH.min + 1e-4
-    Pe = y[:, 2] * (PE.max - PE.min) + PE.min + 1e-4
-    return Bg, Bth, Pe
+    out_t = []
+    for t, p in zip(tensors, params):
+        out_t.append((t - p.min - SHIFT) / (p.max - p.min))
+    return tuple(out_t)
+
+
+def unnormalize_params(
+    tensors: torch.Tensor, params: List[Param]
+) -> Tuple[torch.Tensor]:
+    """Simple linear normalization.
+    """
+    out_t = []
+    for t, p in zip(tensors, params):
+        out_t.append(t * (p.max - p.min) + p.min + SHIFT)
+    return tuple(out_t)
 
 
 def normalize_visc(eta_sp: torch.Tensor) -> torch.Tensor:
@@ -129,9 +148,202 @@ def surface_generator(
 
     for _ in range(num_batches):
         y = torch.rand((batch_size, 3), device=device, dtype=torch.float)
-        Bg, Bth, Pe = unnormalize_params(y)
+        Bg, Bth, Pe = unnormalize_params(y.T, [BG, BTH, PE])
         eta_sp = generate_surfaces(Bg, Bth, Pe)
         X = normalize_visc(eta_sp).to(torch.float)
+        yield X, y
+
+
+def surface_generator_no_Pe(
+    num_batches: int, batch_size: int, device: torch.device,
+    resolution: Tuple[int] = (32, 32)
+) -> Tuple[torch.Tensor]:
+    """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
+    `Pe`, to be used in a `for` loop.
+
+    It defines the resolution of the surface based on either user input
+    (keyword argument `resolution`). It then generates random values for `Bg`,
+    `Bth`, and `Pe`, evaluates the `(phi, Nw, eta_sp)` surface, and normalizes
+    the result. The normalized values of `eta_sp` and `(Bg, Bth, Pe)` are
+    yielded as `X` and `y` for use in a neural network.
+
+    Input:
+        `num_batches` (`int`) : The number of loops to be iterated through.
+        `batch_size` (`int`) : The length of the generated values.
+        `device` (`torch.device`): The device to do computations on.
+        `resolution` (tuple of `int`s) : The shape of the last two dimensions
+            of the generated values.
+
+    Output:
+        `X` (`torch.Tensor` of size `(batch_size, *resolution)`) : Generated,
+            normalized values of `eta_sp` at indexed `phi` and `Nw`.
+        `y` (`torch.Tensor` of size `(batch_size, 3)`) : Generated, normalized
+            values of `(Bg, Bth, Pe)`.
+    """
+
+    # Create tensors for phi (concentration) and Nw (chain length)
+    # Both are meshed and tiled to cover a 3D tensor of size
+    # (batch_size, *resolution) for simple, element-wise operations
+    phi = torch.tensor(np.geomspace(
+        PHI.min,
+        PHI.max,
+        resolution[0],
+        endpoint=True
+    ), dtype=torch.float, device=device)
+
+    Nw = torch.tensor(np.geomspace(
+        NW.min,
+        NW.max,
+        resolution[1],
+        endpoint=True
+    ), dtype=torch.float, device=device)
+
+    phi, Nw = torch.meshgrid(phi, Nw, indexing='xy')
+    phi = torch.tile(phi, (batch_size, 1, 1))
+    Nw = torch.tile(Nw, (batch_size, 1, 1))
+
+    def generate_surfaces(
+            Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
+    ) -> torch.Tensor:
+        # First, tile params to match shape of phi and Nw for simple,
+        # element-wise operations
+        shape = torch.Size((1, *(phi.size()[1:])))
+        Bg = torch.tile(Bg.reshape((batch_size, 1, 1)), shape)
+        Bth = torch.tile(Bth.reshape((batch_size, 1, 1)), shape)
+        Pe = torch.tile(Pe.reshape((batch_size, 1, 1)), shape)
+
+        # Number of repeat units per correlation blob
+        # Only defined for c < c**
+        # Minimum accounts for crossover at c = c_th
+        g = torch.fmin(
+            Bg**(3/0.764) / phi**(1/0.764),
+            Bth**6 / phi**2
+        )
+
+        # Number of repeat units per entanglement strand
+        # Universal definition of Ne accounts for both
+        # Kavassalis-Noolandi and Rubinstein-Colby scaling
+        Ne = Pe**2 * g * torch.fmin(
+            torch.tensor([1], device=device), torch.fmin(
+                (Bth / Bg)**(2/(6*0.588 - 3)) / Bth**2,
+                Bth**4 * phi**(2/3)
+            )
+        )
+
+        # Specific viscosity crossover function from Rouse to entangled regimes
+        # Viscosity crossover function for entanglements
+        # Minimum accounts for crossover at c = c**
+        eta_sp = Nw * (1 + (Nw / Ne)**2) * torch.fmin(
+            1 / g,
+            phi / Bth**2
+        )
+
+        return eta_sp
+
+    for _ in range(num_batches):
+        y = torch.rand((batch_size, 3), device=device, dtype=torch.float)
+        Bg, Bth, Pe = unnormalize_params(y.T, [BG, BTH, PE])
+        eta_sp = generate_surfaces(Bg, Bth, Pe)
+        X = normalize_visc(eta_sp).to(torch.float)
+        yield X, y[:, :2]  # Only give Bg and Bth features!
+
+
+def surface_generator_corr_B(
+    num_batches: int, batch_size: int, device: torch.device,
+    resolution: Tuple[int] = (32, 32)
+) -> Tuple[torch.Tensor]:
+    """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
+    `Pe`, to be used in a `for` loop.
+
+    It defines the resolution of the surface based on either user input
+    (keyword argument `resolution`). It then generates random values for `Bg`,
+    `Bth`, and `Pe`, evaluates the `(phi, Nw, eta_sp)` surface, and normalizes
+    the result. The normalized values of `eta_sp` and `(Bg, Bth, Pe)` are
+    yielded as `X` and `y` for use in a neural network.
+
+    Input:
+        `num_batches` (`int`) : The number of loops to be iterated through.
+        `batch_size` (`int`) : The length of the generated values.
+        `device` (`torch.device`): The device to do computations on.
+        `resolution` (tuple of `int`s) : The shape of the last two dimensions
+            of the generated values.
+
+    Output:
+        `X` (`torch.Tensor` of size `(batch_size, *resolution)`) : Generated,
+            normalized values of `eta_sp` at indexed `phi` and `Nw`.
+        `y` (`torch.Tensor` of size `(batch_size, 3)`) : Generated, normalized
+            values of `(Bg, Bth, Pe)`.
+    """
+
+    # Create tensors for phi (concentration) and Nw (chain length)
+    # Both are meshed and tiled to cover a 3D tensor of size
+    # (batch_size, *resolution) for simple, element-wise operations
+    phi = torch.tensor(np.geomspace(
+        PHI.min,
+        PHI.max,
+        resolution[0],
+        endpoint=True
+    ), dtype=torch.float, device=device)
+
+    Nw = torch.tensor(np.geomspace(
+        NW.min,
+        NW.max,
+        resolution[1],
+        endpoint=True
+    ), dtype=torch.float, device=device)
+
+    phi, Nw = torch.meshgrid(phi, Nw, indexing='xy')
+    phi = torch.tile(phi, (batch_size, 1, 1))
+    Nw = torch.tile(Nw, (batch_size, 1, 1))
+
+    def generate_surfaces(
+            Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
+    ) -> torch.Tensor:
+        # First, tile params to match shape of phi and Nw for simple,
+        # element-wise operations
+        shape = torch.Size((1, *(phi.size()[1:])))
+        Bg = torch.tile(Bg.reshape((batch_size, 1, 1)), shape)
+        Bth = torch.tile(Bth.reshape((batch_size, 1, 1)), shape)
+        Pe = torch.tile(Pe.reshape((batch_size, 1, 1)), shape)
+
+        # Number of repeat units per correlation blob
+        # Only defined for c < c**
+        # Minimum accounts for crossover at c = c_th
+        g = torch.fmin(
+            Bg**(3/0.764) / phi**(1/0.764),
+            Bth**6 / phi**2
+        )
+
+        # Number of repeat units per entanglement strand
+        # Universal definition of Ne accounts for both
+        # Kavassalis-Noolandi and Rubinstein-Colby scaling
+        Ne = Pe**2 * g * torch.fmin(
+            torch.tensor([1], device=device), torch.fmin(
+                (Bth / Bg)**(2/(6*0.588 - 3)) / Bth**2,
+                Bth**4 * phi**(2/3)
+            )
+        )
+
+        # Specific viscosity crossover function from Rouse to entangled regimes
+        # Viscosity crossover function for entanglements
+        # Minimum accounts for crossover at c = c**
+        eta_sp = Nw * (1 + (Nw / Ne)**2) * torch.fmin(
+            1 / g,
+            phi / Bth**2
+        )
+
+        return eta_sp
+
+    for _ in range(num_batches):
+        y_temp = torch.rand((batch_size, 2), device=device, dtype=torch.float)
+        Bg, Pe = unnormalize_params(y_temp.T, [BG, PE])
+        Bth = get_Bth(Bg)
+        eta_sp = generate_surfaces(Bg, Bth, Pe)
+        X = normalize_visc(eta_sp).to(torch.float)
+        y1 = normalize_params(Bth, [BTH, ])
+        y = torch.stack(
+            (y_temp[:, 0], y1, y_temp[:, 1]), dim=1
+        ).to(torch.float)
         yield X, y
 
 

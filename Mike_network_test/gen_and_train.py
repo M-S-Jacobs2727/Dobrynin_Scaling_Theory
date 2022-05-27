@@ -1,7 +1,6 @@
 import math
 from pathlib import Path
-import random
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 import torch
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
@@ -65,7 +64,7 @@ class LinearNeuralNet(torch.nn.Module):
                 torch.nn.ReLU(),
                 torch.nn.Linear(l2, l3),
                 torch.nn.ReLU(),
-                torch.nn.Linear(l3, 3)
+                torch.nn.Linear(l3, 2)
             )
         else:
             self.conv_stack = torch.nn.Sequential(
@@ -74,7 +73,7 @@ class LinearNeuralNet(torch.nn.Module):
                 torch.nn.ReLU(),
                 torch.nn.Linear(l1, l2),
                 torch.nn.ReLU(),
-                torch.nn.Linear(l2, 3)
+                torch.nn.Linear(l2, 2)
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -176,18 +175,11 @@ def train(
     num_samples: int,
     batch_size: int,
     resolution: Tuple[int],
+    generator: Callable,
     optimizer: torch.optim.Optimizer
 ) -> None:
 
     model.train()
-
-    if len(resolution) == 2:
-        generator = scaling.surface_generator
-    elif len(resolution) == 3:
-        generator = scaling.voxel_image_generator
-    else:
-        raise ValueError('Parameter `resolution` should be of length 2 or 3,'
-                         f' not {len(resolution)}.')
 
     num_batches = num_samples // batch_size
     # avg_loss, avg_error = 0, 0
@@ -217,17 +209,10 @@ def test(
     num_samples: int,
     batch_size: int,
     resolution: Tuple[int],
+    generator: Callable
 ) -> Tuple[torch.Tensor, torch.nn.Module]:
 
     model.eval()
-
-    if len(resolution) == 2:
-        generator = scaling.surface_generator
-    elif len(resolution) == 3:
-        generator = scaling.voxel_image_generator
-    else:
-        raise ValueError('Parameter `resolution` should be of length 2 or 3,'
-                         f' not {len(resolution)}.')
 
     num_batches = num_samples // batch_size
     avg_loss, avg_error = 0, 0
@@ -252,19 +237,24 @@ def train_test_model(
     conf: Dict[str, Any], checkpoint_dir: Path = None
 ) -> None:
 
+    if len(conf['resolution']) == 2:
+        generator = scaling.surface_generator_no_Pe
+    elif len(conf['resolution']) == 3:
+        generator = scaling.voxel_image_generator
+    else:
+        raise ValueError(
+            f'Parameter `resolution` should be of length 2 or 3,'
+            f' not {len(conf["resolution"])}.'
+        )
+
     device = torch.device('cuda:0')  # if torch.cuda.is_available() else 'cpu'
 
     model = LinearNeuralNet(
         res=conf['resolution'], l1=conf['l1'], l2=conf['l2'], l3=conf['l3']
     ).to(device)
-    # model = ConvNeuralNet3D(
-    #     c1=conf['c1'], c2=conf['c2'], k1=conf['k1'], k2=conf['k2'],
-    #     p1=conf['p1'], p2=conf['p2'], l1=conf['l1'], l2=conf['l2'],
-    #     res=conf['resolution']
-    # ).to(device)
 
-    # loss_fn = torch.nn.MSELoss()
-    loss_fn = LogCoshLoss()
+    loss_fn = torch.nn.MSELoss()
+    # loss_fn = LogCoshLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf['lr'])
 
     if checkpoint_dir:
@@ -272,97 +262,58 @@ def train_test_model(
         model.load_state_dict(model_state)
         optimizer.load_state_dict(optim_state)
 
-    for epoch in range(20):
+    for epoch in range(conf['epochs']):
 
         train(
             model=model, loss_fn=loss_fn, device=device,
             num_samples=conf['train_size'], batch_size=conf['batch_size'],
-            resolution=conf['resolution'], optimizer=optimizer
+            resolution=conf['resolution'], generator=generator,
+            optimizer=optimizer
         )
 
-        (bg_err, bth_err, pe_err), loss = test(
+        (bg_err, bth_err), loss = test(
             model=model, loss_fn=loss_fn, device=device,
             num_samples=conf['test_size'], batch_size=conf['batch_size'],
-            resolution=conf['resolution'],
+            resolution=conf['resolution'], generator=generator,
         )
         bg_err = bg_err.cpu()
         bth_err = bth_err.cpu()
-        pe_err = pe_err.cpu()
 
-        with tune.checkpoint_dir(epoch) as checkpoint_dir:
-            path = Path(checkpoint_dir, "checkpoint")
-            torch.save((model.state_dict(), optimizer.state_dict()), path)
+        if (epoch + 1) % 5 == 0:
+            with tune.checkpoint_dir(epoch) as checkpoint_dir:
+                path = Path(checkpoint_dir, "checkpoint")
+                torch.save((model.state_dict(), optimizer.state_dict()), path)
 
-        tune.report(loss=loss, bg_err=bg_err, bth_err=bth_err, pe_err=pe_err)
+        tune.report(loss=loss, bg_err=bg_err, bth_err=bth_err)
 
 
 def main():
 
-    # config = {
-    #     'batch_size': tune.choice([10, 20, 50, 100]),
-    #     'train_size': 70000,
-    #     'test_size': 30000,
-    #     'lr': 1e-3,
-    #     'resolution': (128, 32, 128),
-    #     'c1': tune.choice([6, 8, 10, 12]),
-    #     'c2': tune.choice([16, 20, 24, 32]),
-    #     'k1': tune.choice([1, 3, 5, 7]),
-    #     'k2': tune.choice([1, 3, 5, 7]),
-    #     'p1': 2,
-    #     'p2': 2,
-    #     'l1': tune.sample_from(lambda _: 2**random.randint(6, 10)),
-    #     'l2': tune.sample_from(lambda _: 2**random.randint(6, 10)),
-    # }
-
     config = {
-        'batch_size': 200,
+        'epochs': 50,
+        'batch_size': 50,
         'train_size': 10000,
         'test_size': 5000,
-        'lr': 1e-3,
-        'resolution': (64, 64, 64),
-        'l1': tune.sample_from(lambda _: 2**random.randint(6, 10)),
-        'l2': tune.sample_from(lambda _: 2**random.randint(5, 10)),
-        'l3': tune.sample_from(lambda _: 2**random.randint(5, 10)),  # or None
+        'lr': tune.loguniform(1e-4, 0.1),
+        'resolution': (512, 512),
+        'l1': tune.choice([256, 512, 1024]),
+        'l2': tune.choice([64, 128, 256, 512, 1024]),
+        'l3': tune.choice([64, 128, 256, 512]),
     }
-    # config = {
-    #     'batch_size': tune.choice([10, 20, 50, 100]),
-    #     'train_size': 10000,
-    #     'test_size': 5000,
-    #     'lr': tune.loguniform(1e-4, 1e-1),
-    #     'resolution': (128, 32, 128),
-    #     'c1': 6,
-    #     'c2': 32,
-    #     'k1': 7,
-    #     'k2': 5,
-    #     'p1': 2,
-    #     'p2': 2,
-    #     'l1': 256,
-    #     'l2': 128,
-    # }
 
-    scheduler = ASHAScheduler(metric='loss', mode='min', grace_period=10)
+    scheduler = ASHAScheduler(metric='loss', mode='min', grace_period=20)
     reporter = CLIReporter(
         parameter_columns=['l1', 'l2', 'l3'],
-        metric_columns=['bg_err', 'bth_err', 'pe_err', 'loss'],
+        metric_columns=['bg_err', 'bth_err', 'loss'],
         max_report_frequency=60,
         max_progress_rows=50,
     )
-    # reporter = CLIReporter(
-    #     parameter_columns=[
-    #         'batch_size', 'resolution', 'lr', 'c1', 'c2', 'k1', 'k2',
-    #         'l1', 'l2'
-    #     ],
-    #     metric_columns=['loss', 'bg_err', 'bth_err', 'pe_err'],
-    #     max_report_frequency=60,
-    #     max_progress_rows=50,
-    #     print_intermediate_tables=True
-    # )
 
     result = tune.run(
         train_test_model,
         resources_per_trial={'gpu': 1},
         config=config,
-        num_samples=100,
+        num_samples=50,
         scheduler=scheduler,
         progress_reporter=reporter,
         local_dir=RAY_PATH,
