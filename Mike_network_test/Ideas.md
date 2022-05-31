@@ -21,6 +21,15 @@ learning the data at ~1M surfaces every 5 minutes at a resolution of (32, 32).
 With torch, I can do the same at around ~1M surfaces every 3-5 seconds.
 - For the voxel method, we'll have to be careful about defining the edge
 of the voxel vs. the center of the voxel.
+- We noticed the errors were particularly high for the $P_e$ parameter, no
+matter what we did. However, if we get otherwise good errors for $B_g$ and 
+$B_{th}$, we can normalize the generated data and fit it to a simple cubic
+crossover function to obtain $P_e$.
+- We need to account for the case where the polymer is in an athermal solvent,
+where the $B_{th}$ parameter has no effect on the surface because $B_g$ is low 
+enough. We have done this by creating a custom loss function which does not 
+punish the model for incorrect predictions of $B_{th}$ if the true values 
+satisfy $B_g < B_{th}^{0.824}$.
 
 ## From discussion
 1. Try Adam optimizer

@@ -33,16 +33,18 @@ class LogCoshLoss(torch.nn.Module):
 
 
 def custom_MSELoss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-    Bg, Bth, _ = y_true.T
+    Bg, Bth, Pe = y_true.T
+    pred_Bg, pred_Bth, pred_Pe = y_pred.T
+
     mask = Bg < Bth**0.824
-    athermal_error = torch.mean(
-        (y_pred[mask][:, (0, 2)] - y_true[mask][:, (0, 2)])**2,
-        dim=1
-    )
-    good_error = torch.mean(
-        (y_pred[~mask] - y_true[~mask])**2,
-        dim=1
-    )
+    athermal_error = (Bg[mask] - pred_Bg[mask])**2
+    athermal_error += (Pe[mask] - pred_Pe[mask])**2
+    athermal_error /= 2
+
+    good_error = (Bg[~mask] - pred_Bg[~mask])**2
+    good_error += (Bth[~mask] - pred_Bth[~mask])**2
+    good_error += (Pe[~mask] - pred_Pe[~mask])**2
+    good_error /= 3
 
     return torch.mean(torch.cat((athermal_error, good_error)))
 
@@ -96,7 +98,7 @@ class LinearNeuralNet(torch.nn.Module):
                 torch.nn.ReLU(),
                 torch.nn.Linear(l2, l3),
                 torch.nn.ReLU(),
-                torch.nn.Linear(l3, 2)
+                torch.nn.Linear(l3, 3)
             )
         else:
             self.conv_stack = torch.nn.Sequential(
@@ -105,7 +107,7 @@ class LinearNeuralNet(torch.nn.Module):
                 torch.nn.ReLU(),
                 torch.nn.Linear(l1, l2),
                 torch.nn.ReLU(),
-                torch.nn.Linear(l2, 2)
+                torch.nn.Linear(l2, 3)
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -297,20 +299,21 @@ def train_test_model(
             optimizer=optimizer
         )
 
-        (bg_err, bth_err), loss = test(
+        (bg_err, bth_err, pe_err), loss = test(
             model=model, loss_fn=loss_fn, device=device,
             num_samples=conf['test_size'], batch_size=conf['batch_size'],
             resolution=conf['resolution'], generator=generator,
         )
         bg_err = bg_err.cpu()
         bth_err = bth_err.cpu()
+        pe_err = pe_err.cpu()
 
         if (epoch + 1) % 5 == 0:
             with tune.checkpoint_dir(epoch) as checkpoint_dir:
                 path = Path(checkpoint_dir, "checkpoint")
                 torch.save((model.state_dict(), optimizer.state_dict()), path)
 
-        tune.report(loss=loss, bg_err=bg_err, bth_err=bth_err)
+        tune.report(loss=loss, bg_err=bg_err, bth_err=bth_err, pe_err=pe_err)
 
 
 def main():
