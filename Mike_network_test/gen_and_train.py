@@ -1,12 +1,14 @@
 import math
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
+import pandas as pd
 import torch
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune import CLIReporter
 
 import scaling_torch_lib as scaling
+from scaling_torch_lib import Resolution
 
 PROJ_PATH = Path('/proj/avdlab/projects/Solutions_ML/')
 LOG_PATH = Path(PROJ_PATH, 'mike_outputs/')
@@ -30,12 +32,42 @@ class LogCoshLoss(torch.nn.Module):
         return log_cosh_loss(y_pred, y_true)
 
 
+def custom_MSELoss(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+    Bg, Bth, _ = y_true.T
+    mask = Bg < Bth**0.824
+    athermal_error = torch.mean(
+        (y_pred[mask][:, (0, 2)] - y_true[mask][:, (0, 2)])**2,
+        dim=1
+    )
+    good_error = torch.mean(
+        (y_pred[~mask] - y_true[~mask])**2,
+        dim=1
+    )
+
+    return torch.mean(torch.cat((athermal_error, good_error)))
+
+
+class CustomMSELoss(torch.nn.Module):
+    """A custom implementation of the mean squared error class that accounts
+    for the existence of athermal solutions, for which the Bth parameter is
+    unused. When computing the loss, for any athermal systems
+    (i.e., Bg < Bth**0.824), we only compute the loss for the Bg and Pe params.
+    """
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(
+        self, y_pred: torch.Tensor, y_true: torch.Tensor
+    ) -> torch.Tensor:
+        return custom_MSELoss(y_pred, y_true)
+
+
 class LinearNeuralNet(torch.nn.Module):
     """The classic, fully connected neural network.
     TODO: Make hyperparameters accessible and tune.
     """
     def __init__(
-        self, res: Tuple[int], l1: int, l2: int, l3: Optional[int] = None
+        self, res: Resolution, l1: int, l2: int, l3: Optional[int] = None
     ) -> None:
         """Input:
                 np.array of size 32x32 of type np.float32
@@ -51,9 +83,9 @@ class LinearNeuralNet(torch.nn.Module):
         """
         super().__init__()
 
-        l0 = 1
-        for r in res:
-            l0 *= r
+        l0 = res.phi * res.Nw
+        if res.eta_sp:
+            l0 *= res.eta_sp
 
         if l3:
             self.conv_stack = torch.nn.Sequential(
@@ -84,7 +116,7 @@ class ConvNeuralNet2D(torch.nn.Module):
     """The convolutional neural network.
     TODO: Make hyperparameters accessible and tune.
     """
-    def __init__(self, shape: Tuple[int]) -> None:
+    def __init__(self, res: Resolution) -> None:
         """Input:
                 np.array of size 32x32 of type np.float32
                 Two convolutional layers, three fully connected layers.
@@ -116,11 +148,10 @@ class ConvNeuralNet2D(torch.nn.Module):
 class ConvNeuralNet3D(torch.nn.Module):
 
     def __init__(
-        self,
+        self, res: Resolution,
         c1: int = 6, k1: int = 3, p1: int = 2,
         c2: int = 16, k2: int = 3, p2: int = 2,
-        l1: int = 64, l2: int = 64,
-        res: Tuple[int] = (32, 32, 32)
+        l1: int = 64, l2: int = 64
     ) -> None:
 
         super().__init__()
@@ -154,17 +185,17 @@ class ConvNeuralNet3D(torch.nn.Module):
 
 
 def get_final_len(
-    res: Tuple[int], k1: int, k2: int, p1: int, p2: int
+    res: Resolution, k1: int, k2: int, p1: int, p2: int
 ) -> int:
     """Compute final output size of two sets of (conv3d, maxpool3d) layers
     using conv kernel_size and pool kernel_size of each layer.
     """
 
-    res2 = (math.floor(((r - k1 + 1) - p1) / p1 + 1) for r in res)
-    res3 = (math.floor(((r - k2 + 1) - p2) / p2 + 1) for r in res2)
-    final_len = 1
-    for r in res3:
-        final_len *= r
+    res2 = Resolution(math.floor(((r - k1 + 1) - p1) / p1 + 1) for r in res)
+    res3 = Resolution(math.floor(((r - k2 + 1) - p2) / p2 + 1) for r in res2)
+    final_len = res3.phi * res3.Nw
+    if res.eta_sp:
+        final_len *= res.eta_sp
     return final_len
 
 
@@ -174,7 +205,7 @@ def train(
     device: torch.device,
     num_samples: int,
     batch_size: int,
-    resolution: Tuple[int],
+    resolution: Resolution,
     generator: Callable,
     optimizer: torch.optim.Optimizer
 ) -> None:
@@ -208,7 +239,7 @@ def test(
     device: torch.device,
     num_samples: int,
     batch_size: int,
-    resolution: Tuple[int],
+    resolution: Resolution,
     generator: Callable
 ) -> Tuple[torch.Tensor, torch.nn.Module]:
 
@@ -237,15 +268,10 @@ def train_test_model(
     conf: Dict[str, Any], checkpoint_dir: Path = None
 ) -> None:
 
-    if len(conf['resolution']) == 2:
-        generator = scaling.surface_generator_no_Pe
-    elif len(conf['resolution']) == 3:
+    if conf['resolution'].eta_sp:
         generator = scaling.voxel_image_generator
     else:
-        raise ValueError(
-            f'Parameter `resolution` should be of length 2 or 3,'
-            f' not {len(conf["resolution"])}.'
-        )
+        generator = scaling.surface_generator
 
     device = torch.device('cuda:0')  # if torch.cuda.is_available() else 'cpu'
 
@@ -253,7 +279,7 @@ def train_test_model(
         res=conf['resolution'], l1=conf['l1'], l2=conf['l2'], l3=conf['l3']
     ).to(device)
 
-    loss_fn = torch.nn.MSELoss()
+    loss_fn = CustomMSELoss()
     # loss_fn = LogCoshLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=conf['lr'])
 
@@ -290,21 +316,21 @@ def train_test_model(
 def main():
 
     config = {
-        'epochs': 50,
+        'epochs': 200,
         'batch_size': 50,
-        'train_size': 10000,
+        'train_size': 40_000,
         'test_size': 5000,
-        'lr': tune.loguniform(1e-4, 0.1),
-        'resolution': (512, 512),
-        'l1': tune.choice([256, 512, 1024]),
-        'l2': tune.choice([64, 128, 256, 512, 1024]),
-        'l3': tune.choice([64, 128, 256, 512]),
+        'lr': 3e-4,
+        'resolution': Resolution(512, 512),
+        'l1': tune.choice([1024, 2048]),
+        'l2': tune.choice([256, 512, 1024]),
+        'l3': tune.choice([256, 512, 1024]),
     }
 
-    scheduler = ASHAScheduler(metric='loss', mode='min', grace_period=20)
+    scheduler = ASHAScheduler(metric='loss', mode='min', grace_period=100)
     reporter = CLIReporter(
         parameter_columns=['l1', 'l2', 'l3'],
-        metric_columns=['bg_err', 'bth_err', 'loss'],
+        metric_columns=['bg_err', 'bth_err', 'pe_err', 'loss'],
         max_report_frequency=60,
         max_progress_rows=50,
     )
@@ -323,6 +349,9 @@ def main():
     print(f'Best trial: {best_trial.trial_id}')
     print(f'Best trial config: {best_trial.config}')
     print(f'Best trial final loss: {best_trial.last_result["loss"]}')
+
+    df: pd.DataFrame = result.dataframe()
+    print(df.sort_values(by='loss'))
 
 
 if __name__ == '__main__':

@@ -1,9 +1,15 @@
-import collections
+from collections import namedtuple
 from typing import List, Tuple
 import numpy as np
 import torch
 
-Param = collections.namedtuple('Param', ('min', 'max'))
+Resolution = namedtuple(
+    'Resolution',
+    ('phi', 'Nw', 'eta_sp'),
+    defaults=(None, )
+)
+
+Param = namedtuple('Param', ('min', 'max'))
 
 PHI = Param(1e-6, 1e-3)
 NW = Param(100, 3e5)
@@ -62,7 +68,7 @@ def normalize_visc(eta_sp: torch.Tensor) -> torch.Tensor:
 
 def surface_generator(
     num_batches: int, batch_size: int, device: torch.device,
-    resolution: Tuple[int] = (32, 32)
+    resolution: Resolution
 ) -> Tuple[torch.Tensor]:
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
     `Pe`, to be used in a `for` loop.
@@ -93,14 +99,14 @@ def surface_generator(
     phi = torch.tensor(np.geomspace(
         PHI.min,
         PHI.max,
-        resolution[0],
+        resolution.phi,
         endpoint=True
     ), dtype=torch.float, device=device)
 
     Nw = torch.tensor(np.geomspace(
         NW.min,
         NW.max,
-        resolution[1],
+        resolution.Nw,
         endpoint=True
     ), dtype=torch.float, device=device)
 
@@ -156,7 +162,7 @@ def surface_generator(
 
 def surface_generator_no_Pe(
     num_batches: int, batch_size: int, device: torch.device,
-    resolution: Tuple[int] = (32, 32)
+    resolution: Resolution
 ) -> Tuple[torch.Tensor]:
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
     `Pe`, to be used in a `for` loop.
@@ -187,14 +193,14 @@ def surface_generator_no_Pe(
     phi = torch.tensor(np.geomspace(
         PHI.min,
         PHI.max,
-        resolution[0],
+        resolution.phi,
         endpoint=True
     ), dtype=torch.float, device=device)
 
     Nw = torch.tensor(np.geomspace(
         NW.min,
         NW.max,
-        resolution[1],
+        resolution.Nw,
         endpoint=True
     ), dtype=torch.float, device=device)
 
@@ -250,7 +256,7 @@ def surface_generator_no_Pe(
 
 def surface_generator_corr_B(
     num_batches: int, batch_size: int, device: torch.device,
-    resolution: Tuple[int] = (32, 32)
+    resolution: Resolution
 ) -> Tuple[torch.Tensor]:
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
     `Pe`, to be used in a `for` loop.
@@ -281,14 +287,14 @@ def surface_generator_corr_B(
     phi = torch.tensor(np.geomspace(
         PHI.min,
         PHI.max,
-        resolution[0],
+        resolution.phi,
         endpoint=True
     ), dtype=torch.float, device=device)
 
     Nw = torch.tensor(np.geomspace(
         NW.min,
         NW.max,
-        resolution[1],
+        resolution.Nw,
         endpoint=True
     ), dtype=torch.float, device=device)
 
@@ -349,7 +355,7 @@ def surface_generator_corr_B(
 
 def voxel_image_generator(
     num_batches: int, batch_size: int, device: torch.device,
-    resolution: Tuple[int] = (32, 32, 32)
+    resolution: Resolution
 ) -> Tuple[torch.Tensor]:
     """Uses surface_generator to generate a surface with a resolution one more,
     then generates a 3D binary array dictating whether or not the surface
@@ -374,10 +380,15 @@ def voxel_image_generator(
         `y` (`torch.Tensor` of size `(batch_size, 3)`) : Generated, normalized
             values of `(Bg, Bth, Pe)`.
     """
-    s_res = (resolution[0] + 1, resolution[1] + 1)
+    s_res = Resolution(resolution.phi + 1, resolution.Nw + 1)
 
     eta_sp = normalize_visc(torch.tensor(
-        np.geomspace(ETA_SP.min, ETA_SP.max, resolution[2]+1, endpoint=True),
+        np.geomspace(
+            ETA_SP.min,
+            ETA_SP.max,
+            resolution.eta_sp+1,
+            endpoint=True
+        ),
         dtype=torch.float,
         device=device
     ))
@@ -387,7 +398,7 @@ def voxel_image_generator(
     ):
         surf = torch.tile(
             X.reshape((batch_size, *s_res, 1)),
-            (1, 1, 1, resolution[2]+1)
+            (1, 1, 1, resolution.eta_sp+1)
         )
 
         # if <= or >=, we would include capped values, which we don't want
@@ -404,7 +415,7 @@ def main() -> None:
     batch_size = 100
     frac = torch.zeros(num_batches*batch_size)
     for b, (X, _) in enumerate(surface_generator(
-        num_batches, batch_size, torch.device('cuda'), (64, 64)
+        num_batches, batch_size, torch.device('cuda'), Resolution(64, 64)
     )):
         frac[b*batch_size:(b+1)*batch_size] = torch.sum(X == 0, dim=(1, 2))
 
