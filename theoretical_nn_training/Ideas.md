@@ -1,10 +1,10 @@
 # Thoughts on the project
 
 ## To Do List
-- [] Apply distributions to parameter generation
+- [ ] Apply distributions to parameter generation
 - [x] Reorganize code into distinct files
-- [] Change down to 2 parameters (new folder?)
-- [] 2D convolutional NN with 5+ layers (set one for each resolution?)
+- [ ] Change down to 2 parameters (new folder?)
+- [ ] 2D convolutional NN with 5+ layers (set one for each resolution?)
 
 ## General thoughts on procedure, model, etc.
 
