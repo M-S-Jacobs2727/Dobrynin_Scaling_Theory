@@ -22,7 +22,7 @@ def run(config: Dict[str, Any], checkpoint_dir: str) -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = models.ConvNeuralNet3D(
+    model = models.LinearNeuralNet(
         res=config["resolution"], l1=config["l1"], l2=config["l2"]
     ).to(device)
 
@@ -78,14 +78,17 @@ def main() -> None:
         "batch_size": 100,
         "train_size": 70000,
         "test_size": 2000,
+        "epochs": 100,
         "resolution": Resolution(256, 256),
         "loss_fn": loss.CustomMSELoss(),
         "lr": 1e-3,
+        "l1": 1024,
+        "l2": 1024,
     }
 
     scheduler = ASHAScheduler(metric="loss", mode="min", grace_period=100)
     reporter = CLIReporter(
-        parameter_columns=["l1", "l2", "l3"],
+        parameter_columns=["l1", "l2"],
         metric_columns=["bg_err", "bth_err", "pe_err", "loss"],
         max_report_frequency=60,
         max_progress_rows=50,
@@ -95,7 +98,7 @@ def main() -> None:
         run,
         resources_per_trial={"gpu": 1},
         config=config,
-        num_samples=50,
+        num_samples=5,
         scheduler=scheduler,
         progress_reporter=reporter,
         local_dir=str(ray_path),

@@ -19,7 +19,6 @@ def train(
     model.train()
 
     num_batches = num_samples // batch_size
-    # avg_loss, avg_error = 0, 0
 
     for X, y in generator(num_batches, batch_size, device, resolution):
         pred = model(X)
@@ -43,7 +42,7 @@ def test(
     model.eval()
 
     num_batches = num_samples // batch_size
-    avg_loss, avg_error = 0, torch.zeros(3)
+    avg_loss, avg_error = 0, torch.zeros(3, device=device)
     with torch.no_grad():
         for X, y in generator(num_batches, batch_size, device, resolution):
             pred = model(X)
