@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict
 
@@ -6,55 +7,35 @@ from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.schedulers import ASHAScheduler
 
-import theoretical_nn_training.generators as gen
-import theoretical_nn_training.loss_funcs as loss
+import theoretical_nn_training.data_processing as data
+import theoretical_nn_training.loss_funcs as loss_funcs
 import theoretical_nn_training.models as models
 import theoretical_nn_training.training as train
-from theoretical_nn_training.datatypes import Resolution
+from theoretical_nn_training.data_processing import Param, Resolution
 
 
-def run(config: Dict[str, Any], checkpoint_dir: str) -> None:
-
-    if config["resolution"].eta_sp:
-        generator = gen.voxel_image_generator
-    else:
-        generator = gen.surface_generator
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def run(config: Dict[str, Any], checkpoint_dir: str, my_config: data.NNConfig) -> None:
 
     model = models.LinearNeuralNet(
-        res=config["resolution"], l1=config["l1"], l2=config["l2"]
-    ).to(device)
+        res=my_config.resolution, layers=my_config.layers
+    ).to(my_config.device)
 
-    loss_fn = config["loss_fn"]
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
+    loss_fn = loss_funcs.CustomMSELoss(
+        my_config.bg_param, my_config.bth_param, my_config.pe_param
+    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=my_config.lr)
 
     if checkpoint_dir:
         model_state, optim_state = torch.load(checkpoint_dir)
         model.load_state_dict(model_state)
         optimizer.load_state_dict(optim_state)
 
-    for epoch in range(config["epochs"]):
+    for epoch in range(my_config.epochs):
 
-        train.train(
-            model=model,
-            loss_fn=loss_fn,
-            device=device,
-            num_samples=config["train_size"],
-            batch_size=config["batch_size"],
-            resolution=config["resolution"],
-            generator=generator,
-            optimizer=optimizer,
-        )
+        train.train(model=model, optimizer=optimizer, loss_fn=loss_fn, config=my_config)
 
         (bg_err, bth_err, pe_err), loss = train.test(
-            model=model,
-            loss_fn=loss_fn,
-            device=device,
-            num_samples=config["test_size"],
-            batch_size=config["batch_size"],
-            resolution=config["resolution"],
-            generator=generator,
+            model=model, loss_fn=loss_fn, config=my_config
         )
         bg_err = bg_err.cpu()
         bth_err = bth_err.cpu()
@@ -74,17 +55,25 @@ def main() -> None:
     log_path = Path(proj_path, "mike_outputs/")
     ray_path = Path(log_path, "ray_results/")
 
-    config = {
-        "batch_size": 100,
-        "train_size": 70000,
-        "test_size": 2000,
-        "epochs": 100,
-        "resolution": Resolution(256, 256),
-        "loss_fn": loss.CustomMSELoss(),
-        "lr": 1e-3,
-        "l1": 1024,
-        "l2": 1024,
-    }
+    config = data.CNNConfig(
+        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        phi_param=Param(1e-6, 1e-2),
+        nw_param=Param(100, 1e5),
+        eta_sp_param=Param(1, 1e6),
+        bg_param=Param(0.3, 1.1),
+        bth_param=Param(0.2, 0.8),
+        pe_param=Param(4, 20),
+        batch_size=100,
+        train_size=700_000,
+        test_size=2_000,
+        epochs=100,
+        resolution=Resolution(128, 128),
+        lr=0.001,
+        layers=[1024, 1024, 512],
+        channels=[4, 16, 64, 256],
+        kernels=[5, 5, 5, 5],
+        pools=[2, 3, 2, 3],
+    )
 
     scheduler = ASHAScheduler(metric="loss", mode="min", grace_period=100)
     reporter = CLIReporter(
@@ -95,9 +84,9 @@ def main() -> None:
     )
 
     result = tune.run(
-        run,
+        partial(run, my_config=config),
         resources_per_trial={"gpu": 1},
-        config=config,
+        config=config.__dict__,
         num_samples=5,
         scheduler=scheduler,
         progress_reporter=reporter,

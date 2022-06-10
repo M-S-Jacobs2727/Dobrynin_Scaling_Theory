@@ -3,61 +3,12 @@ from typing import Iterable, Tuple
 import numpy as np
 import torch
 
-from theoretical_nn_training.datatypes import Param, Resolution
-
-PHI = Param(1e-6, 1e-3)
-NW = Param(100, 3e5)
-ETA_SP = Param(1, 4e6)
-
-BG = Param(0.3, 1.1)
-BTH = Param(0.2, 0.7)
-PE = Param(10, 18)
-
-SHIFT = 1e-4
-
-
-def get_Bth(Bg: torch.Tensor) -> torch.Tensor:
-    Bth = 0.54 * Bg + 0.05
-    Bth += Bth * 0.05 * torch.normal(torch.zeros_like(Bth), torch.ones_like(Bth))
-    return Bth
-
-
-def normalize_params(
-    Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
-) -> Tuple[torch.Tensor, ...]:
-    """Simple linear normalization."""
-    Bg = (Bg - BG.min - SHIFT) / (BG.max - BG.min)
-    Bth = (Bth - BTH.min - SHIFT) / (BTH.max - BTH.min)
-    Pe = (Pe - PE.min - SHIFT) / (PE.max - PE.min)
-    return Bg, Bth, Pe
-
-
-def unnormalize_params(
-    Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
-) -> Tuple[torch.Tensor, ...]:
-    """Simple linear normalization."""
-    Bg = Bg * (BG.max - BG.min) + BG.min + SHIFT
-    Bth = Bth * (BTH.max - BTH.min) + BTH.min + SHIFT
-    Pe = Pe * (PE.max - PE.min) + PE.min + SHIFT
-    return Bg, Bth, Pe
-
-
-def preprocess_visc(eta_sp: torch.Tensor) -> torch.Tensor:
-    """Add noise, cap the values, take the log, then normalize."""
-    eta_sp += (
-        eta_sp * 0.05 * torch.normal(torch.zeros_like(eta_sp), torch.ones_like(eta_sp))
-    )
-    eta_sp = torch.fmin(eta_sp, torch.tensor(ETA_SP.max))
-    eta_sp = torch.fmax(eta_sp, torch.tensor(ETA_SP.min))
-    return normalize_visc(eta_sp)
-
-
-def normalize_visc(eta_sp: torch.Tensor) -> torch.Tensor:
-    return torch.log(eta_sp / ETA_SP.min) / np.log(ETA_SP.max / ETA_SP.min)
+import theoretical_nn_training.data_processing as data
+from theoretical_nn_training.data_processing import Resolution
 
 
 def surface_generator(
-    num_batches: int, batch_size: int, device: torch.device, resolution: Resolution
+    num_batches: int, config: data.Config
 ) -> Iterable[Tuple[torch.Tensor, ...]]:
     """Generate `batch_size` surfaces, based on ranges for `Bg`, `Bth`, and
     `Pe`, to be used in a `for` loop.
@@ -86,20 +37,30 @@ def surface_generator(
     # Both are meshed and tiled to cover a 3D tensor of size
     # (batch_size, *resolution) for simple, element-wise operations
     phi = torch.tensor(
-        np.geomspace(PHI.min, PHI.max, resolution.phi, endpoint=True),
+        np.geomspace(
+            config.phi_param.min,
+            config.phi_param.max,
+            config.resolution.phi,
+            endpoint=True,
+        ),
         dtype=torch.float,
-        device=device,
+        device=config.device,
     )
 
     Nw = torch.tensor(
-        np.geomspace(NW.min, NW.max, resolution.Nw, endpoint=True),
+        np.geomspace(
+            config.nw_param.min,
+            config.nw_param.max,
+            config.resolution.Nw,
+            endpoint=True,
+        ),
         dtype=torch.float,
-        device=device,
+        device=config.device,
     )
 
     phi, Nw = torch.meshgrid(phi, Nw, indexing="xy")
-    phi = torch.tile(phi, (batch_size, 1, 1))
-    Nw = torch.tile(Nw, (batch_size, 1, 1))
+    phi = torch.tile(phi, (config.batch_size, 1, 1))
+    Nw = torch.tile(Nw, (config.batch_size, 1, 1))
 
     def generate_surfaces(
         Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
@@ -107,9 +68,9 @@ def surface_generator(
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
         shape = torch.Size((1, *(phi.size()[1:])))
-        Bg = torch.tile(Bg.reshape((batch_size, 1, 1)), shape)
-        Bth = torch.tile(Bth.reshape((batch_size, 1, 1)), shape)
-        Pe = torch.tile(Pe.reshape((batch_size, 1, 1)), shape)
+        Bg = torch.tile(Bg.reshape((config.batch_size, 1, 1)), shape)
+        Bth = torch.tile(Bth.reshape((config.batch_size, 1, 1)), shape)
+        Pe = torch.tile(Pe.reshape((config.batch_size, 1, 1)), shape)
 
         # Number of repeat units per correlation blob
         # Only defined for c < c**
@@ -123,7 +84,7 @@ def surface_generator(
             Pe**2
             * g
             * torch.fmin(
-                torch.tensor([1], device=device),
+                torch.tensor([1], device=config.device),
                 torch.fmin(
                     (Bth / Bg) ** (2 / (6 * 0.588 - 3)) / Bth**2,
                     Bth**4 * phi ** (2 / 3),
@@ -139,15 +100,20 @@ def surface_generator(
         return eta_sp
 
     for _ in range(num_batches):
-        y = torch.rand((batch_size, 3), device=device, dtype=torch.float)
-        Bg, Bth, Pe = unnormalize_params(*(y.T))
+        y0, y1, y2 = torch.rand(
+            (3, config.batch_size), device=config.device, dtype=torch.float
+        )
+        Bg, Bth, Pe = data.unnormalize_params(
+            y0, y1, y2, config.bg_param, config.bth_param, config.pe_param
+        )
         eta_sp = generate_surfaces(Bg, Bth, Pe)
-        X = preprocess_visc(eta_sp).to(torch.float)
+        X = data.preprocess_visc(eta_sp, config.eta_sp_param).to(torch.float)
+        y = torch.cat((y0, y1, y2), 1)
         yield X, y
 
 
 def voxel_image_generator(
-    num_batches: int, batch_size: int, device: torch.device, resolution: Resolution
+    num_batches: int, config: data.Config
 ) -> Iterable[Tuple[torch.Tensor, ...]]:
     """Uses surface_generator to generate a surface with a resolution one more,
     then generates a 3D binary array dictating whether or not the surface
@@ -172,24 +138,31 @@ def voxel_image_generator(
         `y` (`torch.Tensor` of size `(batch_size, 3)`) : Generated, normalized
             values of `(Bg, Bth, Pe)`.
     """
-    s_res = Resolution(resolution.phi + 1, resolution.Nw + 1)
+    s_res = Resolution(config.resolution.phi + 1, config.resolution.Nw + 1)
 
-    eta_sp = preprocess_visc(
+    eta_sp = data.preprocess_visc(
         torch.tensor(
-            np.geomspace(ETA_SP.min, ETA_SP.max, resolution.eta_sp + 1, endpoint=True),
+            np.geomspace(
+                config.eta_sp_param.min,
+                config.eta_sp_param.max,
+                config.resolution.eta_sp + 1,
+                endpoint=True,
+            ),
             dtype=torch.float,
-            device=device,
-        )
+            device=config.device,
+        ),
+        config.eta_sp_param,
     )
 
-    for X, y in surface_generator(num_batches, batch_size, device, resolution=s_res):
+    for X, y in surface_generator(num_batches, config):
         surf = torch.tile(
-            X.reshape((batch_size, *s_res, 1)), (1, 1, 1, resolution.eta_sp + 1)
+            X.reshape((config.batch_size, *s_res, 1)),
+            (1, 1, 1, config.resolution.eta_sp + 1),
         )
 
         # if <= or >=, we would include capped values, which we don't want
         image = torch.logical_and(
             surf[:, :-1, :-1, :-1] < eta_sp[1:], surf[:, 1:, 1:, 1:] > eta_sp[:-1]
-        ).to(dtype=torch.float, device=device)
+        ).to(dtype=torch.float, device=config.device)
 
         yield image, y
