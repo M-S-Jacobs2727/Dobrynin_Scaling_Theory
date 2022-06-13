@@ -51,15 +51,12 @@ class LinearNeuralNet(torch.nn.Module):
 
         logger.debug(f"{input_layer_size = }")
 
-        all_layer_sizes = (input_layer_size, *layer_sizes)
-
         self.stack = torch.nn.Sequential(
-            torch.nn.Flatten(),
+            torch.nn.Flatten(), torch.nn.Linear(input_layer_size, layer_sizes[0])
         )
-        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
-            self.stack.append(torch.nn.Linear(prev, next))
+        for prev, next in zip(layer_sizes[:-1], layer_sizes[1:]):
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+            self.stack.append(torch.nn.Linear(prev, next))
 
         # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 
@@ -138,13 +135,13 @@ class ConvNeuralNet2D(torch.nn.Module):
 
         input_layer_size = channels[-1] * resolution.phi * resolution.Nw
         logger.debug(f"{input_layer_size = }")
-        all_layer_sizes = (input_layer_size, *layer_sizes)
-        self.stack.append(torch.nn.Flatten())
 
-        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
-            self.stack.append(torch.nn.Linear(prev, next))
+        self.stack.append(torch.nn.Flatten())
+        self.stack.append(torch.nn.Linear(input_layer_size, layer_sizes[0]))
+
+        for prev, next in zip(layer_sizes[:-1], layer_sizes[1:]):
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+            self.stack.append(torch.nn.Linear(prev, next))
 
         # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 
@@ -220,13 +217,13 @@ class ConvNeuralNet3D(torch.nn.Module):
             channels[-1] * resolution.phi * resolution.Nw * resolution.eta_sp
         )
         logger.debug(f"{input_layer_size = }")
-        all_layer_sizes = (input_layer_size, *layer_sizes)
-        self.stack.append(torch.nn.Flatten())
 
-        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
-            self.stack.append(torch.nn.Linear(prev, next))
+        self.stack.append(torch.nn.Flatten())
+        self.stack.append(torch.nn.Linear(input_layer_size, layer_sizes[0]))
+
+        for prev, next in zip(layer_sizes[:-1], layer_sizes[1:]):
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+            self.stack.append(torch.nn.Linear(prev, next))
 
         # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 

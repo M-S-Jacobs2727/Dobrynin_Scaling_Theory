@@ -3,7 +3,7 @@ model:
     kernel_sizes: [7, 7, 5, 5, 3]
     pool_sizes: [2, 2, 2, 2, 2]
     channels: [4, 16, 64, 128, 256]
-    layer_sizes: [1024, 1024, 1024]
+    layer_sizes: [1024, 1024, 1024, 2]
 phi_range: 
     min: 0.000001
     max: 0.01

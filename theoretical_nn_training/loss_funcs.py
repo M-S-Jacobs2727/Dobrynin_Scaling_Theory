@@ -32,14 +32,26 @@ def custom_MSE_loss(
 ) -> torch.Tensor:
     loss = (y_true - y_pred) ** 2
 
+    if loss.size(1) == 2:
+        true_bg, true_bth = y_true.T
+        true_pe = torch.tensor([0])
+    elif loss.size(1) == 3:
+        true_bg, true_bth, true_pe = y_true.T
+    else:
+        raise NotImplementedError("Generated features must be of length 2 or 3.")
+
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
     Bg, Bth, _ = data.unnormalize_params(
-        y_true[:, 0], y_true[:, 1], y_true[:, 2], bg_range, bth_range, pe_range
+        true_bg, true_bth, true_pe, bg_range, bth_range, pe_range
     )
     mask = Bg < Bth**0.824
 
     Bg_loss = torch.mean(loss[:, 0])
     Bth_loss = torch.mean(loss[mask][:, 1])
+
+    if loss.size(1) == 2:
+        return torch.tensor([Bg_loss, Bth_loss])
+
     Pe_loss = torch.mean(loss[:, 2])
 
     return torch.tensor([Bg_loss, Bth_loss, Pe_loss])
@@ -59,7 +71,9 @@ class CustomMSELoss(torch.nn.Module):
         systems, we only compute the loss for the Bg and Pe params.
         """
         if mode not in ["none", "mean"]:
-            raise SyntaxError(f"Expected a mode of either `none` or `mean`, not {mode}")
+            raise SyntaxError(
+                f"Expected a mode of either `none` or `mean`, not `{mode}`"
+            )
         super().__init__()
         self.bg_range = bg_range
         self.bth_range = bth_range
@@ -81,5 +95,5 @@ class CustomMSELoss(torch.nn.Module):
             )
         else:
             raise SyntaxError(
-                f"Expected a mode of either `none` or `mean`, not {self._mode}"
+                f"Expected a mode of either `none` or `mean`, not `{self._mode}`"
             )
