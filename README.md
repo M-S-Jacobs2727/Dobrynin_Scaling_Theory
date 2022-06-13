@@ -1,39 +1,49 @@
 # Dobrynin_Scaling_Theory
 Code that applies the polymer solution scaling theory outlined in the works of 
-Dobrynin, Jacobs, and Sayko [1-5] to polymer solution viscosity data over a wide concentration range.
+Dobrynin, Jacobs, and Sayko [1-5] to polymer solution viscosity data over a wide 
+concentration range.
 
-The ultimate goal of this project is for the user to load a web app, upload their data, and receive accurate
-values of scaling parameters $B_g$ and $B_{th}$ and entanglement packing number $P_e$, as well as moleucular 
-characteristics such as Kuhn length, excluded volume, and thermal blob size.
+The ultimate goal of this project is for the user to load a web app, upload their data, 
+and receive accurate values of scaling parameters $B_g$ and $B_{th}$ and entanglement 
+packing number $P_e$, as well as moleucular characteristics such as Kuhn length, 
+excluded volume, and thermal blob size.
 
 ## Folders
-### *CSV_files*
-This contains a few .csv files of real, experimental data with three columns: concentration $\varphi$, $N_w$, and $\eta_{sp}$.
 
-###  *Data* 
-This contains theoretically generated data as well as all experimental data studied in refs [1-5].
-
-### *Mike gui test*
-Mike's first attempt at creating a standalone gui for piecewise fitting of data to be loaded by the user. 
-Will likely be scrapped for a web version?
-
-### *Mike_network_test*
-Mike's attempt at generating theoretical data as needed while training a neural net.
+### *theoretical_nn_training*
+This will be the production code cited in the eventual publication. I'm making it as
+modular as possible, with a single config file to change all the settings. The user can
+select a convolutional NN over a fully connected linear neural network by setting
+the number of channels, kernel sizes, and pool sizes per convolution. The user can 
+choose to build a model around a 2D or 3D representation of the generated surfaces by
+setting the resolution to have length 2 or 3, respectively.
 
 ### *Molecular-Fingerprint-Code*
-Ryan's libraries for building and running over 1.6 million ($\varphi$, $N_w$, $\eta_{sp}$) surfaces to load and train on.
+Ryan's individual setups for training CNN models on the generated data. 
+
+### *CSV_files*
+This contains a few .csv files of real, experimental data with three columns: 
+concentration $\varphi$, $N_w$, and $\eta_{sp}$.
+
+###  *Data* 
+This contains theoretically generated data as well as experimental data studied in refs 
+[1-5].
+
+### *Mike gui test*
+Mike's first attempt at creating a standalone gui for piecewise fitting of data to be 
+loaded by the user. Will likely be scrapped for a web version.
 
 ## Glossary
-| Term      | Explanation |
-| ---------------- | ---------------- |
-| $\varphi=cl^3$ | reduced polymer concentration |
+| Term      | Explanation | Config variable |
+| ---------------- | ---------------- | ------------- |
 | $c$ | polymer repeat unit concentration (units of mass/volume, number/volume, etc.)|
 | $l$ | repeat unit projection length (units of nm, $\text\AA$, etc.) |
-| $N_w$ | degree of polymerization (number of repeat units per chain) |
-| $\eta_{sp}$ | specific viscosity |
-| $B_g$ | good solvent scaling parameter |
-| $B_{th}$ | thermal blob scaling parameter |
-| $P_e$ | entanglement packing number[6-8] |
+| $\varphi=cl^3$ | reduced polymer concentration | `phi_param` |
+| $N_w$ | degree of polymerization (number of repeat units per chain) | `nw_param` |
+| $\eta_{sp}$ | specific viscosity | `eta_sp_param` |
+| $B_g$ | good solvent scaling parameter | `bg_param` |
+| $B_{th}$ | thermal blob scaling parameter | `bth_param` |
+| $P_e$ | entanglement packing number[6-8] | `pe_param` |
 
 
 ## Refs

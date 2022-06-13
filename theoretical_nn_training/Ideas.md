@@ -5,6 +5,7 @@
 - [x] Reorganize code into distinct files
 - [ ] Change down to 2 parameters (new folder?)
 - [ ] 2D convolutional NN with 5+ layers (set one for each resolution?)
+- [ ] Tuning (with something other than ray) should be done in tuning.py. The main.py file should be for running production training.
 
 ## General thoughts on procedure, model, etc.
 

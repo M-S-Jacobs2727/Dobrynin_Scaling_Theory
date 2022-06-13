@@ -1,54 +1,67 @@
+import logging
 import math
-from typing import List
+from typing import Tuple
 
 import torch
 
-from theoretical_nn_training.data_processing import Resolution
+import theoretical_nn_training.data_processing as data
+
+# TODO: add models for non-Pe training
 
 
-def get_final_len(res: Resolution, k: int, p: int) -> Resolution:
-    """Determines the resulting resolution after a convolution with kernel size `k`
-    and pool size `p`. No dilation or stride is assumed."""
-    return Resolution(
-        math.floor(((res.phi - k + 1) - p) / p + 1),
-        math.floor(((res.Nw - k + 1) - p) / p + 1),
-        math.floor(((res.eta_sp - k + 1) - p) / p + 1) if res.eta_sp else 0,
+def _get_final_resolution(
+    resolution: data.Resolution, kernel_size: int, pool_size: int
+) -> data.Resolution:
+    """Determines the resulting resolution after a convolution with a given kernel size
+    and pool size. No dilation or stride is assumed.
+    """
+    return data.Resolution(
+        math.floor(((resolution.phi - kernel_size + 1) - pool_size) / pool_size + 1),
+        math.floor(((resolution.Nw - kernel_size + 1) - pool_size) / pool_size + 1),
+        math.floor(((resolution.eta_sp - kernel_size + 1) - pool_size) / pool_size + 1)
+        if resolution.eta_sp
+        else 0,
     )
 
 
 class LinearNeuralNet(torch.nn.Module):
-    """The classic, fully connected neural network.
-    TODO: Make hyperparameters accessible and tune.
-    """
+    def __init__(
+        self, resolution: data.Resolution, layer_sizes: Tuple[int, ...]
+    ) -> None:
+        """The classic, fully connected neural network. Configure the hidden layer sizes
+        and input resolution. Returns a torch.nn.Module for training and optimizing.
 
-    def __init__(self, res: Resolution, layers: List[int]) -> None:
-        """Input:
-                np.array of size 32x32 of type np.float32
-
-        Three fully connected layers.
-        Shape of data progresses as follows:
-
-                Input:          (32, 32)
-                Flatten:        (1024,) [ = 32*32]
-                FCL:            (64,)
-                FCL:            (64,)
-                FCL:            (3,)
+        Input:
+            `resolution` (`data_processing.Resolution`) : The 2D or 3D resolution of the
+                generated surfaces.
+            `layer_sizes` (tuple of `int`s) : Number of nodes in each hidden layer of
+                the returned neural network model.
         """
         super().__init__()
 
-        l0 = res.phi * res.Nw
-        if res.eta_sp:
-            l0 *= res.eta_sp
+        logger = logging.getLogger("main")
+        print(logger)
 
-        layers = [l0, *layers]
+        input_layer_size = resolution.phi * resolution.Nw
+        if resolution.eta_sp:
+            input_layer_size *= resolution.eta_sp
+            logger.debug("Model using 3D representation of data.")
+        else:
+            logger.debug("Model using 2D representation of data.")
+
+        logger.debug(f"{input_layer_size = }")
+
+        all_layer_sizes = (input_layer_size, *layer_sizes)
 
         self.stack = torch.nn.Sequential(
             torch.nn.Flatten(),
         )
-        for prev, next in zip(layers[:-1], layers[1:]):
+        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
             self.stack.append(torch.nn.Linear(prev, next))
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(layers[-1], 3))
+        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+
+        # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.stack(x)
@@ -57,37 +70,83 @@ class LinearNeuralNet(torch.nn.Module):
 class ConvNeuralNet2D(torch.nn.Module):
     def __init__(
         self,
-        res: Resolution,
-        channels: List[int],
-        kernels: List[int],
-        pools: List[int],
-        layers: List[int],
+        resolution: data.Resolution,
+        channels: Tuple[int, ...],
+        kernel_sizes: Tuple[int, ...],
+        pool_sizes: Tuple[int, ...],
+        layer_sizes: Tuple[int, ...],
     ) -> None:
+        """A convolutional neural network implementation for 2D images. The
+        convolutional layers are structured as (convolution, ReLU activation function,
+        max-pooling), the number and size of which are specified by `channels`,
+        `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
+        through linear layers as specified in `layer_sizes`.
+
+        Input:
+            `resolution` (`data_processing.Resolution`) : The 2D resolution of the
+                generated surfaces.
+            `channels` (tuple of `int`s) : Number of convolutions applied in each
+                convolutional layer.
+            `kernel_sizes` (tuple of `int`s) : Size of the square kernel for each set of
+                convolutions.
+            `pool_sizes` (tuple of `int`s) : Size of the square kernal for each
+                max-pooling.
+            `layer_sizes` (tuple of `int`s) : Number of nodes in each hidden layer of
+                the returned neural network model.
+
+        Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
+        equal length.
+        """
 
         super().__init__()
 
-        if not (len(channels) == len(kernels) == len(pools)):
+        logger = logging.getLogger("main")
+
+        if not (len(channels) == len(kernel_sizes) == len(pool_sizes)):
             raise ValueError(
                 "This model requires an equal number of convolutions and pools, but"
-                f" received {len(channels) = }, {len(kernels) = }, and {len(pools) = }."
+                f" received {len(channels) = }, {len(kernel_sizes) = }, and"
+                f" {len(pool_sizes) = }."
             )
 
-        r = res
-        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, res[0])))
-        for c1, c2, k, p in zip([1, *channels[:-1]], channels, kernels, pools):
-            self.stack.append(torch.nn.Conv2d(c1, c2, k))
-            self.stack.append(torch.nn.ReLU())
-            self.stack.append(torch.nn.MaxPool2d(p))
-            r = get_final_len(r, k, p)
+        if resolution.eta_sp:
+            raise ValueError(
+                "This model is for 2D images only, but received a 3D resolution:"
+                f"{resolution}."
+            )
 
-        l0 = channels[-1] * r.phi * r.Nw
-        layers = [l0, *layers]
+        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
+
+        logger.debug(
+            "Channels, kernel sizes, pool_sizes, and resolutions after each"
+            " set of convolutions:"
+        )
+        logger.debug(f"    1,   -,   -, {resolution}")
+        for prev_num_channels, next_num_channels, kernel_size, pool_size in zip(
+            [1, *channels[:-1]], channels, kernel_sizes, pool_sizes
+        ):
+            self.stack.append(
+                torch.nn.Conv2d(prev_num_channels, next_num_channels, kernel_size)
+            )
+            self.stack.append(torch.nn.ReLU())
+            self.stack.append(torch.nn.MaxPool2d(pool_size))
+            resolution = _get_final_resolution(resolution, kernel_size, pool_size)
+            logger.debug(
+                f"{next_num_channels:5d}, {kernel_size:3d}, {pool_size:3d},"
+                f" {resolution}"
+            )
+
+        input_layer_size = channels[-1] * resolution.phi * resolution.Nw
+        logger.debug(f"{input_layer_size = }")
+        all_layer_sizes = (input_layer_size, *layer_sizes)
         self.stack.append(torch.nn.Flatten())
 
-        for prev, next in zip(layers[:-1], layers[1:]):
+        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
             self.stack.append(torch.nn.Linear(prev, next))
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(layers[-1], 3))
+        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+
+        # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.stack(x)
@@ -96,37 +155,80 @@ class ConvNeuralNet2D(torch.nn.Module):
 class ConvNeuralNet3D(torch.nn.Module):
     def __init__(
         self,
-        res: Resolution,
-        channels: List[int],
-        kernels: List[int],
-        pools: List[int],
-        layers: List[int],
+        resolution: data.Resolution,
+        channels: Tuple[int, ...],
+        kernel_sizes: Tuple[int, ...],
+        pool_sizes: Tuple[int, ...],
+        layer_sizes: Tuple[int, ...],
     ) -> None:
+        """A convolutional neural network implementation for 3D images. The
+        convolutional layers are structured as (convolution, ReLU activation function,
+        max-pooling), the number and size of which are specified by `channels`,
+        `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
+        through linear layers as specified in `layer_sizes`.
+
+        Input:
+            `resolution` (`data_processing.Resolution`) : The 3D resolution of the
+                generated surfaces.
+            `channels` (tuple of `int`s) : Number of convolutions applied in each
+                convolutional layer.
+            `kernel_sizes` (tuple of `int`s) : Size of the square kernel for each set of
+                convolutions.
+            `pool_sizes` (tuple of `int`s) : Size of the square kernal for each
+                max-pooling.
+            `layer_sizes` (tuple of `int`s) : Number of nodes in each hidden layer of
+                the returned neural network model.
+
+        Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
+        equal length.
+        """
 
         super().__init__()
 
-        if not (len(channels) == len(kernels) == len(pools)):
+        logger = logging.getLogger("main")
+        print(logger)
+
+        if not (len(channels) == len(kernel_sizes) == len(pool_sizes)):
             raise ValueError(
                 "This model requires an equal number of convolutions and pools, but"
-                f" received {len(channels) = }, {len(kernels) = }, and {len(pools) = }."
+                f" received {len(channels) = }, {len(kernel_sizes) = }, and"
+                f" {len(pool_sizes) = }."
             )
 
-        r = res
-        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, res[0])))
-        for c1, c2, k, p in zip([1, *channels[:-1]], channels, kernels, pools):
-            self.stack.append(torch.nn.Conv3d(c1, c2, k))
-            self.stack.append(torch.nn.ReLU())
-            self.stack.append(torch.nn.MaxPool3d(p))
-            r = get_final_len(r, k, p)
+        if not resolution.eta_sp:
+            raise ValueError(
+                "This model is for 3D images only, but received a 2D resolution:"
+                f"{resolution}."
+            )
 
-        l0 = channels[-1] * r.phi * r.Nw * r.eta_sp
-        layers = [l0, *layers]
+        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
+
+        logger.debug("Channels and resolutions after each set of convolutions:")
+        logger.debug(f"1, {resolution}")
+        for prev_num_channels, next_num_channels, kernel_size, pool_size in zip(
+            [1, *channels[:-1]], channels, kernel_sizes, pool_sizes
+        ):
+            self.stack.append(
+                torch.nn.Conv3d(prev_num_channels, next_num_channels, kernel_size)
+            )
+            self.stack.append(torch.nn.ReLU())
+            self.stack.append(torch.nn.MaxPool3d(pool_size))
+            resolution = _get_final_resolution(resolution, kernel_size, pool_size)
+            logger.debug(f"{next_num_channels}, {resolution}")
+
+        input_layer_size = (
+            channels[-1] * resolution.phi * resolution.Nw * resolution.eta_sp
+        )
+        logger.debug(f"{input_layer_size = }")
+        all_layer_sizes = (input_layer_size, *layer_sizes)
         self.stack.append(torch.nn.Flatten())
 
-        for prev, next in zip(layers[:-1], layers[1:]):
+        for prev, next in zip(all_layer_sizes[:-1], all_layer_sizes[1:]):
             self.stack.append(torch.nn.Linear(prev, next))
             self.stack.append(torch.nn.ReLU())
-        self.stack.append(torch.nn.Linear(layers[-1], 3))
+        self.stack.append(torch.nn.Linear(all_layer_sizes[-1], 3))
+
+        # logger.debug(f"Final model structure: \n{self.stack.state_dict()}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.stack(x)

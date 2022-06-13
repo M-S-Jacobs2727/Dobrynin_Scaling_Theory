@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List, NamedTuple, Tuple
+from dataclasses import dataclass
+from typing import Optional, Tuple
 
 import numpy as np
 import torch
@@ -8,51 +8,41 @@ import torch.distributions
 SHIFT = 1e-4
 
 
-class Resolution(NamedTuple):
+@dataclass
+class Resolution:
+    """Resolution of generated surfaces. Dimensions:
+    - `phi` (concentration)
+    - `Nw` (weight-average degree of polymerization)
+    - `eta_sp` (specific viscosity) (optional, for 3D representations only)
+    """
+
     phi: int
     Nw: int
     eta_sp: int = 0
 
 
-class Param(NamedTuple):
+@dataclass
+class Range:
+    """Defines the minimum and maximum values of a distribution of allowed values for
+    parameters. Optionally also allows for the specification of mu and sigma for a
+    Normal or LogNormal distribution, and alpha and beta for a Beta distribution. If
+    none of these are specified, then a Uniform distribution is assumed.
+    """
+
     min: float
     max: float
-    mu: float = 0
-    sigma: float = 0
-    alpha: float = 0
-    beta: float = 0
+    mu: Optional[float] = None
+    sigma: Optional[float] = None
+    alpha: Optional[float] = None
+    beta: Optional[float] = None
 
 
-@dataclass
-class Config:
-    device: torch.device
-    phi_param: Param = Param(1e-6, 1e-2)
-    nw_param: Param = Param(100, 1e5)
-    eta_sp_param: Param = Param(1, 1e6)
-    bg_param: Param = Param(0.3, 1.1)
-    bth_param: Param = Param(0.2, 0.8)
-    pe_param: Param = Param(5, 20)
-    batch_size: int = 100
-    train_size: int = 700000
-    test_size: int = 2000
-    epochs: int = 100
-    resolution: Resolution = Resolution(128, 128)
-    lr: float = 1e-3
-
-
-@dataclass
-class NNConfig(Config):
-    layers: List[int] = field(default=[1024, 1024])
-
-
-@dataclass
-class CNNConfig(NNConfig):
-    channels: List[int] = field(default=[4, 16, 64])
-    kernels: List[int] = field(default=[5, 5, 5])
-    pools: List[int] = field(default=[2, 2, 2])
-
-
-def param_dist(param: Param) -> torch.distributions.Distribution:
+def param_dist(param: Range) -> torch.distributions.Distribution:
+    """Returns a generator that produces a distribution of values for the parameters
+    Bg, Bth, and Pe. These can be the Beta distribution (if param.alpha and param.beta
+    are defined), the LogNormal distribution (if param.mu and param.sigma are defined)
+    or the Uniform distribution otherwise.
+    """
     if param.alpha and param.beta:
         return torch.distributions.Beta(param.alpha, param.beta)
     if param.mu and param.sigma:
@@ -61,8 +51,11 @@ def param_dist(param: Param) -> torch.distributions.Distribution:
 
 
 def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
+    """This computes Bth from Bg on the assumption that they have a linear
+    relationship.
+    """
     Bth = 0.54 * Bg + 0.05
-    Bth += Bth * 0.05 * torch.normal(torch.zeros_like(Bth), torch.ones_like(Bth))
+    Bth += Bth * 0.1 * torch.normal(torch.zeros_like(Bth), torch.ones_like(Bth))
     return Bth
 
 
@@ -70,14 +63,14 @@ def normalize_params(
     Bg: torch.Tensor,
     Bth: torch.Tensor,
     Pe: torch.Tensor,
-    BG: Param,
-    BTH: Param,
-    PE: Param,
+    bg_range: Range,
+    bth_range: Range,
+    pe_range: Range,
 ) -> Tuple[torch.Tensor, ...]:
-    """Simple linear normalization."""
-    Bg = (Bg - BG.min - SHIFT) / (BG.max - BG.min)
-    Bth = (Bth - BTH.min - SHIFT) / (BTH.max - BTH.min)
-    Pe = (Pe - PE.min - SHIFT) / (PE.max - PE.min)
+    """Performs simple linear normalization."""
+    Bg = (Bg - bg_range.min - SHIFT) / (bg_range.max - bg_range.min)
+    Bth = (Bth - bth_range.min - SHIFT) / (bth_range.max - bth_range.min)
+    Pe = (Pe - pe_range.min - SHIFT) / (pe_range.max - pe_range.min)
     return Bg, Bth, Pe
 
 
@@ -85,26 +78,31 @@ def unnormalize_params(
     Bg: torch.Tensor,
     Bth: torch.Tensor,
     Pe: torch.Tensor,
-    BG: Param,
-    BTH: Param,
-    PE: Param,
+    bg_range: Range,
+    bth_range: Range,
+    pe_range: Range,
 ) -> Tuple[torch.Tensor, ...]:
-    """Simple linear normalization."""
-    Bg = Bg * (BG.max - BG.min) + BG.min + SHIFT
-    Bth = Bth * (BTH.max - BTH.min) + BTH.min + SHIFT
-    Pe = Pe * (PE.max - PE.min) + PE.min + SHIFT
+    """Inverts simple linear normalization."""
+    Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min + SHIFT
+    Bth = Bth * (bth_range.max - bth_range.min) + bth_range.min + SHIFT
+    Pe = Pe * (pe_range.max - pe_range.min) + pe_range.min + SHIFT
     return Bg, Bth, Pe
 
 
-def preprocess_visc(eta_sp: torch.Tensor, ETA_SP: Param) -> torch.Tensor:
+def normalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+    """Performs a simple linear normalization of the natural log of the specific
+    viscosity.
+    """
+    return torch.log(eta_sp / eta_sp_range.min) / np.log(
+        eta_sp_range.max / eta_sp_range.min
+    )
+
+
+def preprocess_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Add noise, cap the values, take the log, then normalize."""
     eta_sp += (
         eta_sp * 0.05 * torch.normal(torch.zeros_like(eta_sp), torch.ones_like(eta_sp))
     )
-    eta_sp = torch.fmin(eta_sp, torch.tensor(ETA_SP.max))
-    eta_sp = torch.fmax(eta_sp, torch.tensor(ETA_SP.min))
-    return normalize_visc(eta_sp, ETA_SP)
-
-
-def normalize_visc(eta_sp: torch.Tensor, ETA_SP: Param) -> torch.Tensor:
-    return torch.log(eta_sp / ETA_SP.min) / np.log(ETA_SP.max / ETA_SP.min)
+    eta_sp = torch.fmin(eta_sp, torch.tensor(eta_sp_range.max))
+    eta_sp = torch.fmax(eta_sp, torch.tensor(eta_sp_range.min))
+    return normalize_visc(eta_sp, eta_sp_range)

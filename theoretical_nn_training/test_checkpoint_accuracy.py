@@ -4,30 +4,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-import gen_and_train as nn
-import scaling_torch_lib as scaling
+import theoretical_nn_training.data_processing as data
+import theoretical_nn_training.generators as generators
+import theoretical_nn_training.loss_funcs as loss_funcs
+import theoretical_nn_training.models as models
 
 
 def test_accuracy(
+    device: torch.device,
     model: torch.nn.Module,
     loss_fn: torch.nn.Module,
-    device: torch.device,
     num_samples: int,
-    batch_size: int,
-    res: Tuple[int],
-) -> Tuple[torch.Tensor]:
+    config: data.NNConfig,
+) -> Tuple[torch.Tensor, torch.Tensor, float]:
 
-    num_batches = num_samples // batch_size
+    num_batches = num_samples // config.batch_size
 
-    all_y = torch.zeros((num_batches, batch_size, 3))
-    all_pred = torch.zeros((num_batches, batch_size, 3))
+    all_y = torch.zeros((num_batches, config.batch_size, 3))
+    all_pred = torch.zeros((num_batches, config.batch_size, 3))
 
     model.eval()
 
     cum_loss = 0
     with torch.no_grad():
         for b, (X, y) in enumerate(
-            scaling.voxel_image_generator(num_batches, batch_size, device, res)
+            generators.voxel_image_generator(num_batches, device, config)
         ):
             pred = model(X)
             loss = loss_fn(pred, y)
@@ -35,22 +36,36 @@ def test_accuracy(
             all_y[b] = y
             all_pred[b] = pred
 
-            cum_loss += loss.item()
+            cum_loss += float(loss.item())
 
     return all_y, all_pred, cum_loss / num_samples
 
 
 def main() -> None:
     device = torch.device("cuda:0")
+
+    config = data.NNConfig("theoretical_nn_training/configurations/sample_config.yaml")
+
     model_state, _ = torch.load("../mike_outputs/sample_checkpoint")
-    model = nn.ConvNeuralNet3D(
-        c1=6, k1=7, p1=2, c2=32, k2=5, p2=2, l1=256, l2=128, res=(128, 32, 128)
+    if not (config.channels and config.kernel_sizes and config.pool_sizes):
+        raise ValueError(
+            "Need full convolutional neural network configuration."
+            "Missing one of channels, kernel_sizes, or pool_sizes."
+        )
+    if not config.resolution.eta_sp:
+        raise ValueError("Need 3D resolution. Missing eta_sp dimension.")
+    model = models.ConvNeuralNet3D(
+        channels=config.channels,
+        kernel_sizes=config.kernel_sizes,
+        pool_sizes=config.pool_sizes,
+        layer_sizes=config.layer_sizes,
+        resolution=config.resolution,
     ).to(device)
     model.load_state_dict(model_state)
 
-    y, pred, loss = test_accuracy(
-        model, nn.log_cosh_loss, device, 2000, 100, (128, 32, 128)
-    )
+    loss_fn = loss_funcs.LogCoshLoss()
+
+    y, pred, loss = test_accuracy(device, model, loss_fn, config.test_size, config)
 
     print(loss)
     print(torch.abs(y - pred) / y)
@@ -109,11 +124,11 @@ def main() -> None:
         bth_pred.flatten(),
         pe_pred.flatten(),
     )
-    bg_true, bth_true, pe_true = scaling.unnormalize_params(
-        torch.stack((bg_true, bth_true, pe_true), dim=1)
+    bg_true, bth_true, pe_true = data.unnormalize_params(
+        bg_true, bth_true, pe_true, config.bg_range, config.bth_range, config.pe_range
     )
-    bg_pred, bth_pred, pe_pred = scaling.unnormalize_params(
-        torch.stack((bg_pred, bth_pred, pe_pred), dim=1)
+    bg_pred, bth_pred, pe_pred = data.unnormalize_params(
+        bg_pred, bth_pred, pe_pred, config.bg_range, config.bth_range, config.pe_range
     )
 
     np.savetxt(

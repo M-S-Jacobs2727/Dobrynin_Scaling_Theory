@@ -1,0 +1,29 @@
+resolution: [128, 128]
+model: 
+    kernel_sizes: [7, 7, 5, 5, 3]
+    pool_sizes: [2, 2, 2, 2, 2]
+    channels: [4, 16, 64, 128, 256]
+    layer_sizes: [1024, 1024, 1024]
+phi_range: 
+    min: 0.000001
+    max: 0.01
+nw_range: 
+    min: 100
+    max: 100000
+eta_sp_range: 
+    min: 1
+    max: 1000000
+bg_range: 
+    min: 0.3
+    max: 1.1
+bth_range: 
+    min: 0.2
+    max: 0.7
+pe_range: 
+    min: 4
+    max: 18
+batch_size: 100
+train_size: 70000
+test_size: 2000
+epochs: 4
+learning_rate: 0.001
