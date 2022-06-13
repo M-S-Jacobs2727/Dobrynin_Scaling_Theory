@@ -1,6 +1,6 @@
 resolution: [128, 128]
 model: 
-    layer_sizes: [1000, 84, 3]
+    layer_sizes: [1000, 84, 2]
     kernel_sizes: [5, 3, 3, 5, 5]
     pool_sizes: [2, 2, 2, 2, 1]
     channels: [6, 16, 120, 250, 1000]

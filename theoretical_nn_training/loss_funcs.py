@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Optional
 
 import torch
 from torch.nn.functional import softplus
@@ -23,38 +23,55 @@ class LogCoshLoss(torch.nn.Module):
         return log_cosh_loss(y_pred, y_true)
 
 
-def custom_MSE_loss(
+def _custom_MSE_loss(
     y_pred: torch.Tensor,
     y_true: torch.Tensor,
     bg_range: data.Range,
     bth_range: data.Range,
     pe_range: data.Range,
 ) -> torch.Tensor:
-    loss = (y_true - y_pred) ** 2
 
-    if loss.size(1) == 2:
-        true_bg, true_bth = y_true.T
-        true_pe = torch.tensor([0])
-    elif loss.size(1) == 3:
-        true_bg, true_bth, true_pe = y_true.T
-    else:
-        raise NotImplementedError("Generated features must be of length 2 or 3.")
+    loss = (y_true - y_pred) ** 2
 
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
     Bg, Bth, _ = data.unnormalize_params(
-        true_bg, true_bth, true_pe, bg_range, bth_range, pe_range
+        y_true[:, 0], y_true[:, 1], y_true[:, 2], bg_range, bth_range, pe_range
+    )
+    mask = Bg < Bth**0.824
+
+    Bg_loss = torch.mean(loss[:, 0])
+    Bth_loss = torch.mean(loss[mask][:, 1])
+    Pe_loss = torch.mean(loss[:, 2])
+
+    return torch.tensor(
+        [Bg_loss, Bth_loss, Pe_loss], requires_grad=True, device=y_true.device
+    )
+
+
+def _custom_MSE_loss_no_Pe(
+    y_pred: torch.Tensor,
+    y_true: torch.Tensor,
+    bg_range: data.Range,
+    bth_range: data.Range,
+) -> torch.Tensor:
+
+    loss = (y_true[:, :2] - y_pred) ** 2
+
+    # Test the athermal condition. The solvent is too good for thermal fluctuations.
+    Bg, Bth, _ = data.unnormalize_params(
+        y_true[:, 0],
+        y_true[:, 1],
+        torch.tensor([0]),
+        bg_range,
+        bth_range,
+        data.Range(0, 1),
     )
     mask = Bg < Bth**0.824
 
     Bg_loss = torch.mean(loss[:, 0])
     Bth_loss = torch.mean(loss[mask][:, 1])
 
-    if loss.size(1) == 2:
-        return torch.tensor([Bg_loss, Bth_loss])
-
-    Pe_loss = torch.mean(loss[:, 2])
-
-    return torch.tensor([Bg_loss, Bth_loss, Pe_loss])
+    return torch.tensor([Bg_loss, Bth_loss], requires_grad=True, device=y_true.device)
 
 
 class CustomMSELoss(torch.nn.Module):
@@ -62,7 +79,7 @@ class CustomMSELoss(torch.nn.Module):
         self,
         bg_range: data.Range,
         bth_range: data.Range,
-        pe_range: data.Range,
+        pe_range: Optional[data.Range] = None,
         mode: str = "mean",
     ) -> None:
         """A custom implementation of the mean squared error class that accounts
@@ -80,18 +97,22 @@ class CustomMSELoss(torch.nn.Module):
         self.pe_range = pe_range
         self._mode = mode
 
-    def forward(
-        self, y_pred: torch.Tensor, y_true: torch.Tensor
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
-        if self._mode == "none":
-            return custom_MSE_loss(
+    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+        if self._mode == "none" and self.pe_range:
+            return _custom_MSE_loss(
                 y_pred, y_true, self.bg_range, self.bth_range, self.pe_range
             )
-        elif self._mode == "mean":
+        elif self._mode == "mean" and self.pe_range:
             return torch.mean(
-                custom_MSE_loss(
+                _custom_MSE_loss(
                     y_pred, y_true, self.bg_range, self.bth_range, self.pe_range
                 )
+            )
+        elif self._mode == "none":
+            return _custom_MSE_loss_no_Pe(y_pred, y_true, self.bg_range, self.bth_range)
+        elif self._mode == "mean":
+            return torch.mean(
+                _custom_MSE_loss_no_Pe(y_pred, y_true, self.bg_range, self.bth_range)
             )
         else:
             raise SyntaxError(

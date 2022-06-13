@@ -33,8 +33,8 @@ def run(
     # TODO add additional input comments in docs
     logger.info("Running...")
 
-    logger.info(" epoch  loss    bg_err  bth_err pe_err  ")
-    train_errors, test_errors = np.zeros((2, config.epochs, 4))
+    logger.info(" epoch  loss    bg_err  bth_err ")
+    train_errors, test_errors = np.zeros((2, config.epochs, 1 + config.layer_sizes[-1]))
     for epoch in range(config.epochs):
 
         error_ratios, loss = training.train(
@@ -45,25 +45,16 @@ def run(
             config=config,
             logger=logger,
         )
-        bg_error, bth_error, pe_error = error_ratios.cpu()
-        logger.info(
-            f"{epoch:6d}{loss:8.4f}{bg_error:8.4f}{bth_error:8.4f}{pe_error:8.4f}"
-        )
-        train_errors[epoch] = [
-            loss,
-            bg_error.detach(),
-            bth_error.detach(),
-            pe_error.detach(),
-        ]
+        bg_error, bth_error = error_ratios.cpu()[:2]
+        logger.info(f"{epoch:6d}{loss:8.4f}{bg_error:8.4f}{bth_error:8.4f}")
+        train_errors[epoch] = [loss, bg_error.detach(), bth_error.detach()]
 
         error_ratios, loss = training.test(
             device=device, model=model, loss_fn=loss_fn, config=config, logger=logger
         )
-        bg_error, bth_error, pe_error = error_ratios.cpu()
-        logger.info(
-            f"{epoch:6d}{loss:8.4f}{bg_error:8.4f}{bth_error:8.4f}{pe_error:8.4f}"
-        )
-        test_errors[epoch] = [loss, bg_error, bth_error, pe_error]
+        bg_error, bth_error = error_ratios.cpu()[:2]
+        logger.info(f"{epoch:6d}{loss:8.4f}{bg_error:8.4f}{bth_error:8.4f}")
+        test_errors[epoch] = [loss, bg_error, bth_error]
 
         # The error ratios are defined in training.py as
         # abs(expected - predicted)/expected for each of bg_param, bth_param, and
@@ -76,8 +67,8 @@ def run(
         np.stack((train_errors, test_errors), axis=0),
         fmt="%.6f",
         delimiter=",",
-        header="train_loss,train_bg_error,train_bth_error,train_pe_error,"
-        "test_loss,test_bg_error,test_bth_error,test_pe_error,",
+        header="train_loss,train_bg_error,train_bth_error,"
+        "test_loss,test_bg_error,test_bth_error",
         comments="",
     )
 
@@ -169,9 +160,7 @@ def main() -> None:
         )
         logger.debug("\tInitialized LinearNeuralNet")
 
-    loss_fn = loss_funcs.CustomMSELoss(
-        config.bg_range, config.bth_range, config.pe_range
-    )
+    loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range)
     logger.debug("Initialized loss function")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug("Initialized optimizer")

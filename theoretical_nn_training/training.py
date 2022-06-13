@@ -35,12 +35,10 @@ def train(
         )
 
     model.train()
-    loss2 = loss_funcs.CustomMSELoss(
-        config.bg_range, config.bth_range, config.pe_range, mode="none"
-    )
+    loss2 = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
 
     num_batches = config.train_size // config.batch_size
-    avg_loss, avg_error = 0.0, torch.zeros(3, device=device)
+    avg_loss, avg_error = 0.0, torch.zeros(config.layer_sizes[-1], device=device)
     logger.debug(
         f"Beginning training on {config.train_size} samples with batch size"
         f" {config.batch_size}."
@@ -87,12 +85,10 @@ def test(
         )
 
     model.eval()
-    loss2 = loss_funcs.CustomMSELoss(
-        config.bg_range, config.bth_range, config.pe_range, mode="none"
-    )
+    loss2 = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
 
     num_batches = config.test_size // config.batch_size
-    avg_loss, avg_error = 0.0, torch.zeros(3, device=device)
+    avg_loss, avg_error = 0.0, torch.zeros(config.layer_sizes[-1], device=device)
     logger.debug(
         f"Beginning testing on {config.test_size} samples with batch size"
         f" {config.batch_size}."
