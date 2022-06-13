@@ -38,10 +38,11 @@ def custom_MSE_loss(
     )
     mask = Bg < Bth**0.824
 
-    athermal_loss = (loss[mask][:, 0] + loss[mask][:, 2]) / 2
-    good_loss = torch.mean(loss[~mask], dim=1)
+    Bg_loss = torch.mean(loss[:, 0])
+    Bth_loss = torch.mean(loss[mask][:, 1])
+    Pe_loss = torch.mean(loss[:, 2])
 
-    return torch.cat((athermal_loss, good_loss))
+    return torch.tensor([Bg_loss, Bth_loss, Pe_loss])
 
 
 class CustomMSELoss(torch.nn.Module):
@@ -53,9 +54,9 @@ class CustomMSELoss(torch.nn.Module):
         mode: str = "mean",
     ) -> None:
         """A custom implementation of the mean squared error class that accounts
-        for the existence of athermal solutions, for which the Bth parameter is
-        unused. When computing the loss, for any athermal systems
-        (i.e., Bg < Bth**0.824), we only compute the loss for the Bg and Pe params.
+        for the existence of athermal solutions (i.e., Bg < Bth**0.824), for which the
+        Bth parameter is impossible to detect. When computing the loss, for any athermal
+        systems, we only compute the loss for the Bg and Pe params.
         """
         if mode not in ["none", "mean"]:
             raise SyntaxError(f"Expected a mode of either `none` or `mean`, not {mode}")
