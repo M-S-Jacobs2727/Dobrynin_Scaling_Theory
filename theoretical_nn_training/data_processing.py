@@ -89,6 +89,14 @@ def unnormalize_params(
     return Bg, Bth, Pe
 
 
+def unnormalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+    """Inverts a simple linear normalization of the specific viscosity."""
+    return (
+        torch.exp(eta_sp * np.log(eta_sp_range.max / eta_sp_range.min))
+        * eta_sp_range.min
+    )
+
+
 def normalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Performs a simple linear normalization of the natural log of the specific
     viscosity.
@@ -105,4 +113,5 @@ def preprocess_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     )
     eta_sp = torch.fmin(eta_sp, torch.tensor(eta_sp_range.max))
     eta_sp = torch.fmax(eta_sp, torch.tensor(eta_sp_range.min))
+    # eta_sp[eta_sp == eta_sp_range.max] = eta_sp_range.min
     return normalize_visc(eta_sp, eta_sp_range)

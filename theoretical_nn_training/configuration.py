@@ -1,16 +1,70 @@
 import json
 import logging
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Union
 
 import yaml
 
 from theoretical_nn_training.data_processing import Range, Resolution
 
 
+# TODO: add a __repr__ for NNConfig? or __str__?
+@dataclass
 class NNConfig:
-    def __init__(self, config_filename: Path):
+    def __init__(self, config_filename: Union[Path, str]):
+        """Configuration dataclass. Reads a YAML or JSON configuration file and sets
+        corresponding attributes for the returned object. The attributes listed below
+        are read from the configuration file with the same hierarchical structure.
+
+        Attributes:
+
+        `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
+
+        `xxx_range` (`data_processing.Range`) : These objects define the minimum
+            (`min`), maximum (`max`), and distribution (`alpha` and `beta` for the
+            Beta distribution, `mu` and `sigma` for the LogNormal distribution) of
+            their respective parameters.
+        `phi_range` : The desired range of concentrations.
+        `nw_range` : The desired range of weight-average degrees of polymerization.
+        `eta_sp_range` : The desired range of specific viscosity.
+        `bg_range` : The desired range and distribution settings for the parameter
+            $B_g$.
+        `bth_range` : The desired range and distribution settings for the parameter
+            $B_{th}$.
+        `Pe_range` : The desired range and distribution settings for the packing
+            number $P_e$.
+
+        `batch_size` (`int`) : The number of samples given to the model per batch.
+        `train_size` (`int`) : The number of samples given to the model over one
+            training iteration.
+        `test_size` (`int`) : The number of samples given to the model over one
+            testing iteration.
+        `epochs` (`int`) : The number of training/testing iterations.
+
+        `model` contains the details of the desired neural network architecture.
+        If the model is a convolutional neural network, then each of `channels`,
+        `kernel_sizes`, and `pool_sizes` must be specified and have equal lengths.
+        The architecture of the convolutional layers is a sequence of (convolution,
+        ReLU activation layer, max-pool) sequences, the result of which is fed into
+        a linear neural network.
+            `layer_sizes` (`tuple` of `int`s) : The number of nodes per layer, including
+                the input layer and the final layer (number of features). If the model
+                is a convolutional neural network, the number of input nodes must be
+                equal to the flattened output of the convolutional layers.
+            `channels` (`tuple` of `int`s, optional) : The number of applied
+                convolutions in each convolutional layer (i.e., the number of resulting
+                channels after each set of convolutions).
+            `kernel_sizes` (`tuple` of `int`s, optional) : The size of the square
+                kernels used in each convolutional layer.
+            `pool_sizes` (`tuple` of `int`s, optional) : The size of the square pooling
+                kernels used in each max-pooling layer.
+        """
         logger = logging.getLogger(__name__)
+
         # Load configuration file and assign to config_dictionary
+        if isinstance(config_filename, str):
+            config_filename = Path(config_filename)
         extension = config_filename.suffix
         with open(config_filename, "r") as f:
             if extension == ".yaml":

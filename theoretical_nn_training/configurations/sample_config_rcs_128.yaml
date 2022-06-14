@@ -1,6 +1,6 @@
 resolution: [128, 128]
 model: 
-    layer_sizes: [1000, 84, 2]
+    layer_sizes: [1000, 1000, 84, 2]
     kernel_sizes: [5, 3, 3, 5, 5]
     pool_sizes: [2, 2, 2, 2, 1]
     channels: [6, 16, 120, 250, 1000]
@@ -26,10 +26,10 @@ bth_range:
 pe_range: 
     min: 0
     max: 18
-    mu: 1.94802
-    sigma: 0.49004
+    mu: -0.5
+    sigma: 0.5
 batch_size: 100
-train_size: 70000
-test_size: 30000
+train_size: 7000
+test_size: 3000
 epochs: 200
 learning_rate: 0.001
