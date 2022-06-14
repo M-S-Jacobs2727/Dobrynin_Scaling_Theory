@@ -191,7 +191,7 @@ def main() -> None:
             else generators.SurfaceGenerator(device=device, config=config)
         )
 
-    loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range)
+    loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
     logger.debug("Initialized loss functions")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug("Initialized optimizer")

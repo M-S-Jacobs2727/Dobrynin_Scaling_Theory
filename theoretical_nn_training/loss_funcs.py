@@ -86,11 +86,11 @@ class CustomMSELoss(torch.nn.Module):
         if applicable, the $P_e$ parameter.
 
         Input:
-            `bg_range` ('data_processing.Range`) : Used to compute the true values of
+            `bg_range` (`data_processing.Range`) : Used to compute the true values of
                 the $B_g$ parameter from the normalized values.
-            `bth_range` ('data_processing.Range`) : Used to compute the true values of
+            `bth_range` (`data_processing.Range`) : Used to compute the true values of
                 the $B_{th}$ parameter from the normalized values.
-            `pe_range` ('data_processing.Range`, optional) : Used to compute the true
+            `pe_range` (`data_processing.Range`, optional) : Used to compute the true
                 values of the packing number $P_e$ from the normalized values.
             `mode` (`str`) : Either 'mean' or 'none'. If 'mean', the loss values of the
                 parameters are averaged, and a singlton Tensor is returned. If 'none',

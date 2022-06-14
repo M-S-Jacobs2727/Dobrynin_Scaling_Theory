@@ -2,16 +2,31 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
+from typing import Optional, Tuple, Union
 
 import yaml
 
 from theoretical_nn_training.data_processing import Range, Resolution
 
 
-# TODO: add a __repr__ for NNConfig? or __str__?
 @dataclass
 class NNConfig:
+    learning_rate: float
+    phi_range: Range
+    nw_range: Range
+    eta_sp_range: Range
+    bg_range: Range
+    bth_range: Range
+    pe_range: Range
+    batch_size: int
+    train_size: int
+    test_size: int
+    epochs: int
+    layer_sizes: Tuple[int, ...]
+    channels: Optional[Tuple[int, ...]] = None
+    kernel_sizes: Optional[Tuple[int, ...]] = None
+    pool_sizes: Optional[Tuple[int, ...]] = None
+
     def __init__(self, config_filename: Union[Path, str]):
         """Configuration dataclass. Reads a YAML or JSON configuration file and sets
         corresponding attributes for the returned object. The attributes listed below
