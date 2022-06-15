@@ -50,12 +50,14 @@ def run(
 
     table_header = " epoch"
     for i in range(config.layer_sizes[-1]):
-        table_header += f"  loss_{i}"
+        table_header += f"    loss_{i}"
     logger.info(table_header)
 
     for epoch in range(config.epochs):
 
         # Training
+        # losses will be the individual loss of each feature, as a 1D tensor with
+        # length config.layer_sizes[-1]
         losses = training.train(
             device=device,
             model=model,
@@ -69,7 +71,7 @@ def run(
 
         table_entry = f"{epoch:6d}"
         for loss in losses:
-            table_entry += f"{loss:8.4f}"
+            table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
         # Testing
@@ -85,7 +87,7 @@ def run(
 
         table_entry = f"{epoch:6d}"
         for loss in losses:
-            table_entry += f"{loss:8.4f}"
+            table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
     # Save loss values
@@ -191,7 +193,20 @@ def main() -> None:
             else generators.SurfaceGenerator(device=device, config=config)
         )
 
-    loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
+    if config.layer_sizes[-1] == 3:
+        loss_fn = loss_funcs.CustomMSELoss(
+            config.bg_range, config.bth_range, config.pe_range, mode="none"
+        )
+    elif config.layer_sizes[-1] == 2:
+        loss_fn = loss_funcs.CustomMSELoss(
+            config.bg_range, config.bth_range, mode="none"
+        )
+    else:
+        raise RuntimeError(
+            "Configuration parameter layer_sizes must end in either 2 or 3, not"
+            f" {config.layer_sizes[-1]}."
+        )
+
     logger.debug("Initialized loss functions")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug("Initialized optimizer")
