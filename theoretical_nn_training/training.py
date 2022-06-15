@@ -15,11 +15,9 @@ def train(
     config: NNConfig,
 ) -> torch.Tensor:
     """The neural network model is trained based on the configuration parameters,
-    evaluated by the loss function, and incrementally adjusted by the optimizer. All
-    operations take place on the device (e.g., CUDA-enabled GPU).
+    evaluated by the loss function, and incrementally adjusted by the optimizer.
 
     Input:
-        `device` (`torch.device`) : The device on which all operations take place.
         `model` (`torch.nn.Module`) : The neural network model to be trained.
         `generator` (`generators.Generator`) : The iterable function that returns
             representations of polymer solution specific viscosity data.
@@ -65,10 +63,9 @@ def test(
     config: NNConfig,
 ) -> torch.Tensor:
     """Tests the neural network model based on the configuration parameters using
-    the loss function. All operations take place on the device (e.g., CUDA-enabled GPU).
+    the loss function.
 
     Input:
-        `device` (`torch.device`) : The device on which all operations take place.
         `model` (`torch.nn.Module`) : The neural network model to be trained.
         `generator` (`generators.Generator`) : The iterable function that returns
             representations of polymer solution specific viscosity data.

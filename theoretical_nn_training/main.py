@@ -27,17 +27,12 @@ def run(
             `NNConfig` is a dataclass (see
             https://docs.python.org/3/library/dataclasses.html), which makes processing
             and reading configurations easier than dictionaries.
-        `device` (`torch.device`) : The device on which all operations take place.
         `model` (`torch.nn.Module`) : The neural network model to be trained.
         `generator` (`generators.Generator`) : The iterable function that returns
             representations of polymer solution specific viscosity data.
         `loss_fn` (`torch.nn.Module`) : Determines the errors between the true values of
             the features and those predicted by the model.
         `optimizer` (`torch.optim.Optimizer`) : Incrementally adjusts the model.
-        `output_directory` (`pathlib.Path`) : The directory to which the
-            results will be saved. Specifically, this includes the loss values
-            (`loss_values.csv`) and the model and optimizer state as a binary file
-            (`model_and_optimizer`).
     """
 
     train_errors, test_errors = np.zeros((2, config.epochs, config.layer_sizes[-1]))

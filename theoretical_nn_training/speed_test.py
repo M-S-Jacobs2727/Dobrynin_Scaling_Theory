@@ -25,10 +25,9 @@ def main() -> None:
             print(f"{batch_size = }")
             num_batches = num_samples // batch_size
             start_batch = time.perf_counter()
-            for surf in generators.voxel_image_generator(
-                num_batches, config.device, config
-            ):
-                X, y = surf
+            generator = generators.VoxelImageGenerator(config)
+            for surf, feat in generator(num_batches):
+                pass
             elapsed = time.perf_counter() - start_batch
             batch_time[i][j] = elapsed
 
