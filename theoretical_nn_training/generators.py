@@ -30,7 +30,7 @@ class Generator(ABC):
 
 
 class SurfaceGenerator(Generator):
-    def __init__(self, device: torch.device, config: NNConfig) -> None:
+    def __init__(self, config: NNConfig) -> None:
         """Returns a callable object that can be used in a `for` loop to efficiently
         generate polymer solution specific viscosity data as a function of concentration
         and weight-average degree of polymerization as defined by three parameters: the
@@ -63,7 +63,7 @@ class SurfaceGenerator(Generator):
                 endpoint=True,
             ),
             dtype=torch.float,
-            device=device,
+            device=config.device,
         )
 
         self.Nw = torch.tensor(
@@ -74,14 +74,13 @@ class SurfaceGenerator(Generator):
                 endpoint=True,
             ),
             dtype=torch.float,
-            device=device,
+            device=config.device,
         )
 
         self.phi_mesh, self.Nw_mesh = torch.meshgrid(self.phi, self.Nw, indexing="xy")
         self.phi_mesh = torch.tile(self.phi_mesh, (config.batch_size, 1, 1))
         self.Nw_mesh = torch.tile(self.Nw_mesh, (config.batch_size, 1, 1))
         self.config = config
-        self.device = device
 
         self.bg_distribution = data.param_dist(config.bg_range)
         self.bth_distribution = data.param_dist(config.bth_range)
@@ -121,13 +120,13 @@ class SurfaceGenerator(Generator):
         # more readable this way, but it is less memory-efficient.
         shape = torch.Size((1, *(self.phi_mesh.size()[1:])))
         Bg = torch.tile(Bg.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.device
+            self.config.device
         )
         Bth = torch.tile(Bth.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.device
+            self.config.device
         )
         Pe = torch.tile(Pe.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.device
+            self.config.device
         )
 
         # Number of repeat units per correlation blob
@@ -162,13 +161,13 @@ class SurfaceGenerator(Generator):
         surfaces = data.preprocess_visc(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (normalized_Bg, normalized_Bth, normalized_Pe), dim=1
-        ).to(self.device)
+        ).to(self.config.device)
 
         return surfaces, features
 
 
 class VoxelImageGenerator(Generator):
-    def __init__(self, device: torch.device, config: NNConfig) -> None:
+    def __init__(self, config: NNConfig) -> None:
         """Returns a callable object that can be used in a `for` loop to efficiently
         generate 3D images of polymer solution specific viscosity data as a function of
         concentration and weight-average degree of polymerization as defined by three
@@ -206,19 +205,15 @@ class VoxelImageGenerator(Generator):
                     endpoint=True,
                 ),
                 dtype=torch.float,
-                device=device,
+                device=config.device,
             ),
             config.eta_sp_range,
         )
 
-        self._surface_generator = SurfaceGenerator(device, config)
-        self.device = device
         self.config = config
 
     def __iter__(self) -> Self:
-        self._surface_generator = iter(
-            SurfaceGenerator(self.device, self.config)(self.num_batches)
-        )
+        self._surface_generator = iter(SurfaceGenerator(self.config)(self.num_batches))
 
         return self
 
@@ -244,7 +239,7 @@ class VoxelImageGenerator(Generator):
         image = torch.logical_and(
             surfaces[:, :-1, :-1, :-1] < self.eta_sp[1:],
             surfaces[:, 1:, 1:, 1:] > self.eta_sp[:-1],
-        ).to(dtype=torch.float, device=self.device)
+        ).to(dtype=torch.float, device=self.config.device)
 
         return image, features
 

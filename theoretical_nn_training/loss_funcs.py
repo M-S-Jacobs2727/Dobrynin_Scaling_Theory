@@ -35,10 +35,14 @@ def _custom_MSE_loss(
     Bg, Bth, _ = data.unnormalize_params(
         y_true[:, 0], y_true[:, 1], y_true[:, 2], bg_range, bth_range, pe_range
     )
-    mask = Bg < Bth**0.824
+    athermal = Bg < Bth**0.824
 
     return torch.tensor(
-        [torch.mean(loss[:, 0]), torch.mean(loss[mask][:, 1]), torch.mean(loss[:, 2])],
+        [
+            torch.mean(loss[:, 0]),
+            torch.mean(loss[~athermal][:, 1]),
+            torch.mean(loss[:, 2]),
+        ],
         requires_grad=True,
         device=y_true.device,
     )
@@ -62,10 +66,10 @@ def _custom_MSE_loss_no_Pe(
         bth_range,
         data.Range(0, 1),
     )
-    mask = Bg < Bth**0.824
+    athermal = Bg < Bth**0.824
 
     return torch.tensor(
-        [torch.mean(loss[:, 0]), torch.mean(loss[~mask][:, 1])],
+        [torch.mean(loss[:, 0]), torch.mean(loss[~athermal][:, 1])],
         requires_grad=True,
         device=y_true.device,
     )
@@ -92,10 +96,10 @@ class CustomMSELoss(torch.nn.Module):
                 the $B_{th}$ parameter from the normalized values.
             `pe_range` (`data_processing.Range`, optional) : Used to compute the true
                 values of the packing number $P_e$ from the normalized values.
-            `mode` (`str`) : Either 'mean' or 'none'. If 'mean', the loss values of the
-                parameters are averaged, and a singlton Tensor is returned. If 'none',
-                the loss values of each parameter are returned in a length 3 Tensor if
-                `pe_range` is given or a length 2 Tensor otherwise.
+            `mode` (`str`, default 'mean') : Either 'mean' or 'none'. If 'mean', the
+                loss values of the parameters are averaged, and a singlton Tensor is
+                returned. If 'none', the loss values of each parameter are returned in a
+                length 3 Tensor if `pe_range` is given or a length 2 Tensor otherwise.
         """
         if mode not in ["none", "mean"]:
             raise SyntaxError(

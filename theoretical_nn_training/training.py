@@ -8,7 +8,6 @@ from theoretical_nn_training.configuration import NNConfig
 
 
 def train(
-    device: torch.device,
     model: torch.nn.Module,
     generator: generators.Generator,
     optimizer: torch.optim.Optimizer,
@@ -39,7 +38,7 @@ def train(
     model.train()
 
     num_batches = config.train_size // config.batch_size
-    avg_loss = torch.zeros(config.layer_sizes[-1], device=device)
+    avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
     logger.debug(
         f"Beginning training on {num_batches} batches with batch size"
         f" {config.batch_size} for a total of {config.train_size} samples."
@@ -60,7 +59,6 @@ def train(
 
 
 def test(
-    device: torch.device,
     model: torch.nn.Module,
     generator: generators.Generator,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
@@ -88,7 +86,7 @@ def test(
     model.eval()
 
     num_batches = config.test_size // config.batch_size
-    avg_loss = torch.zeros(config.layer_sizes[-1], device=device)
+    avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
     logger.debug(
         f"Beginning testing on {num_batches} batches with batch size"
         f" {config.batch_size} for a total of {config.test_size} samples."

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
+import torch
 import yaml
 
 from theoretical_nn_training.data_processing import Range, Resolution
@@ -11,6 +12,8 @@ from theoretical_nn_training.data_processing import Range, Resolution
 
 @dataclass
 class NNConfig:
+    device: torch.device
+    output_directory: Path
     learning_rate: float
     phi_range: Range
     nw_range: Range
@@ -33,6 +36,11 @@ class NNConfig:
         are read from the configuration file with the same hierarchical structure.
 
         Attributes:
+
+        `device` (`torch.device`) : The compute device on which all calculations take
+            place. If not specified, the CPU is used.
+        `output_directory` (`pathlib.Path`) : The directory in which all output will be
+            stored. If not specified, the current working directory is used.
 
         `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
 
@@ -75,7 +83,7 @@ class NNConfig:
             `pool_sizes` (`tuple` of `int`s, optional) : The size of the square pooling
                 kernels used in each max-pooling layer.
         """
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("__main__")
 
         # Load configuration file and assign to config_dictionary
         if isinstance(config_filename, str):
@@ -88,6 +96,29 @@ class NNConfig:
                 config_dict = dict(json.load(f))
             else:
                 raise SyntaxError(f"Invalid file extension: {extension}")
+
+        # PyTorch device
+        if "device" not in config_dict.keys() or config_dict["device"] == "cpu":
+            self.device = torch.device("cpu")
+        elif config_dict["device"] == "cuda" and not torch.cuda.is_available():
+            logging.warn("Warning: No CUDA-enabled devices found. Falling back to CPU.")
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device(config_dict["device"])
+        logging.debug(f"Set device to {self.device.type}")
+
+        # Output directory
+        if "output_directory" in config_dict.keys():
+            self.output_directory = Path(config_dict["output_directory"])
+            if not self.output_directory.is_dir():
+                print(
+                    f"Warning: Output directory {self.output_directory.absolute()} not"
+                    "  found. Creating it now."
+                )
+                self.output_directory.mkdir(parents=True)
+        else:
+            self.output_directory = Path(".")
+        logging.debug(f"Set output directory to {self.output_directory.absolute()}")
 
         # Optimizer learning rate
         self.learning_rate: float = config_dict["learning_rate"]

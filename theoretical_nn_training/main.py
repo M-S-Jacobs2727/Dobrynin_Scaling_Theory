@@ -1,6 +1,5 @@
+import argparse
 import logging
-import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
@@ -16,12 +15,10 @@ from theoretical_nn_training.configuration import NNConfig
 
 def run(
     config: NNConfig,
-    device: torch.device,
     model: torch.nn.Module,
     generator: generators.Generator,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     optimizer: torch.optim.Optimizer,
-    output_directory: Path,
 ) -> None:
     """Run a single configuration of settings for the neural network.
 
@@ -59,7 +56,6 @@ def run(
         # losses will be the individual loss of each feature, as a 1D tensor with
         # length config.layer_sizes[-1]
         losses = training.train(
-            device=device,
             model=model,
             generator=generator,
             optimizer=optimizer,
@@ -76,7 +72,6 @@ def run(
 
         # Testing
         losses = training.test(
-            device=device,
             model=model,
             generator=generator,
             loss_fn=loss_fn,
@@ -92,7 +87,7 @@ def run(
 
     # Save loss values
     np.savetxt(
-        output_directory / "loss_values.csv",
+        config.output_directory / "loss_values.csv",
         np.concatenate((train_errors, test_errors), axis=1),
         fmt="%.6f",
         delimiter=",",
@@ -103,58 +98,48 @@ def run(
     # (test manually only if good results)
     torch.save(
         (model.state_dict(), optimizer.state_dict()),
-        output_directory / "model_and_optimizer",
+        config.output_directory / "model_and_optimizer",
     )
 
 
 def main() -> None:
 
-    # TODO: add argparse functionality, with -v option for verbose output, -l for
-    # logging options, etc.
+    # Parse arguments for logfile and verbosity (logging.debug vs. logging.info)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_filename", type=str)
+    parser.add_argument(
+        "-l", "--logfile", type=str, help="If unspecified, will log to console"
+    )
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args()
 
     # Get configuration file from command line
-    if len(sys.argv) != 3:
-        raise SyntaxError("Usage: `main.py <config_filename> <output_filename>`")
-    config_filename = Path(sys.argv[1])
-    output_directory = Path(sys.argv[2])
+    config_filename = Path(args.config_filename)
 
     if not config_filename.is_file():
         raise FileNotFoundError(
             f"Configuration file not found: `{config_filename.absolute()}`."
         )
 
-    if not output_directory.is_dir():
-        print(
-            f"Warning: Output directory {output_directory.absolute()} not found."
-            " Creating it now."
-        )
-        output_directory.mkdir(parents=True)
-
     # Initialize logger
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
-    current_datetime = datetime.now()
-    file_handler = logging.FileHandler(
-        output_directory / f"{current_datetime:%Y%m%d-%H%M}.log"
-    )
-    cli_handler = logging.StreamHandler()
+    if args.logfile:
+        handler = logging.FileHandler(args.logfile)
+    else:
+        handler = logging.StreamHandler()
 
     log_formatter = logging.Formatter(
         fmt="%(asctime)s: %(message)s", datefmt="%H:%M:%S"
     )
 
-    file_handler.setFormatter(log_formatter)
-    cli_handler.setFormatter(log_formatter)
-    logger.addHandler(file_handler)
-    logger.addHandler(cli_handler)
+    handler.setFormatter(log_formatter)
+    logger.addHandler(handler)
 
     logger.info("Initializing...")
     config = NNConfig(config_filename)
     logger.debug(f"Read config from {config_filename.absolute()}")
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.debug(f"Set device to {device}")
 
     logger.debug("Selecting model...")
     if (
@@ -171,7 +156,7 @@ def main() -> None:
             layer_sizes=config.layer_sizes,
         )
         logger.debug("\tInitialized ConvNeuralNet3D")
-        generator = generators.VoxelImageGenerator(device=device, config=config)
+        generator = generators.VoxelImageGenerator(config=config)
     elif config.channels and config.kernel_sizes and config.pool_sizes:
         model = models.ConvNeuralNet2D(
             resolution=config.resolution,
@@ -181,16 +166,16 @@ def main() -> None:
             layer_sizes=config.layer_sizes,
         )
         logger.debug("\tInitialized ConvNeuralNet2D")
-        generator = generators.SurfaceGenerator(device=device, config=config)
+        generator = generators.SurfaceGenerator(config=config)
     else:
         model = models.LinearNeuralNet(
             resolution=config.resolution, layer_sizes=config.layer_sizes
         )
         logger.debug("\tInitialized LinearNeuralNet")
         generator = (
-            generators.VoxelImageGenerator(device=device, config=config)
+            generators.VoxelImageGenerator(config=config)
             if config.resolution.eta_sp
-            else generators.SurfaceGenerator(device=device, config=config)
+            else generators.SurfaceGenerator(config=config)
         )
 
     if config.layer_sizes[-1] == 3:
@@ -206,19 +191,17 @@ def main() -> None:
             "Configuration parameter layer_sizes must end in either 2 or 3, not"
             f" {config.layer_sizes[-1]}."
         )
+    logger.debug(f"Initialized loss function for {config.layer_sizes[-1]} features.")
 
-    logger.debug("Initialized loss functions")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    logger.debug("Initialized optimizer")
+    logger.debug(f"Initialized optimizer with learning rate {config.learning_rate}.")
 
     run(
         config=config,
-        device=device,
-        model=model.to(device),
+        model=model.to(config.device),
         generator=generator,
         loss_fn=loss_fn,
         optimizer=optimizer,
-        output_directory=output_directory,
     )
 
 
