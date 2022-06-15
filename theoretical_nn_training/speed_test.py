@@ -1,13 +1,11 @@
 import time
 
-import torch
-
 import theoretical_nn_training.data_processing as data
 import theoretical_nn_training.generators as generators
+from theoretical_nn_training.configuration import NNConfig
 
 
 def main() -> None:
-    device = torch.device("cuda")
 
     # TODO: the same for the voxel_image_generator
     print("Begin\n")
@@ -16,7 +14,7 @@ def main() -> None:
     batches = [8 * 2**i for i in range(10)]
     resolutions = [16, 32, 64, 128]
     batch_time = [[1.0 for _ in batches] for _ in resolutions]
-    config = data.NNConfig("theoretical_nn_training/configurations/sample_config.yaml")
+    config = NNConfig("theoretical_nn_training/configurations/sample_config.yaml")
 
     start = time.perf_counter()
     for i, res in enumerate(resolutions):
@@ -27,7 +25,9 @@ def main() -> None:
             print(f"{batch_size = }")
             num_batches = num_samples // batch_size
             start_batch = time.perf_counter()
-            for surf in generators.voxel_image_generator(num_batches, device, config):
+            for surf in generators.voxel_image_generator(
+                num_batches, config.device, config
+            ):
                 X, y = surf
             elapsed = time.perf_counter() - start_batch
             batch_time[i][j] = elapsed

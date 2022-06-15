@@ -38,7 +38,6 @@ class LinearNeuralNet(torch.nn.Module):
         super().__init__()
 
         logger = logging.getLogger("__main__")
-        print(logger)
 
         if resolution.eta_sp:
             logger.debug("Model using 3D representation of data.")
@@ -173,7 +172,6 @@ class ConvNeuralNet3D(torch.nn.Module):
         super().__init__()
 
         logger = logging.getLogger("__main__")
-        print(logger)
 
         if not (len(channels) == len(kernel_sizes) == len(pool_sizes)):
             raise ValueError(

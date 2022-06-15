@@ -127,7 +127,6 @@ def plot(pred: np.ndarray, true: np.ndarray, title: str, color: str):
 
 def main() -> None:
     # Set device, config, model, loss function, and generator
-    device = torch.device("cuda:0")
 
     config = NNConfig(
         "theoretical_nn_training/configurations/sample_config_rcs_512.yaml"
@@ -139,19 +138,19 @@ def main() -> None:
     ):
         raise RuntimeError("Invalid configuration.")
 
-    model_state, _ = torch.load("../mike_outputs/test_out/model_and_optimizer")
+    model_state, _ = torch.load("../mike_outputs/complex_out/model_and_optimizer")
     model = models.ConvNeuralNet2D(
         channels=config.channels,
         kernel_sizes=config.kernel_sizes,
         pool_sizes=config.pool_sizes,
         layer_sizes=config.layer_sizes,
         resolution=config.resolution,
-    ).to(device)
+    ).to(config.device)
     model.load_state_dict(model_state)
 
     loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
 
-    generator = generators.SurfaceGenerator(device, config)
+    generator = generators.SurfaceGenerator(config)
 
     # Test and collect data
     all_true, all_pred, all_surfaces, losses = test_accuracy(

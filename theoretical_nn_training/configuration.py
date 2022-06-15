@@ -101,24 +101,24 @@ class NNConfig:
         if "device" not in config_dict.keys() or config_dict["device"] == "cpu":
             self.device = torch.device("cpu")
         elif config_dict["device"] == "cuda" and not torch.cuda.is_available():
-            logging.warn("Warning: No CUDA-enabled devices found. Falling back to CPU.")
+            logger.warn("Warning: No CUDA-enabled devices found. Falling back to CPU.")
             self.device = torch.device("cpu")
         else:
             self.device = torch.device(config_dict["device"])
-        logging.debug(f"Set device to {self.device.type}")
+        logger.debug(f"Set device to {self.device.type}")
 
         # Output directory
         if "output_directory" in config_dict.keys():
             self.output_directory = Path(config_dict["output_directory"])
             if not self.output_directory.is_dir():
-                print(
+                logger.warn(
                     f"Warning: Output directory {self.output_directory.absolute()} not"
                     "  found. Creating it now."
                 )
                 self.output_directory.mkdir(parents=True)
         else:
             self.output_directory = Path(".")
-        logging.debug(f"Set output directory to {self.output_directory.absolute()}")
+        logger.debug(f"Set output directory to {self.output_directory.absolute()}")
 
         # Optimizer learning rate
         self.learning_rate: float = config_dict["learning_rate"]
