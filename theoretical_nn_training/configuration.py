@@ -15,6 +15,7 @@ class NNConfig:
     device: torch.device
     output_directory: Path
     learning_rate: float
+    resolution: Resolution
     phi_range: Range
     nw_range: Range
     eta_sp_range: Range
@@ -30,7 +31,7 @@ class NNConfig:
     kernel_sizes: Optional[Tuple[int, ...]] = None
     pool_sizes: Optional[Tuple[int, ...]] = None
 
-    def __init__(self, config_filename: Union[Path, str]):
+    def __init__(self, config_filename: Union[Path, str]) -> None:
         """Configuration dataclass. Reads a YAML or JSON configuration file and sets
         corresponding attributes for the returned object. The attributes listed below
         are read from the configuration file with the same hierarchical structure.

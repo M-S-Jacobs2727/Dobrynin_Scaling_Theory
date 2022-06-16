@@ -1,36 +1,48 @@
-from abc import ABC
-from typing import Tuple
+from typing import Protocol, Tuple
 
 import numpy as np
 import torch
 from typing_extensions import Self
 
 import theoretical_nn_training.data_processing as data
-from theoretical_nn_training.configuration import NNConfig
 
-# TODO: Add options for generators or new generators for non-Pe training
+# TODO: Add options for generators for slices of Nw
 
 
-class Generator(ABC):
+class Config(Protocol):
+    device: torch.device
+    resolution: data.Resolution
+    phi_range: data.Range
+    nw_range: data.Range
+    eta_sp_range: data.Range
+    bg_range: data.Range
+    bth_range: data.Range
+    pe_range: data.Range
+    batch_size: int
+
+
+class Generator(Protocol):
     """Abstract base class for two generators: the SurfaceGenerator, which yields 2D
     representations of surfaces, and the VoxelImageGenerator, which yields a 3D image of
     the surfaces produced by SurfaceGenerator. These generators are meant to be run on
     high-performance devices, such as a CUDA-enabled GPU.
     """
 
-    def __call__(self, num_batches: int):
-        self.num_batches = num_batches
-        return self
+    def __init__(self, config: Config) -> None:
+        ...
 
-    def __iter__(self):
-        return self
+    def __call__(self, num_batches: int) -> Self:
+        ...
+
+    def __iter__(self) -> Self:
+        ...
 
     def __next__(self) -> Tuple[torch.Tensor, torch.Tensor]:
         ...
 
 
-class SurfaceGenerator(Generator):
-    def __init__(self, config: NNConfig) -> None:
+class SurfaceGenerator:
+    def __init__(self, config: Config) -> None:
         """Returns a callable object that can be used in a `for` loop to efficiently
         generate polymer solution specific viscosity data as a function of concentration
         and weight-average degree of polymerization as defined by three parameters: the
@@ -81,9 +93,13 @@ class SurfaceGenerator(Generator):
         self.Nw_mesh = torch.tile(self.Nw_mesh, (config.batch_size, 1, 1))
         self.config = config
 
-        self.bg_distribution = data.param_dist(config.bg_range)
-        self.bth_distribution = data.param_dist(config.bth_range)
-        self.pe_distribution = data.param_dist(config.pe_range)
+        self.bg_distribution = data.feature_distribution(config.bg_range)
+        self.bth_distribution = data.feature_distribution(config.bth_range)
+        self.pe_distribution = data.feature_distribution(config.pe_range)
+
+    def __call__(self, num_batches: int) -> Self:
+        self.num_batches = num_batches
+        return self
 
     def __iter__(self) -> Self:
         self._index = 0
@@ -104,7 +120,7 @@ class SurfaceGenerator(Generator):
             torch.Size((self.config.batch_size,))
         )
 
-        Bg, Bth, Pe = data.unnormalize_params(
+        Bg, Bth, Pe = data.unnormalize_features(
             normalized_Bg,
             normalized_Bth,
             normalized_Pe,
@@ -157,7 +173,7 @@ class SurfaceGenerator(Generator):
             * torch.fmin(1 / g, self.phi_mesh / Bth**2)
         )
 
-        surfaces = data.preprocess_visc(eta_sp, self.config.eta_sp_range)
+        surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (normalized_Bg, normalized_Bth, normalized_Pe), dim=1
         ).to(self.config.device)
@@ -165,8 +181,8 @@ class SurfaceGenerator(Generator):
         return surfaces, features
 
 
-class VoxelImageGenerator(Generator):
-    def __init__(self, config: NNConfig) -> None:
+class VoxelImageGenerator:
+    def __init__(self, config: Config) -> None:
         """Returns a callable object that can be used in a `for` loop to efficiently
         generate 3D images of polymer solution specific viscosity data as a function of
         concentration and weight-average degree of polymerization as defined by three
@@ -194,7 +210,7 @@ class VoxelImageGenerator(Generator):
             config.resolution.eta_sp,
         )
 
-        self.eta_sp = data.preprocess_visc(
+        self.eta_sp = data.preprocess_eta_sp(
             torch.tensor(
                 np.geomspace(
                     config.eta_sp_range.min,
@@ -209,6 +225,10 @@ class VoxelImageGenerator(Generator):
         )
 
         self.config = config
+
+    def __call__(self, num_batches: int) -> Self:
+        self.num_batches = num_batches
+        return self
 
     def __iter__(self) -> Self:
         self._surface_generator = iter(SurfaceGenerator(self.config)(self.num_batches))

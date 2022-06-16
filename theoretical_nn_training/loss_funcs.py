@@ -32,7 +32,7 @@ def _custom_MSE_loss(
     loss = (y_true - y_pred) ** 2
 
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
-    Bg, Bth, _ = data.unnormalize_params(
+    Bg, Bth, _ = data.unnormalize_features(
         y_true[:, 0], y_true[:, 1], y_true[:, 2], bg_range, bth_range, pe_range
     )
     athermal = Bg < Bth**0.824
@@ -58,7 +58,7 @@ def _custom_MSE_loss_no_Pe(
     loss = (y_true[:, :2] - y_pred) ** 2
 
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
-    Bg, Bth, _ = data.unnormalize_params(
+    Bg, Bth, _ = data.unnormalize_features(
         y_true[:, 0],
         y_true[:, 1],
         torch.tensor([0]),

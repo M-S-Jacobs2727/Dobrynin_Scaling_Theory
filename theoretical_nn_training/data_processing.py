@@ -24,7 +24,7 @@ class Resolution:
 @dataclass
 class Range:
     """Defines the minimum and maximum values of a distribution of allowed values for
-    parameters. Optionally also allows for the specification of mu and sigma for a
+    features. Optionally also allows for the specification of mu and sigma for a
     Normal or LogNormal distribution, and alpha and beta for a Beta distribution. If
     none of these are specified, then a Uniform distribution is assumed.
     """
@@ -37,17 +37,17 @@ class Range:
     beta: Optional[float] = None
 
 
-def param_dist(param: Range) -> torch.distributions.Distribution:
-    """Returns a generator that produces a distribution of values for the parameters
-    Bg, Bth, and Pe. These can be the Beta distribution (if param.alpha and param.beta
-    are defined), the LogNormal distribution (if param.mu and param.sigma are defined)
-    or the Uniform distribution otherwise.
+def feature_distribution(feature_range: Range) -> torch.distributions.Distribution:
+    """Returns a generator that produces a distribution of values for the features
+    Bg, Bth, and Pe. These can be the Beta distribution (if feature_range.alpha and
+    feature_range.beta are defined), the LogNormal distribution (if feature_range.mu
+    and feature_range.sigma are defined) or the Uniform distribution otherwise.
     """
-    if param.alpha and param.beta:
-        return torch.distributions.Beta(param.alpha, param.beta)
-    if param.mu and param.sigma:
-        return torch.distributions.LogNormal(param.mu, param.sigma)
-    return torch.distributions.Uniform(param.min, param.max)
+    if feature_range.alpha and feature_range.beta:
+        return torch.distributions.Beta(feature_range.alpha, feature_range.beta)
+    if feature_range.mu and feature_range.sigma:
+        return torch.distributions.LogNormal(feature_range.mu, feature_range.sigma)
+    return torch.distributions.Uniform(feature_range.min, feature_range.max)
 
 
 def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
@@ -59,7 +59,7 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
     return Bth
 
 
-def normalize_params(
+def normalize_features(
     Bg: torch.Tensor,
     Bth: torch.Tensor,
     Pe: torch.Tensor,
@@ -74,7 +74,7 @@ def normalize_params(
     return Bg, Bth, Pe
 
 
-def unnormalize_params(
+def unnormalize_features(
     Bg: torch.Tensor,
     Bth: torch.Tensor,
     Pe: torch.Tensor,
@@ -89,7 +89,7 @@ def unnormalize_params(
     return Bg, Bth, Pe
 
 
-def unnormalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def unnormalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Inverts a simple linear normalization of the specific viscosity."""
     return (
         torch.exp(eta_sp * np.log(eta_sp_range.max / eta_sp_range.min))
@@ -97,7 +97,7 @@ def unnormalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     )
 
 
-def normalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def normalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Performs a simple linear normalization of the natural log of the specific
     viscosity.
     """
@@ -106,7 +106,7 @@ def normalize_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     )
 
 
-def preprocess_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def preprocess_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Add noise, cap the values, take the log, then normalize."""
     eta_sp += (
         eta_sp * 0.05 * torch.normal(torch.zeros_like(eta_sp), torch.ones_like(eta_sp))
@@ -114,4 +114,4 @@ def preprocess_visc(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     eta_sp = torch.fmin(eta_sp, torch.tensor(eta_sp_range.max))
     eta_sp = torch.fmax(eta_sp, torch.tensor(eta_sp_range.min))
     # eta_sp[eta_sp == eta_sp_range.max] = eta_sp_range.min
-    return normalize_visc(eta_sp, eta_sp_range)
+    return normalize_eta_sp(eta_sp, eta_sp_range)

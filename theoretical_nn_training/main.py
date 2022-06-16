@@ -136,6 +136,7 @@ def main() -> None:
     config = NNConfig(config_filename)
     logger.debug(f"Read config from {config_filename.absolute()}")
 
+    # Model and generator
     logger.debug("Selecting model...")
     if (
         config.channels
@@ -150,8 +151,8 @@ def main() -> None:
             pool_sizes=config.pool_sizes,
             layer_sizes=config.layer_sizes,
         )
-        logger.debug("\tInitialized ConvNeuralNet3D")
         generator = generators.VoxelImageGenerator(config=config)
+        logger.debug("\tInitialized ConvNeuralNet3D with VoxelImageGenerator")
     elif config.channels and config.kernel_sizes and config.pool_sizes:
         model = models.ConvNeuralNet2D(
             resolution=config.resolution,
@@ -160,19 +161,20 @@ def main() -> None:
             pool_sizes=config.pool_sizes,
             layer_sizes=config.layer_sizes,
         )
-        logger.debug("\tInitialized ConvNeuralNet2D")
         generator = generators.SurfaceGenerator(config=config)
+        logger.debug("\tInitialized ConvNeuralNet2D with SurfaceGenerator")
     else:
         model = models.LinearNeuralNet(
             resolution=config.resolution, layer_sizes=config.layer_sizes
         )
-        logger.debug("\tInitialized LinearNeuralNet")
-        generator = (
-            generators.VoxelImageGenerator(config=config)
-            if config.resolution.eta_sp
-            else generators.SurfaceGenerator(config=config)
-        )
+        if config.resolution.eta_sp:
+            generator = generators.VoxelImageGenerator(config=config)
+            logger.debug("\tInitialized LinearNeuralNet with VoxelImageGenerator.")
+        else:
+            generator = generators.SurfaceGenerator(config=config)
+            logger.debug("\tInitialized LinearNeuralNet with SurfaceGenerator.")
 
+    # Loss function
     if config.layer_sizes[-1] == 3:
         loss_fn = loss_funcs.CustomMSELoss(
             config.bg_range, config.bth_range, config.pe_range, mode="none"
@@ -188,9 +190,11 @@ def main() -> None:
         )
     logger.debug(f"Initialized loss function for {config.layer_sizes[-1]} features.")
 
+    # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug(f"Initialized optimizer with learning rate {config.learning_rate}.")
 
+    # Run
     run(
         config=config,
         model=model.to(config.device),
