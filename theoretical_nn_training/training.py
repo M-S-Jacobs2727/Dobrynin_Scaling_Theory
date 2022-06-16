@@ -36,27 +36,28 @@ def train(
 
     logger = logging.getLogger("__main__")
 
-    model.train()
-
     num_batches = config.train_size // config.batch_size
     avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
     logger.debug(
         f"Beginning training on {num_batches} batches with batch size"
         f" {config.batch_size} for a total of {config.train_size} samples."
     )
-    for X, y in generator(num_batches):
-        pred = model(X)
-        loss = loss_fn(pred, y)
 
-        loss.mean().backward()
-        optimizer.step()
+    model.train()
+    for surfaces, features in generator(num_batches):
         optimizer.zero_grad()
+
+        predicted_features = model(surfaces)
+        loss = loss_fn(predicted_features, features)
+
+        loss.sum().backward()
+        optimizer.step()
 
         avg_loss += loss
 
     avg_loss /= num_batches
 
-    return avg_loss
+    return avg_loss.detach().cpu().numpy()
 
 
 def test(
@@ -92,12 +93,12 @@ def test(
         f" {config.batch_size} for a total of {config.test_size} samples."
     )
     with torch.no_grad():
-        for X, y in generator(num_batches):
-            pred = model(X)
-            loss = loss_fn(pred, y)
+        for surfaces, features in generator(num_batches):
+            predicted_features = model(surfaces)
+            loss = loss_fn(predicted_features, features)
 
             avg_loss += loss
 
     avg_loss /= num_batches
 
-    return avg_loss
+    return avg_loss.cpu().numpy()

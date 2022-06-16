@@ -102,7 +102,8 @@ class NNConfig:
             elif extension == ".json":
                 config_dict = dict(json.load(f))
             else:
-                raise SyntaxError(f"Invalid file extension: {extension}")
+                logger.exception(f"Invalid file extension: {extension}")
+                raise
 
         # PyTorch device
         if "device" not in config_dict.keys() or config_dict["device"] == "cpu":
@@ -156,9 +157,6 @@ class NNConfig:
         self.pe_range = Range(
             config_dict["pe_range"]["min"], config_dict["pe_range"]["max"]
         )
-        logger.debug(
-            f"Loaded {self.bg_range = }, {self.bth_range = }, {self.pe_range = }."
-        )
 
         # Check for invalid combinations of alpha, beta, mu, and sigma
         for param_range, param_dictionary in zip(
@@ -171,10 +169,11 @@ class NNConfig:
         ):
             keys = param_dictionary.keys()
             if "alpha" in keys and "beta" in keys and "mu" in keys and "sigma" in keys:
-                raise SyntaxError(
+                logger.exception(
                     "Only one pair of (alpha, beta) or (mu, sigma) may be specified."
                     f" Instead, both are specified in {param_dictionary}"
                 )
+                raise
             if ("alpha" in keys) ^ ("beta" in keys):
                 logger.warn("Only one of alpha/beta is specified. Ignoring.")
             if ("mu" in keys) ^ ("sigma" in keys):
@@ -182,17 +181,17 @@ class NNConfig:
             if "alpha" in keys and "beta" in keys:
                 param_range.alpha = param_dictionary["alpha"]
                 param_range.beta = param_dictionary["beta"]
-                logger.debug(f"Loaded {param_range.alpha = }, {param_range.beta = }.")
             elif "mu" in keys and "sigma" in keys:
                 param_range.mu = param_dictionary["mu"]
                 param_range.sigma = param_dictionary["sigma"]
-                logger.debug(f"Loaded {param_range.mu = }, {param_range.sigma = }.")
             else:
                 param_range.alpha = None
                 param_range.beta = None
                 param_range.mu = None
                 param_range.sigma = None
-                logger.debug("Only min and max loaded.")
+        logger.debug(
+            f"Loaded {self.bg_range = }, {self.bth_range = }, {self.pe_range = }."
+        )
 
         # Model training parameters
         self.batch_size: int = config_dict["batch_size"]
@@ -225,12 +224,13 @@ class NNConfig:
             if not (
                 len(self.channels) == len(self.kernel_sizes) == len(self.pool_sizes)
             ):
-                raise ValueError(
+                logger.exception(
                     "Expected configuration parameters `channels`, `kernel_sizes`, and"
                     "`pool_sizes` to have equal length. Instead, the lengths are"
                     f" {len(self.channels)}, {len(self.kernel_sizes)}, and"
                     f" {len(self.pool_sizes)}, respectively."
                 )
+                raise
             logger.debug(
                 f"Loaded {self.channels = }, {self.kernel_sizes = }, and"
                 f" {self.pool_sizes = }."

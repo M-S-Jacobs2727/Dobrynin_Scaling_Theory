@@ -2,7 +2,8 @@
 and `CustomMSELoss` applies an MSE loss without punishing in the case of an athermal
 solvent ($B_{g} < B_{th}^{0.824}$).
 """
-from typing import Optional
+
+import logging
 
 import torch
 from torch.nn.functional import softplus
@@ -31,9 +32,19 @@ def _custom_MSE_loss(
     bg_range: data.Range,
     bth_range: data.Range,
     pe_range: data.Range,
+    logger: logging.Logger,
 ) -> torch.Tensor:
 
-    loss = (y_true - y_pred) ** 2
+    if y_pred.size(1) == 2:
+        loss = (y_true[:, :2] - y_pred) ** 2
+    elif y_pred.size(1) == 3:
+        loss = (y_true - y_pred) ** 2
+    else:
+        logger.exception(
+            f"Invalid number of features in loss function: {y_pred.size(1)}."
+            " Should be 2 or 3."
+        )
+        raise
 
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
     Bg, Bth, _ = data.unnormalize_features(
@@ -41,42 +52,12 @@ def _custom_MSE_loss(
     )
     athermal = Bg < Bth**0.824
 
-    return torch.tensor(
-        [
-            torch.mean(loss[:, 0]),
-            torch.mean(loss[~athermal][:, 1]),
-            torch.mean(loss[:, 2]),
-        ],
-        requires_grad=True,
-        device=y_true.device,
-    )
+    loss[:, 1][athermal] = 0
 
+    avg_loss = torch.mean(loss, dim=0)
+    avg_loss[1] *= y_pred.size(0) / torch.sum(~athermal)
 
-def _custom_MSE_loss_no_Pe(
-    y_pred: torch.Tensor,
-    y_true: torch.Tensor,
-    bg_range: data.Range,
-    bth_range: data.Range,
-) -> torch.Tensor:
-
-    loss = (y_true[:, :2] - y_pred) ** 2
-
-    # Test the athermal condition. The solvent is too good for thermal fluctuations.
-    Bg, Bth, _ = data.unnormalize_features(
-        y_true[:, 0],
-        y_true[:, 1],
-        torch.tensor([0]),
-        bg_range,
-        bth_range,
-        data.Range(0, 1),
-    )
-    athermal = Bg < Bth**0.824
-
-    return torch.tensor(
-        [torch.mean(loss[:, 0]), torch.mean(loss[~athermal][:, 1])],
-        requires_grad=True,
-        device=y_true.device,
-    )
+    return avg_loss
 
 
 class CustomMSELoss(torch.nn.Module):
@@ -91,49 +72,62 @@ class CustomMSELoss(torch.nn.Module):
             the $B_g$ parameter from the normalized values.
         `bth_range` (`data_processing.Range`) : Used to compute the true values of
             the $B_{th}$ parameter from the normalized values.
-        `pe_range` (`data_processing.Range`, optional) : Used to compute the true
-            values of the packing number $P_e$ from the normalized values.
-        `mode` (`str`, default 'mean') : Either 'mean' or 'none'. If 'mean', the
+        `pe_range` (`data_processing.Range`) : Used to compute the true values of
+            the packing number $P_e$ from the normalized values.
+        `mode` (`str`, default 'mean') : One of 'mean', 'sum', or 'none'. If 'mean', the
             loss values of the parameters are averaged, and a singlton Tensor is
-            returned. If 'none', the loss values of each parameter are returned in a
-            length 3 Tensor if `pe_range` is given or a length 2 Tensor otherwise.
+            returned. If 'sum', they are added together instead. If 'none', the loss
+            values of each parameter are returned in a 1D tensor the same length as
+            y_pred.
     """
 
     def __init__(
         self,
         bg_range: data.Range,
         bth_range: data.Range,
-        pe_range: Optional[data.Range] = None,
+        pe_range: data.Range,
         mode: str = "mean",
     ) -> None:
-        if mode not in ["none", "mean"]:
-            raise SyntaxError(
-                f"Expected a mode of either `none` or `mean`, not `{mode}`"
+        logger = logging.getLogger("__main__")
+        if mode not in ["none", "mean", "sum"]:
+            logger.exception(
+                f"Expected a mode of 'none', 'mean', or 'sum' not '{mode}'"
             )
-        super().__init__()
-        self.bg_range = bg_range
-        self.bth_range = bth_range
-        self.pe_range = pe_range
-        self._mode = mode
+            raise
 
-    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
-        if self._mode == "none" and self.pe_range:
-            return _custom_MSE_loss(
-                y_pred, y_true, self.bg_range, self.bth_range, self.pe_range
+        super().__init__()
+
+        if mode == "none":
+            self.func = lambda y_pred, y_true: _custom_MSE_loss(
+                y_pred,
+                y_true,
+                bg_range,
+                bth_range,
+                pe_range,
+                logger,
             )
-        elif self._mode == "mean" and self.pe_range:
-            return torch.mean(
+        elif mode == "sum":
+            self.func = lambda y_pred, y_true: torch.sum(
                 _custom_MSE_loss(
-                    y_pred, y_true, self.bg_range, self.bth_range, self.pe_range
+                    y_pred,
+                    y_true,
+                    bg_range,
+                    bth_range,
+                    pe_range,
+                    logger,
                 )
             )
-        elif self._mode == "none":
-            return _custom_MSE_loss_no_Pe(y_pred, y_true, self.bg_range, self.bth_range)
-        elif self._mode == "mean":
-            return torch.mean(
-                _custom_MSE_loss_no_Pe(y_pred, y_true, self.bg_range, self.bth_range)
+        elif mode == "mean":
+            self.func = lambda y_pred, y_true: torch.mean(
+                _custom_MSE_loss(
+                    y_pred,
+                    y_true,
+                    bg_range,
+                    bth_range,
+                    pe_range,
+                    logger,
+                )
             )
-        else:
-            raise SyntaxError(
-                f"Expected a mode of either `none` or `mean`, not `{self._mode}`"
-            )
+
+    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+        return self.func(y_pred, y_true)

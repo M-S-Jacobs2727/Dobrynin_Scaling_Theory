@@ -96,17 +96,19 @@ class ConvNeuralNet2D(torch.nn.Module):
         logger = logging.getLogger("__main__")
 
         if not (len(channels) == len(kernel_sizes) == len(pool_sizes)):
-            raise ValueError(
+            logger.exception(
                 "This model requires an equal number of convolutions and pools, but"
                 f" received {len(channels) = }, {len(kernel_sizes) = }, and"
                 f" {len(pool_sizes) = }."
             )
+            raise
 
         if resolution.eta_sp:
-            raise ValueError(
+            logger.exception(
                 "This model is for 2D images only, but received a 3D resolution:"
                 f"{resolution}."
             )
+            raise
 
         self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
 
@@ -178,17 +180,19 @@ class ConvNeuralNet3D(torch.nn.Module):
         logger = logging.getLogger("__main__")
 
         if not (len(channels) == len(kernel_sizes) == len(pool_sizes)):
-            raise ValueError(
+            logger.exception(
                 "This model requires an equal number of convolutions and pools, but"
                 f" received {len(channels) = }, {len(kernel_sizes) = }, and"
                 f" {len(pool_sizes) = }."
             )
+            raise
 
         if not resolution.eta_sp:
-            raise ValueError(
+            logger.exception(
                 "This model is for 3D images only, but received a 2D resolution:"
                 f"{resolution}."
             )
+            raise
 
         self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
 

@@ -60,33 +60,29 @@ def run(
         # Training
         # losses will be the individual loss of each feature, as a 1D tensor with
         # length config.layer_sizes[-1]
-        losses = training.train(
+        train_errors[epoch] = training.train(
             model=model,
             generator=generator,
             optimizer=optimizer,
             loss_fn=loss_fn,
             config=config,
         )
-        losses = losses.detach().cpu()
-        train_errors[epoch] = losses
 
         table_entry = f"{epoch:6d}"
-        for loss in losses:
+        for loss in train_errors[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
         # Testing
-        losses = training.test(
+        test_errors[epoch] = training.test(
             model=model,
             generator=generator,
             loss_fn=loss_fn,
             config=config,
         )
-        losses = losses.cpu()
-        test_errors[epoch] = losses
 
         table_entry = f"{epoch:6d}"
-        for loss in losses:
+        for loss in test_errors[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
@@ -185,20 +181,10 @@ def main() -> None:
             logger.debug("\tInitialized LinearNeuralNet with SurfaceGenerator.")
 
     # Loss function
-    if config.layer_sizes[-1] == 3:
-        loss_fn = loss_funcs.CustomMSELoss(
-            config.bg_range, config.bth_range, config.pe_range, mode="none"
-        )
-    elif config.layer_sizes[-1] == 2:
-        loss_fn = loss_funcs.CustomMSELoss(
-            config.bg_range, config.bth_range, mode="none"
-        )
-    else:
-        raise RuntimeError(
-            "Configuration parameter layer_sizes must end in either 2 or 3, not"
-            f" {config.layer_sizes[-1]}."
-        )
-    logger.debug(f"Initialized loss function for {config.layer_sizes[-1]} features.")
+    loss_fn = loss_funcs.CustomMSELoss(
+        config.bg_range, config.bth_range, config.pe_range, mode="none"
+    )
+    logger.debug("Initialized loss function.")
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
