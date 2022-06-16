@@ -1,3 +1,7 @@
+"""Two custom loss functions, `LogCoshLoss` is taken from a stackexchange post (cite)
+and `CustomMSELoss` applies an MSE loss without punishing in the case of an athermal
+solvent ($B_{g} < B_{th}^{0.824}$).
+"""
 from typing import Optional
 
 import torch
@@ -76,6 +80,25 @@ def _custom_MSE_loss_no_Pe(
 
 
 class CustomMSELoss(torch.nn.Module):
+    """A custom implementation of the mean squared error class that accounts
+    for the existence of athermal solutions (i.e., $B_g < B_{th}^{0.824}$), for
+    which the $B_{th}$ parameter is impossible to detect. When computing the loss,
+    for any athermal systems, we only compute the loss for the $B_g$ parameter and,
+    if applicable, the $P_e$ parameter.
+
+    Input:
+        `bg_range` (`data_processing.Range`) : Used to compute the true values of
+            the $B_g$ parameter from the normalized values.
+        `bth_range` (`data_processing.Range`) : Used to compute the true values of
+            the $B_{th}$ parameter from the normalized values.
+        `pe_range` (`data_processing.Range`, optional) : Used to compute the true
+            values of the packing number $P_e$ from the normalized values.
+        `mode` (`str`, default 'mean') : Either 'mean' or 'none'. If 'mean', the
+            loss values of the parameters are averaged, and a singlton Tensor is
+            returned. If 'none', the loss values of each parameter are returned in a
+            length 3 Tensor if `pe_range` is given or a length 2 Tensor otherwise.
+    """
+
     def __init__(
         self,
         bg_range: data.Range,
@@ -83,24 +106,6 @@ class CustomMSELoss(torch.nn.Module):
         pe_range: Optional[data.Range] = None,
         mode: str = "mean",
     ) -> None:
-        """A custom implementation of the mean squared error class that accounts
-        for the existence of athermal solutions (i.e., $B_g < B_{th}^{0.824}$), for
-        which the $B_{th}$ parameter is impossible to detect. When computing the loss,
-        for any athermal systems, we only compute the loss for the $B_g$ parameter and,
-        if applicable, the $P_e$ parameter.
-
-        Input:
-            `bg_range` (`data_processing.Range`) : Used to compute the true values of
-                the $B_g$ parameter from the normalized values.
-            `bth_range` (`data_processing.Range`) : Used to compute the true values of
-                the $B_{th}$ parameter from the normalized values.
-            `pe_range` (`data_processing.Range`, optional) : Used to compute the true
-                values of the packing number $P_e$ from the normalized values.
-            `mode` (`str`, default 'mean') : Either 'mean' or 'none'. If 'mean', the
-                loss values of the parameters are averaged, and a singlton Tensor is
-                returned. If 'none', the loss values of each parameter are returned in a
-                length 3 Tensor if `pe_range` is given or a length 2 Tensor otherwise.
-        """
         if mode not in ["none", "mean"]:
             raise SyntaxError(
                 f"Expected a mode of either `none` or `mean`, not `{mode}`"

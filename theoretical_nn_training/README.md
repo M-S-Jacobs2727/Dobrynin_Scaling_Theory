@@ -77,7 +77,8 @@ Two custom loss functions, `LogCoshLoss` is taken from a stackexchange post (cit
 ($B_{g} < B_{th}^{0.824}$).
 
 ## `training.py`
-Contains the training and testing functions.
+Contains the train and test functions used to iterate the NN model in the main
+module.
 
 ## `test_checkpoint_accuracy.py`
 

@@ -1,3 +1,4 @@
+"""Three flexible classes for neural networks."""
 import logging
 import math
 from typing import Tuple
@@ -23,18 +24,19 @@ def _get_final_resolution(
 
 
 class LinearNeuralNet(torch.nn.Module):
+    """The classic, fully connected neural network. Configure the hidden layer sizes
+    and input resolution. Returns a torch.nn.Module for training and optimizing.
+
+    Input:
+        `resolution` (`data_processing.Resolution`) : The 2D or 3D resolution of the
+            generated surfaces.
+        `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
+            the returned neural network model.
+    """
+
     def __init__(
         self, resolution: data.Resolution, layer_sizes: Tuple[int, ...]
     ) -> None:
-        """The classic, fully connected neural network. Configure the hidden layer sizes
-        and input resolution. Returns a torch.nn.Module for training and optimizing.
-
-        Input:
-            `resolution` (`data_processing.Resolution`) : The 2D or 3D resolution of the
-                generated surfaces.
-            `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
-                the returned neural network model.
-        """
         super().__init__()
 
         logger = logging.getLogger("__main__")
@@ -58,6 +60,28 @@ class LinearNeuralNet(torch.nn.Module):
 
 
 class ConvNeuralNet2D(torch.nn.Module):
+    """A convolutional neural network implementation for 2D images. The
+    convolutional layers are structured as (convolution, ReLU activation function,
+    max-pooling), the number and size of which are specified by `channels`,
+    `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
+    through linear layers as specified in `layer_sizes`.
+
+    Input:
+        `resolution` (`data_processing.Resolution`) : The 2D resolution of the
+            generated surfaces.
+        `channels` (`tuple` of `int`s) : Number of convolutions applied in each
+            convolutional layer.
+        `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
+            of convolutions.
+        `pool_sizes` (`tuple` of `int`s) : Size of the square kernal for each
+            max-pooling.
+        `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
+            the returned neural network model.
+
+    Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
+    equal length.
+    """
+
     def __init__(
         self,
         resolution: data.Resolution,
@@ -66,27 +90,6 @@ class ConvNeuralNet2D(torch.nn.Module):
         pool_sizes: Tuple[int, ...],
         layer_sizes: Tuple[int, ...],
     ) -> None:
-        """A convolutional neural network implementation for 2D images. The
-        convolutional layers are structured as (convolution, ReLU activation function,
-        max-pooling), the number and size of which are specified by `channels`,
-        `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
-        through linear layers as specified in `layer_sizes`.
-
-        Input:
-            `resolution` (`data_processing.Resolution`) : The 2D resolution of the
-                generated surfaces.
-            `channels` (`tuple` of `int`s) : Number of convolutions applied in each
-                convolutional layer.
-            `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
-                of convolutions.
-            `pool_sizes` (`tuple` of `int`s) : Size of the square kernal for each
-                max-pooling.
-            `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
-                the returned neural network model.
-
-        Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
-        equal length.
-        """
 
         super().__init__()
 
@@ -139,6 +142,28 @@ class ConvNeuralNet2D(torch.nn.Module):
 
 
 class ConvNeuralNet3D(torch.nn.Module):
+    """A convolutional neural network implementation for 3D images. The
+    convolutional layers are structured as (convolution, ReLU activation function,
+    max-pooling), the number and size of which are specified by `channels`,
+    `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
+    through linear layers as specified in `layer_sizes`.
+
+    Input:
+        `resolution` (`data_processing.Resolution`) : The 3D resolution of the
+            generated surfaces.
+        `channels` (`tuple` of `int`s) : Number of convolutions applied in each
+            convolutional layer.
+        `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
+            of convolutions.
+        `pool_sizes` (`tuple` of `int`s) : Size of the square kernal for each
+            max-pooling.
+        `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
+            the returned neural network model.
+
+    Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
+    equal length.
+    """
+
     def __init__(
         self,
         resolution: data.Resolution,
@@ -147,27 +172,6 @@ class ConvNeuralNet3D(torch.nn.Module):
         pool_sizes: Tuple[int, ...],
         layer_sizes: Tuple[int, ...],
     ) -> None:
-        """A convolutional neural network implementation for 3D images. The
-        convolutional layers are structured as (convolution, ReLU activation function,
-        max-pooling), the number and size of which are specified by `channels`,
-        `kernel_sizes`, and `pool_sizes`. The resulting data is then flattened and sent
-        through linear layers as specified in `layer_sizes`.
-
-        Input:
-            `resolution` (`data_processing.Resolution`) : The 3D resolution of the
-                generated surfaces.
-            `channels` (`tuple` of `int`s) : Number of convolutions applied in each
-                convolutional layer.
-            `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
-                of convolutions.
-            `pool_sizes` (`tuple` of `int`s) : Size of the square kernal for each
-                max-pooling.
-            `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
-                the returned neural network model.
-
-        Note: The tuples `channels`, `kernel_sizes`, and `pool_sizes` should all be of
-        equal length.
-        """
 
         super().__init__()
 

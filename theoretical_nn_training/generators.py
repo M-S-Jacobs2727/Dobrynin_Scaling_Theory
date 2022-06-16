@@ -1,3 +1,8 @@
+r"""This file contains two efficient generator clasees based on PyTorch to quickly
+generate $(\varphi, N_{w}, \eta_{sp})$ surfaces defined by the parameter set
+$\{B_{g}, B_{th}, P_{e}\}$. The parameter set is sampled from a choice of `Uniform`,
+`LogNormal`, or `Beta` distributions.
+"""
 from typing import Protocol, Tuple
 
 import numpy as np
@@ -42,26 +47,27 @@ class Generator(Protocol):
 
 
 class SurfaceGenerator:
+    """Returns a callable object that can be used in a `for` loop to efficiently
+    generate polymer solution specific viscosity data as a function of concentration
+    and weight-average degree of polymerization as defined by three parameters: the
+    blob parameters $B_g$ and $B_{th}$, and the entanglement packing number $P_e$.
+
+    Usage:
+    ```
+    config = data_processing.NNConfig('configurations/sample_config.yaml')
+    generator = SurfaceGenerator(config)
+    for surfaces, features in generator(num_batches):
+        ...
+    ```
+
+    Input:
+        `config` (`data_processing.NNConfig`) : The configuration object.
+            Specifically, the generator uses the attributes device, resolution,
+            phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
+            batch_size.
+    """
+
     def __init__(self, config: Config) -> None:
-        """Returns a callable object that can be used in a `for` loop to efficiently
-        generate polymer solution specific viscosity data as a function of concentration
-        and weight-average degree of polymerization as defined by three parameters: the
-        blob parameters $B_g$ and $B_{th}$, and the entanglement packing number $P_e$.
-
-        Usage:
-        ```
-        config = data_processing.NNConfig('configurations/sample_config.yaml')
-        generator = SurfaceGenerator(config)
-        for surfaces, features in generator(num_batches):
-            ...
-        ```
-
-        Input:
-            `config` (`data_processing.NNConfig`) : The configuration object.
-                Specifically, the generator uses the attributes device, resolution,
-                phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
-                batch_size.
-        """
 
         # Create tensors for phi (concentration) and Nw (chain length)
         # Both are meshed and tiled to cover a 3D tensor of size
@@ -182,27 +188,28 @@ class SurfaceGenerator:
 
 
 class VoxelImageGenerator:
+    """Returns a callable object that can be used in a `for` loop to efficiently
+    generate 3D images of polymer solution specific viscosity data as a function of
+    concentration and weight-average degree of polymerization as defined by three
+    parameters: the blob parameters $B_g$ and $B_{th}$, and the entanglement packing
+    number $P_e$. Internally, this iteratres over an instance of SurfaceGenerator.
+
+    Usage:
+    ```
+    config = data_processing.NNConfig('configurations/sample_config.yaml')
+    generator = VoxelImageGenerator(config)
+    for surfaces, features in generator(num_batches):
+        ...
+    ```
+
+    Input:
+        `config` (`data_processing.NNConfig`) : The configuration object.
+            Specifically, the generator uses the attributes device, resolution,
+            phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
+            batch_size.
+    """
+
     def __init__(self, config: Config) -> None:
-        """Returns a callable object that can be used in a `for` loop to efficiently
-        generate 3D images of polymer solution specific viscosity data as a function of
-        concentration and weight-average degree of polymerization as defined by three
-        parameters: the blob parameters $B_g$ and $B_{th}$, and the entanglement packing
-        number $P_e$. Internally, this iteratres over an instance of SurfaceGenerator.
-
-        Usage:
-        ```
-        config = data_processing.NNConfig('configurations/sample_config.yaml')
-        generator = VoxelImageGenerator(config)
-        for surfaces, features in generator(num_batches):
-            ...
-        ```
-
-        Input:
-            `config` (`data_processing.NNConfig`) : The configuration object.
-                Specifically, the generator uses the attributes device, resolution,
-                phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
-                batch_size.
-        """
         self.config = config
         self.config.resolution = data.Resolution(
             config.resolution.phi + 1,

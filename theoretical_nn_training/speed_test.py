@@ -1,3 +1,6 @@
+"""A simple script to test the speed of surface generation as a function of batch
+size and resolution.
+"""
 import time
 
 import theoretical_nn_training.data_processing as data

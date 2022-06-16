@@ -1,3 +1,6 @@
+"""Contains the train and test functions used to iterate the NN model in the main
+module.
+"""
 import logging
 from typing import Callable
 

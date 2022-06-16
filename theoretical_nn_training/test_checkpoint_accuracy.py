@@ -1,3 +1,7 @@
+"""This script takes a completed model and evaluates it using more theoretical data.
+In addition to the errors of the predicted Bg and Bth values, the Pe values are also
+predicted using the physical knowledge and a basic cubic fit (see the `fit_pe` func).
+"""
 from typing import Callable, Tuple
 
 import matplotlib.pyplot as plt

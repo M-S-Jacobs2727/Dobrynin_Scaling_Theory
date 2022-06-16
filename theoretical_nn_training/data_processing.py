@@ -1,3 +1,10 @@
+"""This is somewhat of a catch-all for classes and functions that are used throughout
+the codebase. `Resolution` is a dataclass for the resolution of the
+generated surfaces, either 2D or 3D; `Range` defines the minimum, maximum, and
+distributions for various parameters; and `normalize_params`, `unnormalize_params`,
+`preprocess_eta_sp`, etc. perform basic normalization operations on the data and
+features.
+"""
 from dataclasses import dataclass
 from typing import Optional, Tuple
 

@@ -1,3 +1,8 @@
+"""Sample configurations that define the model, training, and testing are defined in
+YAML or JSON files in the configurations directory. One of these is passed as the first
+command line argument into the main module. This module defines `NNConfig`, the
+configuration class, which is initialized from the given configuration file.
+"""
 import json
 import logging
 from dataclasses import dataclass
@@ -12,6 +17,59 @@ from theoretical_nn_training.data_processing import Range, Resolution
 
 @dataclass
 class NNConfig:
+    """Configuration dataclass. Reads a YAML or JSON configuration file and sets
+    corresponding attributes for the returned object. The attributes listed below
+    are read from the configuration file with the same hierarchical structure.
+
+    Attributes:
+
+    `device` (`torch.device`) : The compute device on which all calculations take
+        place. If not specified, the CPU is used.
+    `output_directory` (`pathlib.Path`) : The directory in which all output will be
+        stored. If not specified, the current working directory is used.
+
+    `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
+
+    `*_range` (`data_processing.Range`) : These objects define the minimum
+        (`.min`), maximum (`.max`), and distribution (`.alpha` and `.beta` for the
+        Beta distribution, `.mu` and `.sigma` for the LogNormal distribution) of
+        their respective parameters.
+    `phi_range` : The desired range of concentrations.
+    `nw_range` : The desired range of weight-average degrees of polymerization.
+    `eta_sp_range` : The desired range of specific viscosity.
+    `bg_range` : The desired range and distribution settings for the parameter
+        $B_g$.
+    `bth_range` : The desired range and distribution settings for the parameter
+        $B_{th}$.
+    `Pe_range` : The desired range and distribution settings for the packing
+        number $P_e$.
+
+    `batch_size` (`int`) : The number of samples given to the model per batch.
+    `train_size` (`int`) : The number of samples given to the model over one
+        training iteration.
+    `test_size` (`int`) : The number of samples given to the model over one
+        testing iteration.
+    `epochs` (`int`) : The number of training/testing iterations.
+
+    `layer_sizes` (`tuple` of `int`s) : The number of nodes per layer, including
+        the input layer and the final layer (number of features). If the model
+        is a convolutional neural network, the number of input nodes must be
+        equal to the flattened output of the convolutional layers.
+    `channels` (`tuple` of `int`s, optional) : The number of applied
+        convolutions in each convolutional layer (i.e., the number of resulting
+        channels after each set of convolutions).
+    `kernel_sizes` (`tuple` of `int`s, optional) : The size of the square
+        kernels used in each convolutional layer.
+    `pool_sizes` (`tuple` of `int`s, optional) : The size of the square pooling
+        kernels used in each max-pooling layer.
+
+    Note: If the model is a convolutional neural network, then each of `channels`,
+    `kernel_sizes`, and `pool_sizes` must be specified and have equal lengths.
+    The architecture of the convolutional layers is a sequence of (convolution,
+    ReLU activation layer, max-pool) sequences, the result of which is fed into
+    a linear neural network.
+    """
+
     device: torch.device
     output_directory: Path
     learning_rate: float
@@ -32,58 +90,6 @@ class NNConfig:
     pool_sizes: Optional[Tuple[int, ...]] = None
 
     def __init__(self, config_filename: Union[Path, str]) -> None:
-        """Configuration dataclass. Reads a YAML or JSON configuration file and sets
-        corresponding attributes for the returned object. The attributes listed below
-        are read from the configuration file with the same hierarchical structure.
-
-        Attributes:
-
-        `device` (`torch.device`) : The compute device on which all calculations take
-            place. If not specified, the CPU is used.
-        `output_directory` (`pathlib.Path`) : The directory in which all output will be
-            stored. If not specified, the current working directory is used.
-
-        `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
-
-        `xxx_range` (`data_processing.Range`) : These objects define the minimum
-            (`min`), maximum (`max`), and distribution (`alpha` and `beta` for the
-            Beta distribution, `mu` and `sigma` for the LogNormal distribution) of
-            their respective parameters.
-        `phi_range` : The desired range of concentrations.
-        `nw_range` : The desired range of weight-average degrees of polymerization.
-        `eta_sp_range` : The desired range of specific viscosity.
-        `bg_range` : The desired range and distribution settings for the parameter
-            $B_g$.
-        `bth_range` : The desired range and distribution settings for the parameter
-            $B_{th}$.
-        `Pe_range` : The desired range and distribution settings for the packing
-            number $P_e$.
-
-        `batch_size` (`int`) : The number of samples given to the model per batch.
-        `train_size` (`int`) : The number of samples given to the model over one
-            training iteration.
-        `test_size` (`int`) : The number of samples given to the model over one
-            testing iteration.
-        `epochs` (`int`) : The number of training/testing iterations.
-
-        `model` contains the details of the desired neural network architecture.
-        If the model is a convolutional neural network, then each of `channels`,
-        `kernel_sizes`, and `pool_sizes` must be specified and have equal lengths.
-        The architecture of the convolutional layers is a sequence of (convolution,
-        ReLU activation layer, max-pool) sequences, the result of which is fed into
-        a linear neural network.
-            `layer_sizes` (`tuple` of `int`s) : The number of nodes per layer, including
-                the input layer and the final layer (number of features). If the model
-                is a convolutional neural network, the number of input nodes must be
-                equal to the flattened output of the convolutional layers.
-            `channels` (`tuple` of `int`s, optional) : The number of applied
-                convolutions in each convolutional layer (i.e., the number of resulting
-                channels after each set of convolutions).
-            `kernel_sizes` (`tuple` of `int`s, optional) : The size of the square
-                kernels used in each convolutional layer.
-            `pool_sizes` (`tuple` of `int`s, optional) : The size of the square pooling
-                kernels used in each max-pooling layer.
-        """
         logger = logging.getLogger("__main__")
 
         # Load configuration file and assign to config_dictionary
@@ -202,23 +208,20 @@ class NNConfig:
         self.resolution = Resolution(*config_dict["resolution"])
         logger.debug(f"Loaded {self.resolution = }.")
 
-        # Model
-        model_dict = dict(config_dict["model"])
-
         # Number of nodes in each linear NN layer
-        self.layer_sizes = tuple(model_dict["layer_sizes"])
+        self.layer_sizes = tuple(config_dict["layer_sizes"])
         logger.debug(f"Loaded {self.layer_sizes = }.")
 
         # Define these three hyperparameters in the configuration file with equal
         # lengths to specify a convolutional neural network.
         if (
-            "channels" in model_dict.keys()
-            and "kernel_sizes" in model_dict.keys()
-            and "pool_sizes" in model_dict.keys()
+            "channels" in config_dict.keys()
+            and "kernel_sizes" in config_dict.keys()
+            and "pool_sizes" in config_dict.keys()
         ):
-            self.channels = tuple(model_dict["channels"])
-            self.kernel_sizes = tuple(model_dict["kernel_sizes"])
-            self.pool_sizes = tuple(model_dict["pool_sizes"])
+            self.channels = tuple(config_dict["channels"])
+            self.kernel_sizes = tuple(config_dict["kernel_sizes"])
+            self.pool_sizes = tuple(config_dict["pool_sizes"])
             if not (
                 len(self.channels) == len(self.kernel_sizes) == len(self.pool_sizes)
             ):
@@ -233,9 +236,9 @@ class NNConfig:
                 f" {self.pool_sizes = }."
             )
         elif (
-            "channels" in model_dict.keys()
-            or "kernel_sizes" in model_dict.keys()
-            or "pool_sizes" in model_dict.keys()
+            "channels" in config_dict.keys()
+            or "kernel_sizes" in config_dict.keys()
+            or "pool_sizes" in config_dict.keys()
         ):
             logger.warn(
                 "Not all of channels/kernel_sizes/pool_sizes are specified."

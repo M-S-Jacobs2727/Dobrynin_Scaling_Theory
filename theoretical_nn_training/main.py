@@ -1,3 +1,13 @@
+"""Run this from the command line as
+
+    python3 main.py <configuration_filename> [-l logfile] [-v] [-h]
+
+where `<configuration_filename>` is a path to a YAML or JSON configuration file (see
+examples in the configurations folder). This will create a model, train it on the
+generated data, and save the results (model, optimizer, and losses and errors over
+training iterations).
+"""
+
 import argparse
 import logging
 from pathlib import Path
