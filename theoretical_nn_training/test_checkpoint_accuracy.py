@@ -1,6 +1,8 @@
 """This script takes a completed model and evaluates it using more theoretical data.
 In addition to the errors of the predicted Bg and Bth values, the Pe values are also
 predicted using the physical knowledge and a basic cubic fit (see the `fit_pe` func).
+
+TODO: turn this into a notebook? (.ipynb)
 """
 from typing import Callable, Tuple
 
@@ -11,7 +13,6 @@ from scipy.optimize import curve_fit
 
 import theoretical_nn_training.data_processing as data
 import theoretical_nn_training.generators as generators
-import theoretical_nn_training.loss_funcs as loss_funcs
 import theoretical_nn_training.models as models
 from theoretical_nn_training.configuration import NNConfig
 
@@ -25,9 +26,9 @@ def unnormalize_params(
     pe_range: data.Range,
 ) -> Tuple[np.ndarray, ...]:
     """Inverts simple linear normalization."""
-    Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min + data.SHIFT
-    Bth = Bth * (bth_range.max - bth_range.min) + bth_range.min + data.SHIFT
-    Pe = Pe * (pe_range.max - pe_range.min) + pe_range.min + data.SHIFT
+    Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min
+    Bth = Bth * (bth_range.max - bth_range.min) + bth_range.min
+    Pe = Pe * (pe_range.max - pe_range.min) + pe_range.min
     return Bg, Bth, Pe
 
 
@@ -40,7 +41,7 @@ def test_accuracy(
 
     num_batches = config.test_size // config.batch_size
 
-    all_true = np.zeros((num_batches, config.batch_size, 3))
+    all_true = np.zeros((num_batches, config.batch_size, config.layer_sizes[-1]))
     all_pred = np.zeros((num_batches, config.batch_size, config.layer_sizes[-1]))
     all_surfaces = np.zeros(
         (num_batches, config.batch_size, config.resolution.phi, config.resolution.Nw)
@@ -58,10 +59,10 @@ def test_accuracy(
             all_pred[b] = pred.cpu()
             all_surfaces[b] = surfaces.cpu()
 
-            cum_losses += losses.cpu()
+            cum_losses += losses.mean(dim=0).cpu()
 
     return (
-        all_true.reshape(num_batches * config.batch_size, 3),
+        all_true.reshape(num_batches * config.batch_size, config.layer_sizes[-1]),
         all_pred.reshape(num_batches * config.batch_size, config.layer_sizes[-1]),
         all_surfaces.reshape(
             num_batches * config.batch_size,
@@ -109,24 +110,34 @@ def fit_pe(
     return pe_fit
 
 
-def plot(pred: np.ndarray, true: np.ndarray, title: str, color: str):
+def plot(
+    pred: np.ndarray, true: np.ndarray, title: str, color: str, athermal: np.ndarray
+):
 
     plt.figure(title)
+    plot_min = min(pred.min(), true.min())
+    plot_max = max(pred.max(), true.max())
+    plt.plot([plot_min, plot_max], [plot_min, plot_max], "k-", lw=3)
     plt.plot(
-        [min(pred.min(), true.min()), max(pred.max(), true.max())],
-        [min(pred.min(), true.min()), max(pred.max(), true.max())],
-        "k-",
-        lw=3,
+        true[athermal],
+        pred[athermal],
+        marker="o",
+        mec="xkcd:grey",
+        mfc="None",
+        mew=1,
+        ls="None",
     )
     plt.plot(
-        true,
-        pred,
+        true[~athermal],
+        pred[~athermal],
         marker="o",
         mec=color,
         mfc="None",
         mew=1,
         ls="None",
     )
+    plt.xlim([plot_min, plot_max])
+    plt.ylim([plot_min, plot_max])
 
 
 def main() -> None:
@@ -142,7 +153,7 @@ def main() -> None:
     ):
         raise RuntimeError("Invalid configuration.")
 
-    model_state, _ = torch.load("../mike_outputs/complex_out/model_and_optimizer")
+    checkpoint = torch.load("../mike_outputs/complex_out/model_and_optimizer")
     model = models.ConvNeuralNet2D(
         channels=config.channels,
         kernel_sizes=config.kernel_sizes,
@@ -150,9 +161,9 @@ def main() -> None:
         layer_sizes=config.layer_sizes,
         resolution=config.resolution,
     ).to(config.device)
-    model.load_state_dict(model_state)
+    model.load_state_dict(checkpoint["model"])
 
-    loss_fn = loss_funcs.CustomMSELoss(config.bg_range, config.bth_range, mode="none")
+    loss_fn = torch.nn.MSELoss(reduction="none")
 
     generator = generators.SurfaceGenerator(config)
 
@@ -161,39 +172,51 @@ def main() -> None:
         model=model, loss_fn=loss_fn, config=config, generator=generator
     )
 
-    print(losses)
-
-    bg_true = all_true[:, :, 0]
-    bth_true = all_true[:, :, 1]
-    pe_true = all_true[:, :, 2]
-    bg_pred = all_pred[:, :, 0]
-    bth_pred = all_pred[:, :, 1]
+    print(f"{losses = }")
 
     bg_true, bth_true, pe_true = unnormalize_params(
-        bg_true, bth_true, pe_true, config.bg_range, config.bth_range, config.pe_range
-    )
-    bg_pred, bth_pred, pe_pred = unnormalize_params(
-        bg_pred,
-        bth_pred,
-        np.zeros(1),
+        all_true[:, 0],
+        all_true[:, 1],
+        all_true[:, 2],
         config.bg_range,
         config.bth_range,
         config.pe_range,
     )
 
-    # Fit Pe using least-squares fit to cubic equation
-    pe_pred = fit_pe(
-        bg_pred=bg_pred,
-        bth_pred=bth_pred,
-        phi_mesh=generator.phi_mesh.numpy(),
-        Nw_mesh=generator.Nw_mesh.numpy(),
-        all_surfaces=all_surfaces,
-    )
+    if all_pred.shape[2] == 3:
+        bg_pred, bth_pred, pe_pred = unnormalize_params(
+            all_pred[:, 0],
+            all_pred[:, 1],
+            all_pred[:, 2],
+            config.bg_range,
+            config.bth_range,
+            config.pe_range,
+        )
+    elif all_pred.shape[2] == 2:
+        bg_pred, bth_pred, _ = unnormalize_params(
+            all_pred[:, 0],
+            all_pred[:, 1],
+            np.zeros(1),
+            config.bg_range,
+            config.bth_range,
+            config.pe_range,
+        )
+        pe_pred = fit_pe(
+            bg_pred=bg_pred,
+            bth_pred=bth_pred,
+            phi_mesh=generator.phi_mesh.numpy(),
+            Nw_mesh=generator.Nw_mesh.numpy(),
+            all_surfaces=all_surfaces,
+        )
+    else:
+        raise
+
+    athermal = bg_true < bth_true**0.824
 
     # Show parity plots
-    plot(bg_pred, bg_true, "Bg", "r")
-    plot(bth_pred, bth_true, "Bth", "g")
-    plot(pe_pred, pe_true, "Pe", "b")
+    plot(bg_pred, bg_true, "Bg", "r", athermal)
+    plot(bth_pred, bth_true, "Bth", "g", athermal)
+    plot(pe_pred, pe_true, "Pe", "b", athermal)
     plt.show()
 
     # Save true and predicted values

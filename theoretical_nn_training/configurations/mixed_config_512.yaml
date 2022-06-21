@@ -1,5 +1,5 @@
-device: 'cuda'
-output_directory: '../mike_outputs/complex_out'
+device: 'cuda:0'
+output_directory: '../mike_outputs/mixed'
 mode: 'mixed' # Can be 'mixed', 'theta', or 'good'
 resolution: [512, 512]
 layer_sizes: [3200, 2000, 1000, 3]
@@ -30,8 +30,8 @@ pe_range:
     max: 18
     mu: -0.5
     sigma: 0.5
-batch_size: 80
-train_size: 80000
-test_size: 4000
-epochs: 100
+batch_size: 40
+train_size: 8000
+test_size: 400
+epochs: 20
 learning_rate: 0.001

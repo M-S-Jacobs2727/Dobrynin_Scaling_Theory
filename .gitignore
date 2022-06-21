@@ -8,3 +8,4 @@ theoretical_nn_training/__pycache__/mike_torch_lib.cpython-38.pyc
 theoretical_nn_training/__pycache__/models.cpython-38.pyc
 theoretical_nn_training/__pycache__/scaling_torch_lib.cpython-38.pyc
 theoretical_nn_training/__pycache__/training.cpython-38.pyc
+theoretical_nn_training/models/**

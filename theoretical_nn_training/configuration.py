@@ -12,10 +12,10 @@ from typing import Optional, Tuple, Union
 import torch
 import yaml
 
-from theoretical_nn_training.data_processing import Range, Resolution
+from theoretical_nn_training.data_processing import Mode, Range, Resolution
 
 
-@dataclass
+@dataclass()
 class NNConfig:
     """Configuration dataclass. Reads a YAML or JSON configuration file and sets
     corresponding attributes for the returned object. The attributes listed below
@@ -27,6 +27,9 @@ class NNConfig:
         place. If not specified, the CPU is used.
     `output_directory` (`pathlib.Path`) : The directory in which all output will be
         stored. If not specified, the current working directory is used.
+    `mode` (`data_processing.Mode`) : Selects the features that will be generated
+        and trained. Can be set as 'good' (only $B_g$ and $P_e$), 'theta' (only
+        $B_{th}$ and $P_e$), or 'mixed' (all three).
 
     `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
 
@@ -72,6 +75,7 @@ class NNConfig:
 
     device: torch.device
     output_directory: Path
+    mode: Mode
     learning_rate: float
     resolution: Resolution
     phi_range: Range
@@ -106,18 +110,18 @@ class NNConfig:
                 raise
 
         # PyTorch device
-        if "device" not in config_dict.keys() or config_dict["device"] == "cpu":
+        if config_dict.get("device") is None or config_dict.get("device") == "cpu":
             self.device = torch.device("cpu")
         elif config_dict["device"] == "cuda" and not torch.cuda.is_available():
             logger.warn("Warning: No CUDA-enabled devices found. Falling back to CPU.")
             self.device = torch.device("cpu")
         else:
             self.device = torch.device(config_dict["device"])
-        logger.debug(f"Set device to {self.device.type}")
+        logger.info(f"Set device to {self.device.type}")
 
         # Output directory
-        if "output_directory" in config_dict.keys():
-            self.output_directory = Path(config_dict["output_directory"])
+        if out_dir := config_dict.get("output_directory"):
+            self.output_directory = Path(out_dir)
             if not self.output_directory.is_dir():
                 logger.warn(
                     f"Warning: Output directory {self.output_directory.absolute()} not"
@@ -127,6 +131,23 @@ class NNConfig:
         else:
             self.output_directory = Path(".")
         logger.debug(f"Set output directory to {self.output_directory.absolute()}")
+
+        # Generator and learning mode
+        mode = config_dict.get("mode")
+        if mode is None:
+            self.mode = Mode.MIXED
+            logger.warn(
+                "Warning: configuration setting `mode` not set. Setting to 'mixed'."
+            )
+        elif mode == "mixed":
+            self.mode = Mode.MIXED
+        elif mode == "good":
+            self.mode = Mode.GOOD
+        elif mode == "theta":
+            self.mode = Mode.THETA
+        else:
+            logger.exception(f"Invalid `mode` setting: {mode}")
+            raise
 
         # Optimizer learning rate
         self.learning_rate: float = config_dict["learning_rate"]
@@ -148,45 +169,53 @@ class NNConfig:
         )
 
         # Min, max, and distribution definitions for Bg, Bth, and Pe
+        # For the distributions, we use .get() instead of [] because it returns None on
+        # an invalid key. For min and max, we require these to be specified, so they
+        # will raise an error otherwise.
         self.bg_range = Range(
-            config_dict["bg_range"]["min"], config_dict["bg_range"]["max"]
+            config_dict["bg_range"]["min"],
+            config_dict["bg_range"]["max"],
+            alpha=config_dict["bg_range"].get("alpha"),
+            beta=config_dict["bg_range"].get("beta"),
+            mu=config_dict["bg_range"].get("mu"),
+            sigma=config_dict["bg_range"].get("sigma"),
         )
         self.bth_range = Range(
-            config_dict["bth_range"]["min"], config_dict["bth_range"]["max"]
+            config_dict["bth_range"]["min"],
+            config_dict["bth_range"]["max"],
+            alpha=config_dict["bth_range"].get("alpha"),
+            beta=config_dict["bth_range"].get("beta"),
+            mu=config_dict["bth_range"].get("mu"),
+            sigma=config_dict["bth_range"].get("sigma"),
         )
         self.pe_range = Range(
-            config_dict["pe_range"]["min"], config_dict["pe_range"]["max"]
+            config_dict["pe_range"]["min"],
+            config_dict["pe_range"]["max"],
+            alpha=config_dict["pe_range"].get("alpha"),
+            beta=config_dict["pe_range"].get("beta"),
+            mu=config_dict["pe_range"].get("mu"),
+            sigma=config_dict["pe_range"].get("sigma"),
         )
 
-        # Check for invalid combinations of alpha, beta, mu, and sigma
-        for param_range, param_dictionary in zip(
-            [self.bg_range, self.bth_range, self.pe_range],
-            [
-                config_dict["bg_range"],
-                config_dict["bth_range"],
-                config_dict["pe_range"],
-            ],
-        ):
-            keys = param_dictionary.keys()
-            if "alpha" in keys and "beta" in keys and "mu" in keys and "sigma" in keys:
+        # Check for incorrect combinations of (mu, sigma) and (alpha, beta) pairs
+        for param_range in [self.bg_range, self.bth_range, self.pe_range]:
+            if (
+                param_range.mu
+                and param_range.sigma
+                and param_range.alpha
+                and param_range.beta
+            ):
                 logger.exception(
                     "Only one pair of (alpha, beta) or (mu, sigma) may be specified."
-                    f" Instead, both are specified in {param_dictionary}"
+                    " Instead, both are specified."
                 )
                 raise
-            if ("alpha" in keys) ^ ("beta" in keys):
+            if (param_range.alpha is None) ^ (param_range.beta is None):
                 logger.warn("Only one of alpha/beta is specified. Ignoring.")
-            if ("mu" in keys) ^ ("sigma" in keys):
-                logger.warn("Only one of mu/sigma is specified. Ignoring.")
-            if "alpha" in keys and "beta" in keys:
-                param_range.alpha = param_dictionary["alpha"]
-                param_range.beta = param_dictionary["beta"]
-            elif "mu" in keys and "sigma" in keys:
-                param_range.mu = param_dictionary["mu"]
-                param_range.sigma = param_dictionary["sigma"]
-            else:
                 param_range.alpha = None
                 param_range.beta = None
+            if (param_range.mu is None) ^ (param_range.sigma is None):
+                logger.warn("Only one of mu/sigma is specified. Ignoring.")
                 param_range.mu = None
                 param_range.sigma = None
         logger.debug(
@@ -209,18 +238,30 @@ class NNConfig:
 
         # Number of nodes in each linear NN layer
         self.layer_sizes = tuple(config_dict["layer_sizes"])
+        if self.layer_sizes[-1] == 2 and self.mode is Mode.MIXED:
+            logger.exception(
+                "For the 'mixed' mode, the final element in `layer_sizes` must be 3."
+            )
+            raise
+        if self.layer_sizes[-1] == 3 and (
+            self.mode is Mode.GOOD or self.mode is Mode.THETA
+        ):
+            logger.exception(
+                f"For the '{self.mode}' mode, the final element in `layer_sizes` must"
+                " be 2."
+            )
+            raise
         logger.debug(f"Loaded {self.layer_sizes = }.")
 
         # Define these three hyperparameters in the configuration file with equal
         # lengths to specify a convolutional neural network.
-        if (
-            "channels" in config_dict.keys()
-            and "kernel_sizes" in config_dict.keys()
-            and "pool_sizes" in config_dict.keys()
-        ):
-            self.channels = tuple(config_dict["channels"])
-            self.kernel_sizes = tuple(config_dict["kernel_sizes"])
-            self.pool_sizes = tuple(config_dict["pool_sizes"])
+        channels = config_dict.get("channels")
+        kernel_sizes = config_dict.get("kernel_sizes")
+        pool_sizes = config_dict.get("pool_sizes")
+        if channels and kernel_sizes and pool_sizes:
+            self.channels = tuple(channels)
+            self.kernel_sizes = tuple(kernel_sizes)
+            self.pool_sizes = tuple(pool_sizes)
             if not (
                 len(self.channels) == len(self.kernel_sizes) == len(self.pool_sizes)
             ):
@@ -235,11 +276,7 @@ class NNConfig:
                 f"Loaded {self.channels = }, {self.kernel_sizes = }, and"
                 f" {self.pool_sizes = }."
             )
-        elif (
-            "channels" in config_dict.keys()
-            or "kernel_sizes" in config_dict.keys()
-            or "pool_sizes" in config_dict.keys()
-        ):
+        elif channels or kernel_sizes or pool_sizes:
             logger.warn(
                 "Not all of channels/kernel_sizes/pool_sizes are specified."
                 " Ignoring."

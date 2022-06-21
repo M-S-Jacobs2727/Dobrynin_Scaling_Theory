@@ -6,13 +6,26 @@ distributions for various parameters; and `normalize_params`, `unnormalize_param
 features.
 """
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from enum import Enum
+from typing import Optional
 
 import numpy as np
 import torch
 import torch.distributions
 
-SHIFT = 1e-4
+
+class Mode(Enum):
+    """An enum for selecting the features to use and train against.
+
+    Attributes:
+        `MIXED`: All features Bg, Bth, and Pe
+        `THETA`: Only Bth and Pe
+        `GOOD`: Only Bg and Pe
+    """
+
+    MIXED = "mixed"
+    THETA = "theta"
+    GOOD = "good"
 
 
 @dataclass
@@ -44,17 +57,28 @@ class Range:
     beta: Optional[float] = None
 
 
-def feature_distribution(feature_range: Range) -> torch.distributions.Distribution:
-    """Returns a generator that produces a distribution of values for the features
-    Bg, Bth, and Pe. These can be the Beta distribution (if feature_range.alpha and
-    feature_range.beta are defined), the LogNormal distribution (if feature_range.mu
-    and feature_range.sigma are defined) or the Uniform distribution otherwise.
+def feature_distribution(
+    feature_range: Range, batch_size: int
+) -> torch.distributions.Distribution:
+    """Returns a generator that can be sampled in batches of size `batch_size` for the
+    features Bg, Bth, or Pe. These can be the Beta distribution (if feature_range.alpha
+    and feature_range.beta are defined), the LogNormal distribution (if feature_range.mu
+    and feature_range.sigma are defined), or the Uniform distribution otherwise.
     """
     if feature_range.alpha and feature_range.beta:
-        return torch.distributions.Beta(feature_range.alpha, feature_range.beta)
+        return torch.distributions.Beta(
+            torch.zeros((batch_size,), dtype=torch.float) + feature_range.alpha,
+            torch.zeros((batch_size,), dtype=torch.float) + feature_range.beta,
+        )
     if feature_range.mu and feature_range.sigma:
-        return torch.distributions.LogNormal(feature_range.mu, feature_range.sigma)
-    return torch.distributions.Uniform(feature_range.min, feature_range.max)
+        return torch.distributions.LogNormal(
+            torch.zeros((batch_size,), dtype=torch.float) + feature_range.mu,
+            torch.zeros((batch_size,), dtype=torch.float) + feature_range.sigma,
+        )
+    return torch.distributions.Uniform(
+        torch.zeros((batch_size,), dtype=torch.float) + feature_range.min,
+        torch.zeros((batch_size,), dtype=torch.float) + feature_range.max,
+    )
 
 
 def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
@@ -66,34 +90,24 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
     return Bth
 
 
-def normalize_features(
-    Bg: torch.Tensor,
-    Bth: torch.Tensor,
-    Pe: torch.Tensor,
-    bg_range: Range,
-    bth_range: Range,
-    pe_range: Range,
-) -> Tuple[torch.Tensor, ...]:
+# TODO: refactor for one feature. Too difficult to account for the cases where we only
+# normalize/unnormalize one or two features.
+def normalize_feature(
+    feature: torch.Tensor,
+    feature_range: Range,
+) -> torch.Tensor:
     """Performs simple linear normalization."""
-    Bg = (Bg - bg_range.min - SHIFT) / (bg_range.max - bg_range.min)
-    Bth = (Bth - bth_range.min - SHIFT) / (bth_range.max - bth_range.min)
-    Pe = (Pe - pe_range.min - SHIFT) / (pe_range.max - pe_range.min)
-    return Bg, Bth, Pe
+    return (feature - feature_range.min) / (feature_range.max - feature_range.min)
 
 
-def unnormalize_features(
-    Bg: torch.Tensor,
-    Bth: torch.Tensor,
-    Pe: torch.Tensor,
-    bg_range: Range,
-    bth_range: Range,
-    pe_range: Range,
-) -> Tuple[torch.Tensor, ...]:
+# TODO: refactor for one feature. Too difficult to account for the cases where we only
+# normalize/unnormalize one or two features.
+def unnormalize_feature(
+    feature: torch.Tensor,
+    feature_range: Range,
+) -> torch.Tensor:
     """Inverts simple linear normalization."""
-    Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min + SHIFT
-    Bth = Bth * (bth_range.max - bth_range.min) + bth_range.min + SHIFT
-    Pe = Pe * (pe_range.max - pe_range.min) + pe_range.min + SHIFT
-    return Bg, Bth, Pe
+    return feature * (feature_range.max - feature_range.min) + feature_range.min
 
 
 def unnormalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:

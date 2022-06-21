@@ -31,7 +31,6 @@ def _custom_MSE_loss(
     y_true: torch.Tensor,
     bg_range: data.Range,
     bth_range: data.Range,
-    pe_range: data.Range,
     logger: logging.Logger,
 ) -> torch.Tensor:
 
@@ -47,9 +46,8 @@ def _custom_MSE_loss(
         raise
 
     # Test the athermal condition. The solvent is too good for thermal fluctuations.
-    Bg, Bth, _ = data.unnormalize_features(
-        y_true[:, 0], y_true[:, 1], y_true[:, 2], bg_range, bth_range, pe_range
-    )
+    Bg = data.unnormalize_feature(y_true[:, 0], bg_range)
+    Bth = data.unnormalize_feature(y_true[:, 1], bth_range)
     athermal = Bg < Bth**0.824
 
     loss[:, 1][athermal] = 0
@@ -103,7 +101,6 @@ class CustomMSELoss(torch.nn.Module):
                 y_true,
                 bg_range,
                 bth_range,
-                pe_range,
                 logger,
             )
         elif mode == "sum":
@@ -113,7 +110,6 @@ class CustomMSELoss(torch.nn.Module):
                     y_true,
                     bg_range,
                     bth_range,
-                    pe_range,
                     logger,
                 )
             )
@@ -124,7 +120,6 @@ class CustomMSELoss(torch.nn.Module):
                     y_true,
                     bg_range,
                     bth_range,
-                    pe_range,
                     logger,
                 )
             )

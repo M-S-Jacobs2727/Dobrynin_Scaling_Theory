@@ -50,10 +50,10 @@ def train(
         predicted_features = model(surfaces)
         loss = loss_fn(predicted_features, features)
 
-        loss.sum().backward()
+        loss.mean().backward()
         optimizer.step()
 
-        avg_loss += loss
+        avg_loss += loss.mean(dim=0)  # Average over the batches
 
     avg_loss /= num_batches
 
@@ -97,7 +97,7 @@ def test(
             predicted_features = model(surfaces)
             loss = loss_fn(predicted_features, features)
 
-            avg_loss += loss
+            avg_loss += loss.mean(dim=0)
 
     avg_loss /= num_batches
 

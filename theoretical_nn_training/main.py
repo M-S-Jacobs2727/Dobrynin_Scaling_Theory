@@ -17,10 +17,11 @@ import numpy as np
 import torch
 
 import theoretical_nn_training.generators as generators
-import theoretical_nn_training.loss_funcs as loss_funcs
 import theoretical_nn_training.models as models
 import theoretical_nn_training.training as training
 from theoretical_nn_training.configuration import NNConfig
+
+# import theoretical_nn_training.loss_funcs as loss_funcs
 
 
 def run(
@@ -98,7 +99,7 @@ def run(
     # Save model and optimizer for testing and further training
     # (test manually only if good results)
     torch.save(
-        (model.state_dict(), optimizer.state_dict()),
+        {"model": model.state_dict(), "optimizer": optimizer.state_dict()},
         config.output_directory / "model_and_optimizer",
     )
 
@@ -111,7 +112,17 @@ def main() -> None:
     parser.add_argument(
         "-l", "--logfile", type=str, help="If unspecified, will log to console"
     )
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Log all debug messages."
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        help="The location of a file containing the states of the model and optimizer"
+        " as a dictionary. To be read by `torch.load`.",
+        metavar="FILENAME",
+    )
     args = parser.parse_args()
 
     # Get configuration file from command line
@@ -138,6 +149,7 @@ def main() -> None:
     handler.setFormatter(log_formatter)
     logger.addHandler(handler)
 
+    # Configuration
     logger.info("Initializing...")
     config = NNConfig(config_filename)
     logger.debug(f"Read config from {config_filename.absolute()}")
@@ -179,21 +191,32 @@ def main() -> None:
         else:
             generator = generators.SurfaceGenerator(config=config)
             logger.debug("\tInitialized LinearNeuralNet with SurfaceGenerator.")
+    model = model.to(config.device)
 
     # Loss function
-    loss_fn = loss_funcs.CustomMSELoss(
-        config.bg_range, config.bth_range, config.pe_range, mode="none"
-    )
+    loss_fn = torch.nn.MSELoss(reduction="none")
     logger.debug("Initialized loss function.")
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug(f"Initialized optimizer with learning rate {config.learning_rate}.")
 
+    # If the -m argument is passed with a valid filename, the model and optimizer will
+    # be loaded from that file. If the filename is invalid, an error will be raised.
+    # Otherwise, the model and optimizer will be created anew.
+    if args.model:
+        if not Path(args.model).is_file():
+            logger.exception(f"File {args.model} not found.")
+            raise
+        checkpoint = torch.load(args.model)
+        model.load_state_dict(checkpoint["model"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        logger.info("Loaded model and optimizer from checkpoint successfully.")
+
     # Run
     run(
         config=config,
-        model=model.to(config.device),
+        model=model,
         generator=generator,
         loss_fn=loss_fn,
         optimizer=optimizer,
