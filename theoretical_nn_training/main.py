@@ -20,6 +20,7 @@ import theoretical_nn_training.generators as generators
 import theoretical_nn_training.models as models
 import theoretical_nn_training.training as training
 from theoretical_nn_training.configuration import NNConfig
+from theoretical_nn_training.data_processing import Mode
 
 # import theoretical_nn_training.loss_funcs as loss_funcs
 
@@ -52,8 +53,11 @@ def run(
     logger.info("Running...")
 
     table_header = " epoch"
-    for i in range(config.layer_sizes[-1]):
-        table_header += f"    loss_{i}"
+    if config.mode is not Mode.THETA:
+        table_header += "   Bg_loss"
+    if config.mode is not Mode.GOOD:
+        table_header += "  Bth_loss"
+    table_header += "   Pe_loss"
     logger.info(table_header)
 
     for epoch in range(config.epochs):
@@ -95,6 +99,7 @@ def run(
         delimiter=",",
         comments="",
     )
+    logger.info(f"Saved loss progress in {config.output_directory/'loss_values.csv'}")
 
     # Save model and optimizer for testing and further training
     # (test manually only if good results)
@@ -102,6 +107,10 @@ def run(
         {"model": model.state_dict(), "optimizer": optimizer.state_dict()},
         config.output_directory / "model_and_optimizer",
     )
+    logger.info(
+        f"Saved model and optimizer in {config.output_directory/'model_and_optimizer'}"
+    )
+    logger.info("Done.\n")
 
 
 def main() -> None:
@@ -117,11 +126,10 @@ def main() -> None:
     )
     parser.add_argument(
         "-m",
-        "--model",
+        "--modelfile",
         type=str,
         help="The location of a file containing the states of the model and optimizer"
         " as a dictionary. To be read by `torch.load`.",
-        metavar="FILENAME",
     )
     args = parser.parse_args()
 
@@ -201,14 +209,14 @@ def main() -> None:
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     logger.debug(f"Initialized optimizer with learning rate {config.learning_rate}.")
 
-    # If the -m argument is passed with a valid filename, the model and optimizer will
-    # be loaded from that file. If the filename is invalid, an error will be raised.
-    # Otherwise, the model and optimizer will be created anew.
-    if args.model:
-        if not Path(args.model).is_file():
-            logger.exception(f"File {args.model} not found.")
+    # If the -m argument is passed with a valid filename, the model and optimizer states
+    # will be loaded from that file. If the filename is invalid, an error will be
+    # raised. Otherwise, the model and optimizer will be created anew.
+    if args.modelfile:
+        if not Path(args.modelfile).is_file():
+            logger.exception(f"File {args.modelfile} not found.")
             raise
-        checkpoint = torch.load(args.model)
+        checkpoint = torch.load(args.modelfile)
         model.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         logger.info("Loaded model and optimizer from checkpoint successfully.")

@@ -84,14 +84,14 @@ def test(
 
     logger = logging.getLogger("__main__")
 
-    model.eval()
-
     num_batches = config.test_size // config.batch_size
     avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
     logger.debug(
         f"Beginning testing on {num_batches} batches with batch size"
         f" {config.batch_size} for a total of {config.test_size} samples."
     )
+
+    model.eval()
     with torch.no_grad():
         for surfaces, features in generator(num_batches):
             predicted_features = model(surfaces)

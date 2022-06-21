@@ -1,6 +1,9 @@
 """Two custom loss functions, `LogCoshLoss` is taken from a stackexchange post (cite)
 and `CustomMSELoss` applies an MSE loss without punishing in the case of an athermal
 solvent ($B_{g} < B_{th}^{0.824}$).
+
+Note: We have rejected CustomMSELoss in favor of splitting the athermal condition
+into a separate model (see data_processing.Mode).
 """
 
 import logging

@@ -90,8 +90,6 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
     return Bth
 
 
-# TODO: refactor for one feature. Too difficult to account for the cases where we only
-# normalize/unnormalize one or two features.
 def normalize_feature(
     feature: torch.Tensor,
     feature_range: Range,
@@ -100,8 +98,6 @@ def normalize_feature(
     return (feature - feature_range.min) / (feature_range.max - feature_range.min)
 
 
-# TODO: refactor for one feature. Too difficult to account for the cases where we only
-# normalize/unnormalize one or two features.
 def unnormalize_feature(
     feature: torch.Tensor,
     feature_range: Range,

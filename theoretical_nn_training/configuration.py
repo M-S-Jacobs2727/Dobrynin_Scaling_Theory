@@ -2,6 +2,9 @@
 YAML or JSON files in the configurations directory. One of these is passed as the first
 command line argument into the main module. This module defines `NNConfig`, the
 configuration class, which is initialized from the given configuration file.
+
+TODO: move Resolution to Range? If min and max are attributes of, e.g., nw_range,
+why not num_points?
 """
 import json
 import logging
@@ -150,7 +153,7 @@ class NNConfig:
             raise
 
         # Optimizer learning rate
-        self.learning_rate: float = config_dict["learning_rate"]
+        self.learning_rate = float(config_dict["learning_rate"])
         logger.debug(f"Loaded {self.learning_rate = :.5f}.")
 
         # Min and max values of concentration, Nw, and viscosity
@@ -173,24 +176,24 @@ class NNConfig:
         # an invalid key. For min and max, we require these to be specified, so they
         # will raise an error otherwise.
         self.bg_range = Range(
-            config_dict["bg_range"]["min"],
-            config_dict["bg_range"]["max"],
+            min=config_dict["bg_range"]["min"],
+            max=config_dict["bg_range"]["max"],
             alpha=config_dict["bg_range"].get("alpha"),
             beta=config_dict["bg_range"].get("beta"),
             mu=config_dict["bg_range"].get("mu"),
             sigma=config_dict["bg_range"].get("sigma"),
         )
         self.bth_range = Range(
-            config_dict["bth_range"]["min"],
-            config_dict["bth_range"]["max"],
+            min=config_dict["bth_range"]["min"],
+            max=config_dict["bth_range"]["max"],
             alpha=config_dict["bth_range"].get("alpha"),
             beta=config_dict["bth_range"].get("beta"),
             mu=config_dict["bth_range"].get("mu"),
             sigma=config_dict["bth_range"].get("sigma"),
         )
         self.pe_range = Range(
-            config_dict["pe_range"]["min"],
-            config_dict["pe_range"]["max"],
+            min=config_dict["pe_range"]["min"],
+            max=config_dict["pe_range"]["max"],
             alpha=config_dict["pe_range"].get("alpha"),
             beta=config_dict["pe_range"].get("beta"),
             mu=config_dict["pe_range"].get("mu"),
@@ -223,10 +226,10 @@ class NNConfig:
         )
 
         # Model training parameters
-        self.batch_size: int = config_dict["batch_size"]
-        self.train_size: int = config_dict["train_size"]
-        self.test_size: int = config_dict["test_size"]
-        self.epochs: int = config_dict["epochs"]
+        self.batch_size = int(config_dict["batch_size"])
+        self.train_size = int(config_dict["train_size"])
+        self.test_size = int(config_dict["test_size"])
+        self.epochs = int(config_dict["epochs"])
         logger.debug(
             f"Loaded {self.batch_size = }, {self.train_size = }, {self.test_size = },"
             f" and {self.epochs = }."

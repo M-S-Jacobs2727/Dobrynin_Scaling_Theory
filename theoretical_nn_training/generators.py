@@ -2,6 +2,8 @@ r"""This file contains two efficient generator clasees based on PyTorch to quick
 generate $(\varphi, N_{w}, \eta_{sp})$ surfaces defined by the parameter set
 $\{B_{g}, B_{th}, P_{e}\}$. The parameter set is sampled from a choice of `Uniform`,
 `LogNormal`, or `Beta` distributions.
+
+TODO: update documentation for mode and strip_nw
 """
 from typing import Protocol, Tuple
 
@@ -11,8 +13,6 @@ from typing_extensions import Self
 
 import theoretical_nn_training.data_processing as data
 from theoretical_nn_training.data_processing import Mode, Range, Resolution
-
-# TODO: Add options for generators for slices of Nw
 
 
 class Config(Protocol):
@@ -33,7 +33,7 @@ class Config(Protocol):
 
 
 class Generator(Protocol):
-    """Abstract base class for two generators: the SurfaceGenerator, which yields 2D
+    """Protocol for two generators: the SurfaceGenerator, which yields 2D
     representations of surfaces, and the VoxelImageGenerator, which yields a 3D image of
     the surfaces produced by SurfaceGenerator. These generators are meant to be run on
     high-performance devices, such as a CUDA-enabled GPU.
@@ -117,6 +117,13 @@ class SurfaceGenerator:
         self.config = config
         self.strip_nw = strip_nw
 
+        if self.config.mode is Mode.GOOD:
+            self.generation_function = self._good_generation
+        elif self.config.mode is Mode.MIXED:
+            self.generation_function = self._mixed_generation
+        else:
+            self.generation_function = self._theta_generation
+
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
         return self
@@ -130,12 +137,7 @@ class SurfaceGenerator:
             raise StopIteration
         self._index += 1
 
-        if self.config.mode is Mode.GOOD:
-            surfaces, features = self._good_generation()
-        elif self.config.mode is Mode.MIXED:
-            surfaces, features = self._mixed_generation()
-        else:
-            surfaces, features = self._theta_generation()
+        surfaces, features = self.generation_function()
 
         if not self.strip_nw:
             return surfaces, features
@@ -218,12 +220,23 @@ class SurfaceGenerator:
     def _mixed_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
         normalized_Bg = self.bg_distribution.sample()
-        normalized_Bth = self.bth_distribution.sample()
+        # normalized_Bth = self.bth_distribution.sample()
         normalized_Pe = self.pe_distribution.sample()
 
         Bg = data.unnormalize_feature(normalized_Bg, self.config.bg_range)
-        Bth = data.unnormalize_feature(normalized_Bth, self.config.bth_range)
+        # Bth = data.unnormalize_feature(normalized_Bth, self.config.bth_range)
         Pe = data.unnormalize_feature(normalized_Pe, self.config.pe_range)
+
+        # To ensure that this model doesn't generate the athermal condition
+        # (see _good_generatrion), we select Bth uniformly between 0 and Bg^(1/0.824)
+        # We also ensure that Bth stays within the Range.
+        Bth = (
+            torch.rand(torch.Size((self.config.batch_size,)))
+            * Bg ** (1 / 0.824)
+            * (self.config.bth_range.max - self.config.bth_range.min)
+            + self.config.bth_range.min
+        )
+        normalized_Bth = data.normalize_feature(Bth, self.config.bth_range)
 
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
@@ -352,15 +365,15 @@ class VoxelImageGenerator:
         self.config.resolution = Resolution(
             config.resolution.phi + 1,
             config.resolution.Nw + 1,
-            config.resolution.eta_sp,
+            config.resolution.eta_sp + 1,
         )
 
-        self.eta_sp = data.preprocess_eta_sp(
+        self.grid_values = data.preprocess_eta_sp(
             torch.tensor(
                 np.geomspace(
                     config.eta_sp_range.min,
                     config.eta_sp_range.max,
-                    config.resolution.eta_sp + 1,
+                    config.resolution.eta_sp,
                     endpoint=True,
                 ),
                 dtype=torch.float,
@@ -369,22 +382,19 @@ class VoxelImageGenerator:
             config.eta_sp_range,
         )
 
-        self.config = config
         self.strip_nw = strip_nw
+        self.surface_generator = SurfaceGenerator(self.config, self.strip_nw)
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
         return self
 
     def __iter__(self) -> Self:
-        self._surface_generator = iter(
-            SurfaceGenerator(self.config, self.strip_nw)(self.num_batches)
-        )
-
+        self._surface_generator_iter = iter(self.surface_generator(self.num_batches))
         return self
 
     def __next__(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        surfaces, features = next(self._surface_generator)
+        surfaces, features = next(self._surface_generator_iter)
 
         surfaces = torch.tile(
             surfaces.reshape(
@@ -395,13 +405,14 @@ class VoxelImageGenerator:
                     1,
                 )
             ),
-            (1, 1, 1, self.config.resolution.eta_sp + 1),
+            (1, 1, 1, self.config.resolution.eta_sp),
         )
 
         # if <= or >=, we would include capped values, which we don't want
         image = torch.logical_and(
-            surfaces[:, :-1, :-1, :-1] < self.eta_sp[1:],
-            surfaces[:, 1:, 1:, 1:] > self.eta_sp[:-1],
-        ).to(dtype=torch.float, device=self.config.device)
+            surfaces[:, :-1, :-1, :-1] < self.grid_values[1:],
+            surfaces[:, 1:, 1:, 1:] > self.grid_values[:-1],
+        ).to(dtype=torch.int16, device=self.config.device)
+        # TODO: check that this works with int16
 
         return image, features
