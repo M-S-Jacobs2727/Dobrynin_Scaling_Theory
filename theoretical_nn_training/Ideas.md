@@ -3,9 +3,12 @@
 ## To Do List
 - [x] Apply distributions to parameter generation
 - [x] Reorganize code into distinct files
-- [ ] Change down to 2 parameters (new folder?)
+- [ ] ~~Change down to 2 parameters (new folder?)~~
 - [x] 2D convolutional NN with 5+ layers (set one for each resolution?)
 - [x] Tuning (with something other than ray) should be done in tuning.py. The main.py file should be for running production training.
+- [x] Implement a way to cut most values of Nw
+- [x] Implement three different models for (Bg, Pe), (Bth, Pe), and (Bg, Bth, Pe)
+
 
 ## General thoughts on procedure, model, etc.
 
