@@ -39,7 +39,7 @@ class Generator(Protocol):
     high-performance devices, such as a CUDA-enabled GPU.
     """
 
-    def __init__(self, config: Config, strip_nw: bool) -> None:
+    def __init__(self, config: Config) -> None:
         ...
 
     def __call__(self, num_batches: int) -> Self:
@@ -73,7 +73,7 @@ class SurfaceGenerator:
             batch_size.
     """
 
-    def __init__(self, config: Config, strip_nw: bool = False) -> None:
+    def __init__(self, config: Config) -> None:
 
         # Create tensors for phi (concentration) and Nw (chain length)
         # Both are meshed and tiled to cover a 3D tensor of size
@@ -115,7 +115,6 @@ class SurfaceGenerator:
         )
 
         self.config = config
-        self.strip_nw = strip_nw
 
         if self.config.mode is Mode.GOOD:
             self.generation_function = self._good_generation
@@ -138,39 +137,6 @@ class SurfaceGenerator:
         self._index += 1
 
         surfaces, features = self.generation_function()
-
-        if not self.strip_nw:
-            return surfaces, features
-
-        # Stripping the Nw dimension to simulate experimental data, which usually
-        # only has a handful of different samples.
-        nw_slices = torch.randint(
-            int(self.config.nw_range.min),
-            int(self.config.nw_range.max),
-            torch.Size((2, self.config.resolution.Nw)),
-            device=self.config.device,
-        )
-        lo_nw, _ = torch.min(nw_slices, dim=0)
-        hi_nw, _ = torch.max(nw_slices, dim=0)
-        too_narrow = hi_nw - lo_nw < 8
-        lo_nw[too_narrow] = torch.max(
-            torch.min(
-                lo_nw[too_narrow] - 4, torch.tensor(self.config.nw_range.max) - 8
-            ),
-            torch.tensor(self.config.nw_range.min),
-        )
-        hi_nw[too_narrow] = (
-            torch.max(
-                torch.min(
-                    hi_nw[too_narrow] + 4, torch.tensor(self.config.nw_range.max)
-                ),
-                torch.tensor(self.config.nw_range.min) + 8,
-            )
-            - 1
-        )
-
-        surfaces[..., :lo_nw] = 0
-        surfaces[..., hi_nw:] = 0
 
         return surfaces, features
 
@@ -383,7 +349,7 @@ class VoxelImageGenerator:
         )
 
         self.strip_nw = strip_nw
-        self.surface_generator = SurfaceGenerator(self.config, self.strip_nw)
+        self.surface_generator = SurfaceGenerator(self.config)
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
