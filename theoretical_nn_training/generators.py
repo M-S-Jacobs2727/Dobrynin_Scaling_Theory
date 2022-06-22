@@ -39,7 +39,7 @@ class Generator(Protocol):
     high-performance devices, such as a CUDA-enabled GPU.
     """
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, strip_nw: bool) -> None:
         ...
 
     def __call__(self, num_batches: int) -> Self:
@@ -73,7 +73,7 @@ class SurfaceGenerator:
             batch_size.
     """
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, strip_nw: bool = False) -> None:
 
         # Create tensors for phi (concentration) and Nw (chain length)
         # Both are meshed and tiled to cover a 3D tensor of size
@@ -115,6 +115,7 @@ class SurfaceGenerator:
         )
 
         self.config = config
+        self.strip_nw = strip_nw
 
         if self.config.mode is Mode.GOOD:
             self.generation_function = self._good_generation
@@ -137,6 +138,25 @@ class SurfaceGenerator:
         self._index += 1
 
         surfaces, features = self.generation_function()
+
+        if not self.strip_nw:
+            return surfaces, features
+
+        # Stripping the Nw dimension to simulate experimental data, which usually
+        # only has a handful of different samples.
+        # TODO: add interpolation of the few samples, as we will for experimental data
+        nw_index_choices = torch.randint(
+            0,
+            self.config.resolution.Nw,
+            torch.Size((self.config.batch_size, 8)),
+            device=self.config.device,
+        )
+        to_keep = torch.zeros(
+            (self.config.batch_size, self.config.resolution.Nw), dtype=torch.bool
+        )
+        for surface, to_keep_b, choices_b in zip(surfaces, to_keep, nw_index_choices):
+            to_keep_b[choices_b] = True
+            surface[~to_keep_b] = 0
 
         return surfaces, features
 
@@ -349,7 +369,7 @@ class VoxelImageGenerator:
         )
 
         self.strip_nw = strip_nw
-        self.surface_generator = SurfaceGenerator(self.config)
+        self.surface_generator = SurfaceGenerator(self.config, self.strip_nw)
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
