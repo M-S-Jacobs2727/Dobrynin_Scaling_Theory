@@ -15,7 +15,7 @@ from typing import Optional, Tuple, Union
 import torch
 import yaml
 
-from theoretical_nn_training.data_processing import Mode, Range, Resolution
+from theoretical_nn_training.data_processing import FeatureRange, Mode, SurfaceRange
 
 
 @dataclass()
@@ -80,13 +80,12 @@ class NNConfig:
     output_directory: Path
     mode: Mode
     learning_rate: float
-    resolution: Resolution
-    phi_range: Range
-    nw_range: Range
-    eta_sp_range: Range
-    bg_range: Range
-    bth_range: Range
-    pe_range: Range
+    phi_range: SurfaceRange
+    nw_range: SurfaceRange
+    eta_sp_range: SurfaceRange
+    bg_range: FeatureRange
+    bth_range: FeatureRange
+    pe_range: FeatureRange
     batch_size: int
     train_size: int
     test_size: int
@@ -157,15 +156,20 @@ class NNConfig:
         logger.debug(f"Loaded {self.learning_rate = :.5f}.")
 
         # Min and max values of concentration, Nw, and viscosity
-        self.phi_range = Range(
-            config_dict["phi_range"]["min"], config_dict["phi_range"]["max"]
+        self.phi_range = SurfaceRange(
+            config_dict["phi_range"]["min"],
+            config_dict["phi_range"]["max"],
+            config_dict["phi_range"]["resolution"],
         )
-        self.nw_range = Range(
-            config_dict["nw_range"]["min"], config_dict["nw_range"]["max"]
+        self.nw_range = SurfaceRange(
+            config_dict["nw_range"]["min"],
+            config_dict["nw_range"]["max"],
+            config_dict["nw_range"]["resolution"],
         )
-        self.eta_sp_range = Range(
+        self.eta_sp_range = SurfaceRange(
             config_dict["eta_sp_range"]["min"],
             config_dict["eta_sp_range"]["max"],
+            config_dict["eta_sp_range"].get("resolution"),
         )
         logger.debug(
             f"Loaded {self.phi_range = }, {self.nw_range = }, {self.eta_sp_range = }."
@@ -175,7 +179,7 @@ class NNConfig:
         # For the distributions, we use .get() instead of [] because it returns None on
         # an invalid key. For min and max, we require these to be specified, so they
         # will raise an error otherwise.
-        self.bg_range = Range(
+        self.bg_range = FeatureRange(
             min=config_dict["bg_range"]["min"],
             max=config_dict["bg_range"]["max"],
             alpha=config_dict["bg_range"].get("alpha"),
@@ -183,7 +187,7 @@ class NNConfig:
             mu=config_dict["bg_range"].get("mu"),
             sigma=config_dict["bg_range"].get("sigma"),
         )
-        self.bth_range = Range(
+        self.bth_range = FeatureRange(
             min=config_dict["bth_range"]["min"],
             max=config_dict["bth_range"]["max"],
             alpha=config_dict["bth_range"].get("alpha"),
@@ -191,7 +195,7 @@ class NNConfig:
             mu=config_dict["bth_range"].get("mu"),
             sigma=config_dict["bth_range"].get("sigma"),
         )
-        self.pe_range = Range(
+        self.pe_range = FeatureRange(
             min=config_dict["pe_range"]["min"],
             max=config_dict["pe_range"]["max"],
             alpha=config_dict["pe_range"].get("alpha"),
@@ -234,10 +238,6 @@ class NNConfig:
             f"Loaded {self.batch_size = }, {self.train_size = }, {self.test_size = },"
             f" and {self.epochs = }."
         )
-
-        # Surface resolution
-        self.resolution = Resolution(*config_dict["resolution"])
-        logger.debug(f"Loaded {self.resolution = }.")
 
         # Number of nodes in each linear NN layer
         self.layer_sizes = tuple(config_dict["layer_sizes"])

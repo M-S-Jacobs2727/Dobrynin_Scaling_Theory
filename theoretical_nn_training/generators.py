@@ -12,7 +12,7 @@ import torch
 from typing_extensions import Self
 
 import theoretical_nn_training.data_processing as data
-from theoretical_nn_training.data_processing import Mode, Range, Resolution
+from theoretical_nn_training.data_processing import FeatureRange, Mode, SurfaceRange
 
 
 class Config(Protocol):
@@ -21,14 +21,13 @@ class Config(Protocol):
     """
 
     device: torch.device
-    resolution: Resolution
     mode: Mode
-    phi_range: Range
-    nw_range: Range
-    eta_sp_range: Range
-    bg_range: Range
-    bth_range: Range
-    pe_range: Range
+    phi_range: SurfaceRange
+    nw_range: SurfaceRange
+    eta_sp_range: SurfaceRange
+    bg_range: FeatureRange
+    bth_range: FeatureRange
+    pe_range: FeatureRange
     batch_size: int
 
 
@@ -88,7 +87,7 @@ class SurfaceGenerator:
             np.geomspace(
                 config.phi_range.min,
                 config.phi_range.max,
-                config.resolution.phi,
+                config.phi_range.resolution,
                 endpoint=True,
             ),
             dtype=torch.float,
@@ -99,7 +98,7 @@ class SurfaceGenerator:
             np.geomspace(
                 config.nw_range.min,
                 config.nw_range.max,
-                config.resolution.Nw,
+                config.nw_range.resolution,
                 endpoint=True,
             ),
             dtype=torch.float,
@@ -153,12 +152,12 @@ class SurfaceGenerator:
         # TODO: add interpolation of the few samples, as we will for experimental data
         nw_index_choices = torch.randint(
             0,
-            self.config.resolution.Nw,
+            self.config.nw_range.resolution,
             torch.Size((self.config.batch_size, 8)),
             device=self.config.device,
         )
         to_keep = torch.zeros(
-            (self.config.batch_size, self.config.resolution.Nw), dtype=torch.bool
+            (self.config.batch_size, self.config.nw_range.resolution), dtype=torch.bool
         )
         for surface, to_keep_b, choices_b in zip(surfaces, to_keep, nw_index_choices):
             to_keep_b[choices_b] = True
@@ -359,18 +358,16 @@ class VoxelImageGenerator:
 
     def __init__(self, config: Config, strip_nw: bool = False) -> None:
         self.config = config
-        self.config.resolution = Resolution(
-            config.resolution.phi + 1,
-            config.resolution.Nw + 1,
-            config.resolution.eta_sp + 1,
-        )
+        self.config.nw_range.resolution += 1
+        self.config.phi_range.resolution += 1
+        self.config.eta_sp_range.resolution += 1
 
         self.grid_values = data.preprocess_eta_sp(
             torch.tensor(
                 np.geomspace(
                     config.eta_sp_range.min,
                     config.eta_sp_range.max,
-                    config.resolution.eta_sp,
+                    config.eta_sp_range.resolution,
                     endpoint=True,
                 ),
                 dtype=torch.float,
@@ -397,12 +394,12 @@ class VoxelImageGenerator:
             surfaces.reshape(
                 (
                     self.config.batch_size,
-                    self.config.resolution.phi,
-                    self.config.resolution.Nw,
+                    self.config.phi_range.resolution,
+                    self.config.nw_range.resolution,
                     1,
                 )
             ),
-            (1, 1, 1, self.config.resolution.eta_sp),
+            (1, 1, 1, self.config.eta_sp_range.resolution),
         )
 
         # if <= or >=, we would include capped values, which we don't want

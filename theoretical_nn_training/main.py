@@ -170,10 +170,14 @@ def main() -> None:
         config.channels
         and config.kernel_sizes
         and config.pool_sizes
-        and config.resolution.eta_sp
+        and config.eta_sp_range.resolution
     ):
         model = models.ConvNeuralNet3D(
-            resolution=config.resolution,
+            resolution=(
+                config.phi_range.resolution,
+                config.nw_range.resolution,
+                config.eta_sp_range.resolution,
+            ),
             channels=config.channels,
             kernel_sizes=config.kernel_sizes,
             pool_sizes=config.pool_sizes,
@@ -183,7 +187,11 @@ def main() -> None:
         logger.debug("\tInitialized ConvNeuralNet3D with VoxelImageGenerator")
     elif config.channels and config.kernel_sizes and config.pool_sizes:
         model = models.ConvNeuralNet2D(
-            resolution=config.resolution,
+            resolution=(
+                config.phi_range.resolution,
+                config.nw_range.resolution,
+                config.eta_sp_range.resolution,
+            ),
             channels=config.channels,
             kernel_sizes=config.kernel_sizes,
             pool_sizes=config.pool_sizes,
@@ -193,9 +201,14 @@ def main() -> None:
         logger.debug("\tInitialized ConvNeuralNet2D with SurfaceGenerator")
     else:
         model = models.LinearNeuralNet(
-            resolution=config.resolution, layer_sizes=config.layer_sizes
+            resolution=(
+                config.phi_range.resolution,
+                config.nw_range.resolution,
+                config.eta_sp_range.resolution,
+            ),
+            layer_sizes=config.layer_sizes,
         )
-        if config.resolution.eta_sp:
+        if config.eta_sp_range.resolution:
             generator = generators.VoxelImageGenerator(config=config)
             logger.debug("\tInitialized LinearNeuralNet with VoxelImageGenerator.")
         else:

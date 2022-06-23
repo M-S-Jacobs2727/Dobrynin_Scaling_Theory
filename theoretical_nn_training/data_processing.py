@@ -29,20 +29,20 @@ class Mode(Enum):
 
 
 @dataclass
-class Resolution:
-    """Resolution of generated surfaces. Dimensions:
-    - `phi` (concentration)
-    - `Nw` (weight-average degree of polymerization)
-    - `eta_sp` (specific viscosity) (optional, for 3D representations only)
+class SurfaceRange:
+    """Defines the minimum and maximum values of a distribution of allowed values for
+    features. Optionally also allows for the specification of mu and sigma for a
+    Normal or LogNormal distribution, and alpha and beta for a Beta distribution. If
+    none of these are specified, then a Uniform distribution is assumed.
     """
 
-    phi: int
-    Nw: int
-    eta_sp: int = 0
+    min: float
+    max: float
+    resolution: int = 0
 
 
 @dataclass
-class Range:
+class FeatureRange:
     """Defines the minimum and maximum values of a distribution of allowed values for
     features. Optionally also allows for the specification of mu and sigma for a
     Normal or LogNormal distribution, and alpha and beta for a Beta distribution. If
@@ -58,7 +58,7 @@ class Range:
 
 
 def feature_distribution(
-    feature_range: Range, batch_size: int
+    feature_range: FeatureRange, batch_size: int
 ) -> torch.distributions.Distribution:
     """Returns a generator that can be sampled in batches of size `batch_size` for the
     features Bg, Bth, or Pe. These can be the Beta distribution (if feature_range.alpha
@@ -92,7 +92,7 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
 
 def normalize_feature(
     feature: torch.Tensor,
-    feature_range: Range,
+    feature_range: FeatureRange,
 ) -> torch.Tensor:
     """Performs simple linear normalization."""
     return (feature - feature_range.min) / (feature_range.max - feature_range.min)
@@ -100,13 +100,15 @@ def normalize_feature(
 
 def unnormalize_feature(
     feature: torch.Tensor,
-    feature_range: Range,
+    feature_range: FeatureRange,
 ) -> torch.Tensor:
     """Inverts simple linear normalization."""
     return feature * (feature_range.max - feature_range.min) + feature_range.min
 
 
-def unnormalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def unnormalize_eta_sp(
+    eta_sp: torch.Tensor, eta_sp_range: SurfaceRange
+) -> torch.Tensor:
     """Inverts a simple linear normalization of the specific viscosity."""
     return (
         torch.exp(eta_sp * np.log(eta_sp_range.max / eta_sp_range.min))
@@ -114,7 +116,7 @@ def unnormalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tenso
     )
 
 
-def normalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def normalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: SurfaceRange) -> torch.Tensor:
     """Performs a simple linear normalization of the natural log of the specific
     viscosity.
     """
@@ -123,7 +125,7 @@ def normalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     )
 
 
-def preprocess_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
+def preprocess_eta_sp(eta_sp: torch.Tensor, eta_sp_range: SurfaceRange) -> torch.Tensor:
     """Add noise, cap the values, take the log, then normalize."""
     eta_sp += (
         eta_sp * 0.05 * torch.normal(torch.zeros_like(eta_sp), torch.ones_like(eta_sp))

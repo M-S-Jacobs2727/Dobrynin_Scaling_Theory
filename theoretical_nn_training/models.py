@@ -5,20 +5,18 @@ from typing import Tuple
 
 import torch
 
-import theoretical_nn_training.data_processing as data
-
 
 def _get_final_resolution(
-    resolution: data.Resolution, kernel_size: int, pool_size: int
-) -> data.Resolution:
+    resolution: Tuple[int, int, int], kernel_size: int, pool_size: int
+) -> Tuple[int, int, int]:
     """Determines the resulting resolution after a convolution with a given kernel size
     and pool size. No dilation or stride is assumed.
     """
-    return data.Resolution(
-        math.floor(((resolution.phi - kernel_size + 1) - pool_size) / pool_size + 1),
-        math.floor(((resolution.Nw - kernel_size + 1) - pool_size) / pool_size + 1),
-        math.floor(((resolution.eta_sp - kernel_size + 1) - pool_size) / pool_size + 1)
-        if resolution.eta_sp
+    return (
+        math.floor(((resolution[0] - kernel_size + 1) - pool_size) / pool_size + 1),
+        math.floor(((resolution[1] - kernel_size + 1) - pool_size) / pool_size + 1),
+        math.floor(((resolution[2] - kernel_size + 1) - pool_size) / pool_size + 1)
+        if resolution[2]
         else 0,
     )
 
@@ -35,13 +33,13 @@ class LinearNeuralNet(torch.nn.Module):
     """
 
     def __init__(
-        self, resolution: data.Resolution, layer_sizes: Tuple[int, ...]
+        self, resolution: Tuple[int, int, int], layer_sizes: Tuple[int, ...]
     ) -> None:
         super().__init__()
 
         logger = logging.getLogger("__main__")
 
-        if resolution.eta_sp:
+        if resolution[2]:
             logger.debug("Model using 3D representation of data.")
         else:
             logger.debug("Model using 2D representation of data.")
@@ -84,7 +82,7 @@ class ConvNeuralNet2D(torch.nn.Module):
 
     def __init__(
         self,
-        resolution: data.Resolution,
+        resolution: Tuple[int, int, int],
         channels: Tuple[int, ...],
         kernel_sizes: Tuple[int, ...],
         pool_sizes: Tuple[int, ...],
@@ -103,14 +101,14 @@ class ConvNeuralNet2D(torch.nn.Module):
             )
             raise
 
-        if resolution.eta_sp:
+        if resolution[2]:
             logger.exception(
                 "This model is for 2D images only, but received a 3D resolution:"
                 f"{resolution}."
             )
             raise
 
-        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
+        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution[0])))
 
         logger.debug(
             "Channels, kernel sizes, pool_sizes, and resolutions after each"
@@ -168,7 +166,7 @@ class ConvNeuralNet3D(torch.nn.Module):
 
     def __init__(
         self,
-        resolution: data.Resolution,
+        resolution: Tuple[int, int, int],
         channels: Tuple[int, ...],
         kernel_sizes: Tuple[int, ...],
         pool_sizes: Tuple[int, ...],
@@ -187,14 +185,14 @@ class ConvNeuralNet3D(torch.nn.Module):
             )
             raise
 
-        if not resolution.eta_sp:
+        if not resolution[2]:
             logger.exception(
                 "This model is for 3D images only, but received a 2D resolution:"
                 f"{resolution}."
             )
             raise
 
-        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution.phi)))
+        self.stack = torch.nn.Sequential(torch.nn.Unflatten(1, (1, resolution[0])))
 
         logger.debug("Channels and resolutions after each set of convolutions:")
         logger.debug(f"    1,   -,   -, {resolution}")

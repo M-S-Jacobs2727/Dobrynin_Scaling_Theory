@@ -3,7 +3,6 @@ size and resolution.
 """
 import time
 
-import theoretical_nn_training.data_processing as data
 import theoretical_nn_training.generators as generators
 from theoretical_nn_training.configuration import NNConfig
 
@@ -24,7 +23,9 @@ def main() -> None:
         print(f"{res = }")
         for j, batch_size in enumerate(batches):
             config.batch_size = batch_size
-            config.resolution = data.Resolution(res, res, res)
+            config.phi_range.resolution = res
+            config.nw_range.resolution = res
+            config.eta_sp_range.resolution = res
             print(f"{batch_size = }")
             num_batches = num_samples // batch_size
             start_batch = time.perf_counter()

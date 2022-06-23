@@ -32,8 +32,8 @@ class LogCoshLoss(torch.nn.Module):
 def _custom_MSE_loss(
     y_pred: torch.Tensor,
     y_true: torch.Tensor,
-    bg_range: data.Range,
-    bth_range: data.Range,
+    bg_range: data.FeatureRange,
+    bth_range: data.FeatureRange,
     logger: logging.Logger,
 ) -> torch.Tensor:
 
@@ -84,9 +84,9 @@ class CustomMSELoss(torch.nn.Module):
 
     def __init__(
         self,
-        bg_range: data.Range,
-        bth_range: data.Range,
-        pe_range: data.Range,
+        bg_range: data.FeatureRange,
+        bth_range: data.FeatureRange,
+        pe_range: data.FeatureRange,
         mode: str = "mean",
     ) -> None:
         logger = logging.getLogger("__main__")

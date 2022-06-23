@@ -21,9 +21,9 @@ def unnormalize_params(
     Bg: np.ndarray,
     Bth: np.ndarray,
     Pe: np.ndarray,
-    bg_range: data.Range,
-    bth_range: data.Range,
-    pe_range: data.Range,
+    bg_range: data.FeatureRange,
+    bth_range: data.FeatureRange,
+    pe_range: data.FeatureRange,
 ) -> Tuple[np.ndarray, ...]:
     """Inverts simple linear normalization."""
     Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min
@@ -44,7 +44,12 @@ def test_accuracy(
     all_true = np.zeros((num_batches, config.batch_size, config.layer_sizes[-1]))
     all_pred = np.zeros((num_batches, config.batch_size, config.layer_sizes[-1]))
     all_surfaces = np.zeros(
-        (num_batches, config.batch_size, config.resolution.phi, config.resolution.Nw)
+        (
+            num_batches,
+            config.batch_size,
+            config.phi_range.resolution,
+            config.nw_range.resolution,
+        )
     )
 
     model.eval()
@@ -66,7 +71,7 @@ def test_accuracy(
         all_pred.reshape(num_batches * config.batch_size, config.layer_sizes[-1]),
         all_surfaces.reshape(
             num_batches * config.batch_size,
-            config.resolution.phi * config.resolution.Nw,
+            config.phi_range.resolution * config.nw_range.resolution,
         ),
         cum_losses / num_batches,
     )
@@ -159,7 +164,11 @@ def main() -> None:
         kernel_sizes=config.kernel_sizes,
         pool_sizes=config.pool_sizes,
         layer_sizes=config.layer_sizes,
-        resolution=config.resolution,
+        resolution=(
+            config.phi_range.resolution,
+            config.nw_range.resolution,
+            config.eta_sp_range.resolution,
+        ),
     ).to(config.device)
     model.load_state_dict(checkpoint["model"])
 
