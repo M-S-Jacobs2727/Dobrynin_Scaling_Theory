@@ -53,10 +53,11 @@ class Generator(Protocol):
 
 
 class SurfaceGenerator:
-    """Returns a callable object that can be used in a `for` loop to efficiently
-    generate polymer solution specific viscosity data as a function of concentration
-    and weight-average degree of polymerization as defined by three parameters: the
-    blob parameters $B_g$ and $B_{th}$, and the entanglement packing number $P_e$.
+    """Returns a callable, iterable object that can be used in a `for` loop to
+    efficiently generate polymer solution specific viscosity data as a function of
+    concentration and weight-average degree of polymerization as defined by three
+    parameters: the blob parameters $B_g$ and $B_{th}$, and the entanglement packing
+    number $P_e$.
 
     Usage:
     ```
@@ -68,9 +69,14 @@ class SurfaceGenerator:
 
     Input:
         `config` (`data_processing.NNConfig`) : The configuration object.
-            Specifically, the generator uses the attributes device, resolution,
-            phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
-            batch_size.
+            Specifically, the generator uses the attributes specified in the Config
+            protocol in this module.
+        `strip_nw` (`bool`, default `False`) : If true, then before the generated
+            surfaces are returned, they are stripped down in the Nw dimension to reflect
+            that experiments are usually done with fewer than 8 different molecular
+            weight species. All specific viscosity data is set to 0 for all values of Nw
+            except for several randomly chosen values. Then, the remaining values are
+            interpolated to cover the whole intermediate range.
     """
 
     def __init__(self, config: Config, strip_nw: bool = False) -> None:
@@ -341,9 +347,14 @@ class VoxelImageGenerator:
 
     Input:
         `config` (`data_processing.NNConfig`) : The configuration object.
-            Specifically, the generator uses the attributes device, resolution,
-            phi_range, nw_range, eta_sp_range, bg_range, bth_range, pe_range, and
-            batch_size.
+            Specifically, the generator uses the attributes specified in the Config
+            protocol in this module.
+        `strip_nw` (`bool`, default `False`) : If true, then before the generated
+            surfaces are returned, they are stripped down in the Nw dimension to reflect
+            that experiments are usually done with fewer than 8 different molecular
+            weight species. All specific viscosity data is set to 0 for all values of Nw
+            except for several randomly chosen values. Then, the remaining values are
+            interpolated to cover the whole intermediate range.
     """
 
     def __init__(self, config: Config, strip_nw: bool = False) -> None:

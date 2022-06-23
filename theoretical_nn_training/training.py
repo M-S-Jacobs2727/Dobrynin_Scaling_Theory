@@ -70,7 +70,7 @@ def test(
     the loss function.
 
     Input:
-        `model` (`torch.nn.Module`) : The neural network model to be trained.
+        `model` (`torch.nn.Module`) : The neural network model to be tested.
         `generator` (`generators.Generator`) : The iterable function that returns
             representations of polymer solution specific viscosity data.
         `loss_fn` (`torch.nn.Module`) : Determines the errors between the true values of
