@@ -6,6 +6,8 @@ where `<configuration_filename>` is a path to a YAML or JSON configuration file 
 examples in the configurations folder). This will create a model, train it on the
 generated data, and save the results (model, optimizer, and losses and errors over
 training iterations).
+
+TODO: implement distributed_data_parallel?
 """
 
 import argparse
@@ -47,7 +49,7 @@ def run(
         `optimizer` (`torch.optim.Optimizer`) : Incrementally adjusts the model.
     """
 
-    train_errors, test_errors = np.zeros((2, config.epochs, config.layer_sizes[-1]))
+    train_losses, test_losses = np.zeros((2, config.epochs, config.layer_sizes[-1]))
 
     logger = logging.getLogger("__main__")
     logger.info("Running...")
@@ -65,7 +67,7 @@ def run(
         # Training
         # losses will be the individual loss of each feature, as a 1D tensor with
         # length config.layer_sizes[-1]
-        train_errors[epoch] = training.train(
+        train_losses[epoch] = training.train(
             model=model,
             generator=generator,
             optimizer=optimizer,
@@ -74,12 +76,12 @@ def run(
         )
 
         table_entry = f"{epoch:6d}"
-        for loss in train_errors[epoch]:
+        for loss in train_losses[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
         # Testing
-        test_errors[epoch] = training.test(
+        test_losses[epoch] = training.test(
             model=model,
             generator=generator,
             loss_fn=loss_fn,
@@ -87,29 +89,29 @@ def run(
         )
 
         table_entry = f"{epoch:6d}"
-        for loss in test_errors[epoch]:
+        for loss in test_losses[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
 
     # Save loss values
+    loss_file = config.output_directory / "loss_values.csv"
     np.savetxt(
-        config.output_directory / "loss_values.csv",
-        np.concatenate((train_errors, test_errors), axis=1),
+        loss_file,
+        np.concatenate((train_losses, test_losses), axis=1),
         fmt="%.6f",
         delimiter=",",
         comments="",
     )
-    logger.info(f"Saved loss progress in {config.output_directory/'loss_values.csv'}")
+    logger.info(f"Saved loss progress in {loss_file}")
 
     # Save model and optimizer for testing and further training
     # (test manually only if good results)
+    model_file = config.output_directory / "model_and_optimizer"
     torch.save(
         {"model": model.state_dict(), "optimizer": optimizer.state_dict()},
-        config.output_directory / "model_and_optimizer",
+        model_file,
     )
-    logger.info(
-        f"Saved model and optimizer in {config.output_directory/'model_and_optimizer'}"
-    )
+    logger.info(f"Saved model and optimizer in {model_file}")
     logger.info("Done.\n")
 
 
@@ -211,7 +213,7 @@ def main() -> None:
 
     # If the -m argument is passed with a valid filename, the model and optimizer states
     # will be loaded from that file. If the filename is invalid, an error will be
-    # raised. Otherwise, the model and optimizer will be created anew.
+    # raised.
     if args.modelfile:
         if not Path(args.modelfile).is_file():
             logger.exception(f"File {args.modelfile} not found.")
