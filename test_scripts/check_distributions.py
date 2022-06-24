@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
-import torch
 import theoretical_nn_training.data_processing as data
+import torch
 from theoretical_nn_training.configuration import NNConfig
 
 
 def sample_and_plot(
     feature_range: data.Range, batch_size: int, feature_name: str, device: torch.device
 ) -> None:
-    dist = data.feature_distribution(feature_range, batch_size, device)
+    dist = data.feature_distribution(feature_range, device)
     values = dist.sample()
 
     plt.figure(feature_name)

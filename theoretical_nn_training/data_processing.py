@@ -58,7 +58,7 @@ class Range:
 
 
 def feature_distribution(
-    feature_range: Range, batch_size: int, device: torch.device
+    feature_range: Range, device: torch.device
 ) -> torch.distributions.Distribution:
     """Returns a generator that can be sampled in batches of size `batch_size` for the
     features Bg, Bth, or Pe. These can be the Beta distribution (if feature_range.alpha
@@ -70,17 +70,17 @@ def feature_distribution(
     """
     if feature_range.alpha and feature_range.beta:
         return torch.distributions.Beta(
-            torch.zeros((batch_size,), dtype=torch.float) + feature_range.alpha,
-            torch.zeros((batch_size,), dtype=torch.float) + feature_range.beta,
+            torch.tensor(feature_range.alpha, dtype=torch.float, device=device),
+            torch.tensor(feature_range.beta, dtype=torch.float, device=device),
         )
     if feature_range.mu and feature_range.sigma:
         return torch.distributions.LogNormal(
-            torch.zeros((batch_size,), dtype=torch.float) + feature_range.mu,
-            torch.zeros((batch_size,), dtype=torch.float) + feature_range.sigma,
+            torch.tensor(feature_range.mu, dtype=torch.float, device=device),
+            torch.tensor(feature_range.sigma, dtype=torch.float, device=device),
         )
     return torch.distributions.Uniform(
-        torch.zeros((batch_size,), dtype=torch.float) + feature_range.min,
-        torch.zeros((batch_size,), dtype=torch.float) + feature_range.max,
+        torch.tensor(feature_range.min, dtype=torch.float, device=device),
+        torch.tensor(feature_range.max, dtype=torch.float, device=device),
     )
 
 

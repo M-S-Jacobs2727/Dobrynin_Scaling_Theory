@@ -93,7 +93,7 @@ class SurfaceGenerator:
             ),
             dtype=torch.float,
             device=config.device,
-        )
+        ).reshape((1, config.resolution.phi, 1))
 
         self.Nw = torch.tensor(
             np.geomspace(
@@ -104,33 +104,27 @@ class SurfaceGenerator:
             ),
             dtype=torch.float,
             device=config.device,
-        )
+        ).reshape((1, 1, config.resolution.Nw))
 
-        self.phi_mesh, self.Nw_mesh = torch.meshgrid(self.phi, self.Nw, indexing="xy")
-        self.phi_mesh = torch.tile(self.phi_mesh, (config.batch_size, 1, 1))
-        self.Nw_mesh = torch.tile(self.Nw_mesh, (config.batch_size, 1, 1))
-
-        if self.config.mode is not Mode.THETA:
+        if config.mode is not Mode.THETA:
             self.bg_distribution = data.feature_distribution(
-                config.bg_range, config.batch_size, config.device
+                config.bg_range, config.device
             )
-        if self.config.mode is not Mode.GOOD:
+        if config.mode is not Mode.GOOD:
             self.bth_distribution = data.feature_distribution(
-                config.bth_range, config.batch_size, config.device
+                config.bth_range, config.device
             )
-        self.pe_distribution = data.feature_distribution(
-            config.pe_range, config.batch_size, config.device
-        )
+        self.pe_distribution = data.feature_distribution(config.pe_range, config.device)
 
-        self.config = config
-        self.strip_nw = strip_nw
-
-        if self.config.mode is Mode.GOOD:
+        if config.mode is Mode.GOOD:
             self.generation_function = self._good_generation
-        elif self.config.mode is Mode.MIXED:
+        elif config.mode is Mode.MIXED:
             self.generation_function = self._mixed_generation
         else:
             self.generation_function = self._theta_generation
+
+        self.config = config
+        self.strip_nw = strip_nw
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
@@ -170,42 +164,30 @@ class SurfaceGenerator:
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = self.bg_distribution.sample()
-        Pe = self.pe_distribution.sample()
-
-        # First, tile params to match shape of phi and Nw for simple,
-        # element-wise operations
-        # TODO: check if there is a way to do operations without the meshes. It may be
-        # more readable this way, but it is less memory-efficient.
-        shape = torch.Size((1, *(self.phi_mesh.size()[1:])))
-        Bg = torch.tile(Bg.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
-        Pe = torch.tile(Pe.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
+        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # Number of repeat units per correlation blob
-        g = Bg ** (3 / 0.764) / self.phi_mesh ** (1 / 0.764)
-
-        # Number of repeat units per entanglement strand
-        # Kavassalis-Noolandi only
-        Ne = Pe**2 * g
+        g = Bg ** (3 / 0.764) / self.phi ** (1 / 0.764)
 
         # Specific viscosity crossover function from Rouse to entangled regimes
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
+        # Ne is simply Pe^2 * g
         eta_sp = (
-            self.Nw_mesh
-            * (1 + (self.Nw_mesh / Ne) ** 2)
-            * torch.fmin(1 / g, self.phi_mesh / Bg ** (1 / (1 - 0.588)))
+            self.Nw
+            * (1 + (self.Nw / Pe**2 / g) ** 2)
+            * torch.fmin(
+                1 / g,
+                self.phi / Bg ** (1 / (1 - 0.588)),
+            )
         )
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bg, self.config.bg_range),
-                data.normalize_feature(Pe, self.config.pe_range),
+                data.normalize_feature(Bg.flatten(), self.config.bg_range),
+                data.normalize_feature(Pe.flatten(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)
@@ -214,40 +196,25 @@ class SurfaceGenerator:
 
     def _mixed_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = self.bg_distribution.sample()
-        Pe = self.pe_distribution.sample()
+        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # To ensure that this model doesn't generate the athermal condition
         # (see _good_generatrion), we select Bth uniformly between 0 and Bg^(1/0.824)
         # We also ensure that Bth stays within the Range.
         Bth = (
-            torch.rand(torch.Size((self.config.batch_size,)))
+            torch.rand(self.config.batch_size, 1, 1, device=self.config.device)
             * Bg ** (1 / 0.824)
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
-        )
-
-        # First, tile params to match shape of phi and Nw for simple,
-        # element-wise operations
-        # TODO: check if there is a way to do operations without the meshes. It may be
-        # more readable this way, but it is less memory-efficient.
-        shape = torch.Size((1, *(self.phi_mesh.size()[1:])))
-        Bg = torch.tile(Bg.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
-        Bth = torch.tile(Bth.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
-        Pe = torch.tile(Pe.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
         )
 
         # Number of repeat units per correlation blob
         # The minimum function accounts for the piecewise crossover at the thermal
         # blob overlap concentration.
         g = torch.fmin(
-            Bg ** (3 / 0.764) / self.phi_mesh ** (1 / 0.764),
-            Bth**6 / self.phi_mesh**2,
+            Bg ** (3 / 0.764) / self.phi ** (1 / 0.764),
+            Bth**6 / self.phi**2,
         )
 
         # Number of repeat units per entanglement strand
@@ -257,7 +224,7 @@ class SurfaceGenerator:
         Ne = Pe**2 * torch.fmin(
             torch.fmin(
                 Bth ** (0.944 / 0.528) / Bg ** (2 / 0.528) * g,  # c* < c < c_th
-                Bth**2 * self.phi_mesh ** (-4 / 3),  # c_th < c < b^-3
+                Bth**2 * self.phi ** (-4 / 3),  # c_th < c < b^-3
             ),
             g,  # b^-3 < c
         )
@@ -266,17 +233,15 @@ class SurfaceGenerator:
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
         eta_sp = (
-            self.Nw_mesh
-            * (1 + (self.Nw_mesh / Ne) ** 2)
-            * torch.fmin(1 / g, self.phi_mesh / Bth**2)
+            self.Nw * (1 + (self.Nw / Ne) ** 2) * torch.fmin(1 / g, self.phi / Bth**2)
         )
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bg, self.config.bg_range),
-                data.normalize_feature(Bth, self.config.bth_range),
-                data.normalize_feature(Pe, self.config.pe_range),
+                data.normalize_feature(Bg.flatten(), self.config.bg_range),
+                data.normalize_feature(Bth.flatten(), self.config.bth_range),
+                data.normalize_feature(Pe.flatten(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)
@@ -285,30 +250,18 @@ class SurfaceGenerator:
 
     def _theta_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bth = self.bth_distribution.sample()
-        Pe = self.pe_distribution.sample()
-
-        # First, tile params to match shape of phi and Nw for simple,
-        # element-wise operations
-        # TODO: check if there is a way to do operations without the meshes. It may be
-        # more readable this way, but it is less memory-efficient.
-        shape = torch.Size((1, *(self.phi_mesh.size()[1:])))
-        Bth = torch.tile(Bth.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
-        Pe = torch.tile(Pe.reshape((self.config.batch_size, 1, 1)), shape).to(
-            self.config.device
-        )
+        Bth = self.bth_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # Number of repeat units per correlation blob
-        g = Bth**6 / self.phi_mesh**2
+        g = Bth**6 / self.phi**2
 
         # Number of repeat units per entanglement strand
         # Universal definition of Ne accounts for both
         # Kavassalis-Noolandi and Rubinstein-Colby scaling.
         # Corresponding concentration ranges are listed next to the expressions.
         Ne = Pe**2 * torch.fmin(
-            Bth**2 * self.phi_mesh ** (-4 / 3),  # c* < c < b^-3
+            Bth**2 * self.phi ** (-4 / 3),  # c* < c < b^-3
             g,  # b^-3 < c
         )
 
@@ -316,16 +269,14 @@ class SurfaceGenerator:
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
         eta_sp = (
-            self.Nw_mesh
-            * (1 + (self.Nw_mesh / Ne) ** 2)
-            * torch.fmin(1 / g, self.phi_mesh / Bth**2)
+            self.Nw * (1 + (self.Nw / Ne) ** 2) * torch.fmin(1 / g, self.phi / Bth**2)
         )
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bth, self.config.bth_range),
-                data.normalize_feature(Pe, self.config.pe_range),
+                data.normalize_feature(Bth.flatten(), self.config.bth_range),
+                data.normalize_feature(Pe.flatten(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)
