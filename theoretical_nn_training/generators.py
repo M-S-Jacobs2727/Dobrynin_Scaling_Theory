@@ -168,11 +168,8 @@ class SurfaceGenerator:
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        normalized_Bg = self.bg_distribution.sample()
-        normalized_Pe = self.pe_distribution.sample()
-
-        Bg = data.unnormalize_feature(normalized_Bg, self.config.bg_range)
-        Pe = data.unnormalize_feature(normalized_Pe, self.config.pe_range)
+        Bg = self.bg_distribution.sample()
+        Pe = self.pe_distribution.sample()
 
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
@@ -203,21 +200,20 @@ class SurfaceGenerator:
         )
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
-        features = torch.stack((normalized_Bg, normalized_Pe), dim=1).to(
-            self.config.device
-        )
+        features = torch.stack(
+            (
+                data.normalize_feature(Bg, self.config.bg_range),
+                data.normalize_feature(Pe, self.config.pe_range),
+            ),
+            dim=1,
+        ).to(self.config.device)
 
         return surfaces, features
 
     def _mixed_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        normalized_Bg = self.bg_distribution.sample()
-        # normalized_Bth = self.bth_distribution.sample()
-        normalized_Pe = self.pe_distribution.sample()
-
-        Bg = data.unnormalize_feature(normalized_Bg, self.config.bg_range)
-        # Bth = data.unnormalize_feature(normalized_Bth, self.config.bth_range)
-        Pe = data.unnormalize_feature(normalized_Pe, self.config.pe_range)
+        Bg = self.bg_distribution.sample()
+        Pe = self.pe_distribution.sample()
 
         # To ensure that this model doesn't generate the athermal condition
         # (see _good_generatrion), we select Bth uniformly between 0 and Bg^(1/0.824)
@@ -228,7 +224,6 @@ class SurfaceGenerator:
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
         )
-        normalized_Bth = data.normalize_feature(Bth, self.config.bth_range)
 
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
@@ -276,18 +271,20 @@ class SurfaceGenerator:
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
-            (normalized_Bg, normalized_Bth, normalized_Pe), dim=1
+            (
+                data.normalize_feature(Bg, self.config.bg_range),
+                data.normalize_feature(Bth, self.config.bth_range),
+                data.normalize_feature(Pe, self.config.pe_range),
+            ),
+            dim=1,
         ).to(self.config.device)
 
         return surfaces, features
 
     def _theta_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        normalized_Bth = self.bth_distribution.sample()
-        normalized_Pe = self.pe_distribution.sample()
-
-        Bth = data.unnormalize_feature(normalized_Bth, self.config.bth_range)
-        Pe = data.unnormalize_feature(normalized_Pe, self.config.pe_range)
+        Bth = self.bth_distribution.sample()
+        Pe = self.pe_distribution.sample()
 
         # First, tile params to match shape of phi and Nw for simple,
         # element-wise operations
@@ -323,9 +320,13 @@ class SurfaceGenerator:
         )
 
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
-        features = torch.stack((normalized_Bth, normalized_Pe), dim=1).to(
-            self.config.device
-        )
+        features = torch.stack(
+            (
+                data.normalize_feature(Bth, self.config.bth_range),
+                data.normalize_feature(Pe, self.config.pe_range),
+            ),
+            dim=1,
+        ).to(self.config.device)
 
         return surfaces, features
 
