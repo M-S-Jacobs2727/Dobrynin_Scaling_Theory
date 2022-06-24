@@ -110,14 +110,16 @@ class SurfaceGenerator:
         self.phi_mesh = torch.tile(self.phi_mesh, (config.batch_size, 1, 1))
         self.Nw_mesh = torch.tile(self.Nw_mesh, (config.batch_size, 1, 1))
 
-        self.bg_distribution = data.feature_distribution(
-            config.bg_range, config.batch_size
-        )
-        self.bth_distribution = data.feature_distribution(
-            config.bth_range, config.batch_size
-        )
+        if self.config.mode is not Mode.THETA:
+            self.bg_distribution = data.feature_distribution(
+                config.bg_range, config.batch_size, config.device
+            )
+        if self.config.mode is not Mode.GOOD:
+            self.bth_distribution = data.feature_distribution(
+                config.bth_range, config.batch_size, config.device
+            )
         self.pe_distribution = data.feature_distribution(
-            config.pe_range, config.batch_size
+            config.pe_range, config.batch_size, config.device
         )
 
         self.config = config

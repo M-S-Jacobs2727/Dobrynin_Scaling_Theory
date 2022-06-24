@@ -58,12 +58,15 @@ class Range:
 
 
 def feature_distribution(
-    feature_range: Range, batch_size: int
+    feature_range: Range, batch_size: int, device: torch.device
 ) -> torch.distributions.Distribution:
     """Returns a generator that can be sampled in batches of size `batch_size` for the
     features Bg, Bth, or Pe. These can be the Beta distribution (if feature_range.alpha
     and feature_range.beta are defined), the LogNormal distribution (if feature_range.mu
     and feature_range.sigma are defined), or the Uniform distribution otherwise.
+
+    Note: to use these in a neural network, they must first be normalized using, e.g.,
+    `data_processing.normalize_feature`.
     """
     if feature_range.alpha and feature_range.beta:
         return torch.distributions.Beta(
