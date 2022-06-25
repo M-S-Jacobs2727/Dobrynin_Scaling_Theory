@@ -8,6 +8,7 @@ TODO: update documentation for mode and strip_nw
 from typing import Protocol, Tuple
 
 import numpy as np
+import scipy.interpolate
 import torch
 from typing_extensions import Self
 
@@ -29,6 +30,7 @@ class Config(Protocol):
     bg_range: Range
     bth_range: Range
     pe_range: Range
+    num_nw_strips: int
     batch_size: int
 
 
@@ -123,8 +125,20 @@ class SurfaceGenerator:
         else:
             self.generation_function = self._theta_generation
 
+        # self.xi is used in the 2D interpolation after stripping the surface of most
+        # Nw values. It is here so it will only be computed once.
+        if config.num_nw_strips:
+            phi_mesh, Nw_mesh = torch.meshgrid(
+                self.phi.ravel(), self.Nw.ravel(), indexing="xy"
+            )
+            self.flattened_phi_Nw_mesh = torch.repeat_interleave(
+                torch.vstack((phi_mesh.ravel(), Nw_mesh.ravel())),
+                config.batch_size,
+                dim=0,
+            )
+            del phi_mesh, Nw_mesh
+
         self.config = config
-        self.strip_nw = strip_nw
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
@@ -141,26 +155,36 @@ class SurfaceGenerator:
 
         surfaces, features = self.generation_function()
 
-        if not self.strip_nw:
+        if not self.config.num_nw_strips:
             return surfaces, features
 
         # Stripping the Nw dimension to simulate experimental data, which usually
-        # only has a handful of different samples.
-        # TODO: add interpolation of the few samples, as we will for experimental data
+        # only has a handful of different samples. Note: this `randint` call is a random
+        # sample with replacement, meaning the total number of strips may be less than
+        # `self.config.num_nw_strips`
         nw_index_choices = torch.randint(
             0,
             self.config.resolution.Nw,
-            torch.Size((self.config.batch_size, 8)),
+            torch.Size((self.config.batch_size, 1, self.config.num_nw_strips)),
             device=self.config.device,
         )
-        to_keep = torch.zeros(
-            (self.config.batch_size, self.config.resolution.Nw), dtype=torch.bool
-        )
-        for surface, to_keep_b, choices_b in zip(surfaces, to_keep, nw_index_choices):
-            to_keep_b[choices_b] = True
-            surface[~to_keep_b] = 0
+        for surface, nw_index_choice in zip(surfaces, nw_index_choices):
+            new_surface = torch.zeros_like(surface)
+            new_surface[:, nw_index_choice] = surface[:, nw_index_choice]
+            surface = new_surface
 
-        return surfaces, features
+        # Interpolate stripped data
+        ravelled_surfaces = surfaces.ravel()
+        have_values = 0 < ravelled_surfaces < 1
+        interp_surfaces = scipy.interpolate.griddata(
+            points=self.flattened_phi_Nw_mesh[have_values],
+            values=ravelled_surfaces[have_values],
+            xi=self.flattened_phi_Nw_mesh,
+            method="linear",
+            fill_value=0.0,
+        )
+
+        return interp_surfaces, features
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
@@ -186,8 +210,8 @@ class SurfaceGenerator:
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bg.flatten(), self.config.bg_range),
-                data.normalize_feature(Pe.flatten(), self.config.pe_range),
+                data.normalize_feature(Bg.ravel(), self.config.bg_range),
+                data.normalize_feature(Pe.ravel(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)
@@ -208,6 +232,10 @@ class SurfaceGenerator:
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
         )
+        if torch.any(Bg < Bth**0.824):
+            raise RuntimeWarning(
+                "Athermal condition detected in generation of strictly thermal data."
+            )
 
         # Number of repeat units per correlation blob
         # The minimum function accounts for the piecewise crossover at the thermal
@@ -239,9 +267,9 @@ class SurfaceGenerator:
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bg.flatten(), self.config.bg_range),
-                data.normalize_feature(Bth.flatten(), self.config.bth_range),
-                data.normalize_feature(Pe.flatten(), self.config.pe_range),
+                data.normalize_feature(Bg.ravel(), self.config.bg_range),
+                data.normalize_feature(Bth.ravel(), self.config.bth_range),
+                data.normalize_feature(Pe.ravel(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)
@@ -275,8 +303,8 @@ class SurfaceGenerator:
         surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
-                data.normalize_feature(Bth.flatten(), self.config.bth_range),
-                data.normalize_feature(Pe.flatten(), self.config.pe_range),
+                data.normalize_feature(Bth.ravel(), self.config.bth_range),
+                data.normalize_feature(Pe.ravel(), self.config.pe_range),
             ),
             dim=1,
         ).to(self.config.device)

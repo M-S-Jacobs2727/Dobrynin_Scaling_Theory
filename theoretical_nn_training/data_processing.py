@@ -133,5 +133,5 @@ def preprocess_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor
     )
     eta_sp = torch.fmin(eta_sp, torch.tensor(eta_sp_range.max))
     eta_sp = torch.fmax(eta_sp, torch.tensor(eta_sp_range.min))
-    # eta_sp[eta_sp == eta_sp_range.max] = eta_sp_range.min
+    eta_sp[eta_sp == eta_sp_range.max] = eta_sp_range.min
     return normalize_eta_sp(eta_sp, eta_sp_range)

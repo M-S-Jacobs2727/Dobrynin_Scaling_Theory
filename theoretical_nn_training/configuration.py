@@ -87,6 +87,7 @@ class NNConfig:
     bg_range: Range
     bth_range: Range
     pe_range: Range
+    num_nw_strips: int
     batch_size: int
     train_size: int
     test_size: int
@@ -224,6 +225,14 @@ class NNConfig:
         logger.debug(
             f"Loaded {self.bg_range = }, {self.bth_range = }, {self.pe_range = }."
         )
+
+        # Whether to strip values of Nw from the generated surfaces, for training data
+        # more similar in shape to experimental data.
+        num_nw_strips = config_dict.get("num_nw_strips")
+        if num_nw_strips:
+            self.num_nw_strips = int(num_nw_strips)
+        else:
+            self.num_nw_strips = 0
 
         # Model training parameters
         self.batch_size = int(config_dict["batch_size"])
