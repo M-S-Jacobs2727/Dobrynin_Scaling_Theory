@@ -30,8 +30,8 @@ pe_range:
     max: 18
     mu: 1.95
     sigma: 0.36
-batch_size: 40
-train_size: 8000
-test_size: 400
-epochs: 20
+batch_size: 60
+train_size: 60000
+test_size: 3000
+epochs: 50
 learning_rate: 0.001
