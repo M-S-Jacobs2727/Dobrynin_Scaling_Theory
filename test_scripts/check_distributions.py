@@ -8,7 +8,7 @@ def sample_and_plot(
     feature_range: data.Range, batch_size: int, feature_name: str, device: torch.device
 ) -> None:
     dist = data.feature_distribution(feature_range, device)
-    values = dist.sample()
+    values = dist.sample(torch.Size((batch_size,)))
 
     plt.figure(feature_name)
     plt.hist(values.numpy(), bins=20)
@@ -16,7 +16,7 @@ def sample_and_plot(
 
 def main() -> None:
     config = NNConfig("theoretical_nn_training/configurations/mixed_config_512.yaml")
-    config.batch_size = 1000
+    config.batch_size = 10000
 
     sample_and_plot(config.bg_range, config.batch_size, "Bg", config.device)
     sample_and_plot(config.bth_range, config.batch_size, "Bth", config.device)

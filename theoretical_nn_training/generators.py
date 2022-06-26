@@ -238,10 +238,6 @@ class SurfaceGenerator:
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
         ) * Bg ** (1 / 0.824)
-        if torch.any(Bg < Bth**0.824):
-            raise RuntimeWarning(
-                "Athermal condition detected in generation of strictly thermal data."
-            )
 
         # Number of repeat units per correlation blob
         # The minimum function accounts for the piecewise crossover at the thermal
