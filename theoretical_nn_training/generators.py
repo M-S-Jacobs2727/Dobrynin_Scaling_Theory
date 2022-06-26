@@ -180,18 +180,19 @@ class SurfaceGenerator:
             (0 < ravelled_surfaces), (ravelled_surfaces < 1)
         )
 
-        interp_surfaces = scipy.interpolate.griddata(
-            points=self.flattened_phi_Nw_mesh[have_values],
-            values=ravelled_surfaces[have_values],
-            xi=self.flattened_phi_Nw_mesh,
-            method="linear",
-            fill_value=0.0,
-        )
+        interp_surfaces = torch.tensor(
+            scipy.interpolate.griddata(
+                points=self.flattened_phi_Nw_mesh[have_values].cpu(),
+                values=ravelled_surfaces[have_values].cpu(),
+                xi=self.flattened_phi_Nw_mesh.cpu(),
+                method="linear",
+                fill_value=0.0,
+            ),
+            dtype=torch.float,
+            device=self.config.device,
+        ).reshape_as(surfaces)
 
-        return (
-            torch.tensor(interp_surfaces, dtype=torch.float, device=self.config.device),
-            features,
-        )
+        return interp_surfaces, features
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
