@@ -41,7 +41,7 @@ class Generator(Protocol):
     high-performance devices, such as a CUDA-enabled GPU.
     """
 
-    def __init__(self, config: Config, strip_nw: bool) -> None:
+    def __init__(self, config: Config) -> None:
         ...
 
     def __call__(self, num_batches: int) -> Self:
@@ -81,7 +81,7 @@ class SurfaceGenerator:
             interpolated to cover the whole intermediate range.
     """
 
-    def __init__(self, config: Config, strip_nw: bool = False) -> None:
+    def __init__(self, config: Config) -> None:
 
         # Create tensors for phi (concentration) and Nw (chain length)
         # Both are meshed and tiled to cover a 3D tensor of size
@@ -132,10 +132,11 @@ class SurfaceGenerator:
                 self.phi.ravel(), self.Nw.ravel(), indexing="xy"
             )
             self.flattened_phi_Nw_mesh = torch.repeat_interleave(
-                torch.vstack((phi_mesh.ravel(), Nw_mesh.ravel())),
+                torch.stack((phi_mesh.ravel(), Nw_mesh.ravel()), dim=1),
                 config.batch_size,
                 dim=0,
             )
+            print(self.flattened_phi_Nw_mesh.size())
             del phi_mesh, Nw_mesh
 
         self.config = config
@@ -175,7 +176,10 @@ class SurfaceGenerator:
 
         # Interpolate stripped data
         ravelled_surfaces = surfaces.ravel()
-        have_values = 0 < ravelled_surfaces < 1
+        have_values = torch.logical_and(
+            (0 < ravelled_surfaces), (ravelled_surfaces < 1)
+        )
+
         interp_surfaces = scipy.interpolate.griddata(
             points=self.flattened_phi_Nw_mesh[have_values],
             values=ravelled_surfaces[have_values],
@@ -184,7 +188,10 @@ class SurfaceGenerator:
             fill_value=0.0,
         )
 
-        return interp_surfaces, features
+        return (
+            torch.tensor(interp_surfaces, dtype=torch.float, device=self.config.device),
+            features,
+        )
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
@@ -228,10 +235,9 @@ class SurfaceGenerator:
         # We also ensure that Bth stays within the Range.
         Bth = (
             torch.rand(self.config.batch_size, 1, 1, device=self.config.device)
-            * Bg ** (1 / 0.824)
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
-        )
+        ) * Bg ** (1 / 0.824)
         if torch.any(Bg < Bth**0.824):
             raise RuntimeWarning(
                 "Athermal condition detected in generation of strictly thermal data."
@@ -339,7 +345,7 @@ class VoxelImageGenerator:
             interpolated to cover the whole intermediate range.
     """
 
-    def __init__(self, config: Config, strip_nw: bool = False) -> None:
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.config.resolution = Resolution(
             config.resolution.phi + 1,
@@ -361,8 +367,7 @@ class VoxelImageGenerator:
             config.eta_sp_range,
         )
 
-        self.strip_nw = strip_nw
-        self.surface_generator = SurfaceGenerator(self.config, self.strip_nw)
+        self.surface_generator = SurfaceGenerator(self.config)
 
     def __call__(self, num_batches: int) -> Self:
         self.num_batches = num_batches
