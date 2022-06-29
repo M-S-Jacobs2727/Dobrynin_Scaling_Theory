@@ -57,7 +57,7 @@ def train(
 
     avg_loss /= num_batches
 
-    return avg_loss.detach().cpu().numpy()
+    return avg_loss.detach().cpu()
 
 
 def test(
@@ -101,4 +101,4 @@ def test(
 
     avg_loss /= num_batches
 
-    return avg_loss.cpu().numpy()
+    return avg_loss.cpu()
