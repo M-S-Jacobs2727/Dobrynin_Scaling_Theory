@@ -5,7 +5,6 @@ configuration class, which is initialized from the given configuration file.
 
 TODO: move Resolution to Range? If min and max are attributes of, e.g., nw_range,
 why not num_points?
-TODO: Check for negative values for all ints and floats.
 """
 import json
 import logging
@@ -165,29 +164,94 @@ class NNConfig:
         # more similar in shape to experimental data.
         num_nw_strips = config_dict.get("num_nw_strips")
         if num_nw_strips:
+            if int(num_nw_strips) != num_nw_strips:
+                raise ValueError(
+                    "Config parameter 'num_nw_strips' must be an integer."
+                    f" Value: {num_nw_strips}"
+                )
+            if num_nw_strips < 0:
+                raise ValueError(
+                    "Config parameter 'num_nw_strips' must be >= 0."
+                    f" Value: {num_nw_strips}"
+                )
             self.num_nw_strips = int(num_nw_strips)
         else:
             self.num_nw_strips = 0
 
         # Optimizer learning rate
         self.learning_rate = float(config_dict["learning_rate"])
+        if self.learning_rate <= 0:
+            raise ValueError(
+                "Config parameter 'learning_rate' must be > 0."
+                f" Value: {self.learning_rate}"
+            )
         logger.debug(f"Loaded {self.learning_rate = :.5f}.")
 
         # Surface resolution
         self.resolution = Resolution(*config_dict["resolution"])
+        if self.resolution.phi <= 0 or self.resolution.Nw <= 0:
+            raise ValueError(
+                "First two elements of config parameter 'resolution' must be > 0."
+                f" Values: ({self.resolution.phi=}, {self.resolution.Nw=})"
+            )
+        if self.resolution.eta_sp < 0:
+            raise ValueError(
+                "Third element of config parameter 'resolution' must be >= 0."
+                f" Value: {self.resolution.eta_sp}"
+            )
+        if (
+            self.resolution.phi != int(self.resolution.phi)
+            or self.resolution.Nw != int(self.resolution.Nw)
+            or self.resolution.eta_sp != int(self.resolution.eta_sp)
+        ):
+            raise ValueError(
+                "All elements of config parameter 'resolution must be integers."
+                f" Values: ({self.resolution.phi=}, {self.resolution.Nw=},"
+                f" {self.resolution.eta_sp})"
+            )
         logger.debug(f"Loaded {self.resolution = }.")
 
         # Min and max values of concentration, Nw, and viscosity
         self.phi_range = Range(
             config_dict["phi_range"]["min"], config_dict["phi_range"]["max"]
         )
+        if self.phi_range.min <= 0 or self.phi_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'phi_range' must be > 0."
+                f" Values: ({self.phi_range.min=}, {self.phi_range.max=})"
+            )
+        if self.phi_range.min >= self.phi_range.max:
+            raise ValueError(
+                "Min value of config parameter 'phi_range' should be less than max"
+                f" value. Values: ({self.phi_range.min=}, {self.phi_range.max=})"
+            )
         self.nw_range = Range(
             config_dict["nw_range"]["min"], config_dict["nw_range"]["max"]
         )
+        if self.nw_range.min <= 0 or self.nw_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'nw_range' must be > 0."
+                f" Values: ({self.nw_range.min=}, {self.nw_range.max=})"
+            )
+        if self.nw_range.min >= self.nw_range.max:
+            raise ValueError(
+                "Min value of config parameter 'nw_range' should be less than max"
+                f" value. Values: ({self.nw_range.min=}, {self.nw_range.max=})"
+            )
         self.eta_sp_range = Range(
             config_dict["eta_sp_range"]["min"],
             config_dict["eta_sp_range"]["max"],
         )
+        if self.eta_sp_range.min <= 0 or self.eta_sp_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'eta_sp_range' must be > 0."
+                f" Values: ({self.eta_sp_range.min=}, {self.eta_sp_range.max=})"
+            )
+        if self.eta_sp_range.min >= self.eta_sp_range.max:
+            raise ValueError(
+                "Min value of config parameter 'eta_sp_range' should be less than max"
+                f" value. Values: ({self.eta_sp_range.min=}, {self.eta_sp_range.max=})"
+            )
         logger.debug(
             f"Loaded {self.phi_range = }, {self.nw_range = }, {self.eta_sp_range = }."
         )
@@ -204,6 +268,16 @@ class NNConfig:
             mu=config_dict["bg_range"].get("mu"),
             sigma=config_dict["bg_range"].get("sigma"),
         )
+        if self.bg_range.min <= 0 or self.bg_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'bg_range' must be > 0."
+                f" Values: ({self.bg_range.min=}, {self.bg_range.max=})"
+            )
+        if self.bg_range.min >= self.bg_range.max:
+            raise ValueError(
+                "Min value of config parameter 'bg_range' should be less than max"
+                f" value. Values: ({self.bg_range.min=}, {self.bg_range.max=})"
+            )
         self.bth_range = Range(
             min=config_dict["bth_range"]["min"],
             max=config_dict["bth_range"]["max"],
@@ -212,6 +286,21 @@ class NNConfig:
             mu=config_dict["bth_range"].get("mu"),
             sigma=config_dict["bth_range"].get("sigma"),
         )
+        if self.bth_range.min <= 0 or self.bth_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'bth_range' must be > 0."
+                f" Values: ({self.bth_range.min=}, {self.bth_range.max=})"
+            )
+        if self.bth_range.min >= 1 or self.bth_range.max >= 1:
+            raise ValueError(
+                "Min and max values of config parameter 'bth_range' must be < 1."
+                f" Values: ({self.bth_range.min=}, {self.bth_range.max=})"
+            )
+        if self.bth_range.min >= self.bth_range.max:
+            raise ValueError(
+                "Min value of config parameter 'bth_range' should be less than max"
+                f" value. Values: ({self.bth_range.min=}, {self.bth_range.max=})"
+            )
         self.pe_range = Range(
             min=config_dict["pe_range"]["min"],
             max=config_dict["pe_range"]["max"],
@@ -220,6 +309,16 @@ class NNConfig:
             mu=config_dict["pe_range"].get("mu"),
             sigma=config_dict["pe_range"].get("sigma"),
         )
+        if self.pe_range.min <= 0 or self.pe_range.max <= 0:
+            raise ValueError(
+                "Min and max values of config parameter 'pe_range' must be > 0."
+                f" Values: ({self.pe_range.min=}, {self.pe_range.max=})"
+            )
+        if self.pe_range.min >= self.pe_range.max:
+            raise ValueError(
+                "Min value of config parameter 'pe_range' should be less than max"
+                f" value. Values: ({self.pe_range.min=}, {self.pe_range.max=})"
+            )
 
         # Check for incorrect combinations of (mu, sigma) and (alpha, beta) pairs
         for param_range in [self.bg_range, self.bth_range, self.pe_range]:
@@ -246,10 +345,47 @@ class NNConfig:
         )
 
         # Model training parameters
-        self.batch_size = int(config_dict["batch_size"])
-        self.train_size = int(config_dict["train_size"])
-        self.test_size = int(config_dict["test_size"])
-        self.epochs = int(config_dict["epochs"])
+        self.batch_size = config_dict["batch_size"]
+        if int(self.batch_size) != self.batch_size:
+            raise ValueError(
+                "Config parameter 'batch_size' must be an integer."
+                f" Value: {self.batch_size}"
+            )
+        if self.batch_size < 0:
+            raise ValueError(
+                "Config parameter 'batch_size' must be >= 0."
+                f" Value: {self.batch_size}"
+            )
+        self.train_size = config_dict["train_size"]
+        if int(self.train_size) != self.train_size:
+            raise ValueError(
+                "Config parameter 'train_size' must be an integer."
+                f" Value: {self.train_size}"
+            )
+        if self.train_size < 0:
+            raise ValueError(
+                "Config parameter 'train_size' must be >= 0."
+                f" Value: {self.train_size}"
+            )
+        self.test_size = config_dict["test_size"]
+        if int(self.test_size) != self.test_size:
+            raise ValueError(
+                "Config parameter 'test_size' must be an integer."
+                f" Value: {self.test_size}"
+            )
+        if self.test_size < 0:
+            raise ValueError(
+                "Config parameter 'test_size' must be >= 0." f" Value: {self.test_size}"
+            )
+        self.epochs = config_dict["epochs"]
+        if int(self.epochs) != self.epochs:
+            raise ValueError(
+                "Config parameter 'epochs' must be an integer." f" Value: {self.epochs}"
+            )
+        if self.epochs < 0:
+            raise ValueError(
+                "Config parameter 'epochs' must be >= 0." f" Value: {self.epochs}"
+            )
         logger.debug(
             f"Loaded {self.batch_size = }, {self.train_size = }, {self.test_size = },"
             f" and {self.epochs = }."
@@ -257,17 +393,28 @@ class NNConfig:
 
         # Number of nodes in each linear NN layer
         self.layer_sizes = tuple(config_dict["layer_sizes"])
-        if self.layer_sizes[-1] == 2 and self.mode is Mode.MIXED:
+        if self.layer_sizes[-1] != 3 and self.mode is Mode.MIXED:
             raise SyntaxError(
                 "For the 'mixed' mode, the final element in `layer_sizes` must be 3."
             )
-        if self.layer_sizes[-1] == 3 and (
+        if self.layer_sizes[-1] != 2 and (
             self.mode is Mode.GOOD or self.mode is Mode.THETA
         ):
             raise SyntaxError(
                 f"For the '{self.mode}' mode, the final element in `layer_sizes` must"
                 " be 2."
             )
+        for size in self.layer_sizes:
+            if int(size) != size:
+                raise ValueError(
+                    "Config parameter 'layer_sizes' must be a list of integers."
+                    f" Values: {self.layer_sizes}"
+                )
+            if size <= 0:
+                raise ValueError(
+                    "Config parameter 'layer_sizes' must be > 0."
+                    f" Values: {self.layer_sizes}"
+                )
         logger.debug(f"Loaded {self.layer_sizes = }.")
 
         # Define these three hyperparameters in the configuration file with equal
@@ -288,6 +435,40 @@ class NNConfig:
                     f" {len(self.channels)}, {len(self.kernel_sizes)}, and"
                     f" {len(self.pool_sizes)}, respectively."
                 )
+
+            for size in self.channels:
+                if int(size) != size:
+                    raise ValueError(
+                        "Config parameter 'channels' must be a list of integers."
+                        f" Values: {self.channels}"
+                    )
+                if size <= 0:
+                    raise ValueError(
+                        "Config parameter 'channels' must be > 0."
+                        f" Values: {self.channels}"
+                    )
+            for size in self.kernel_sizes:
+                if int(size) != size:
+                    raise ValueError(
+                        "Config parameter 'kernel_sizes' must be a list of integers."
+                        f" Values: {self.kernel_sizes}"
+                    )
+                if size <= 0:
+                    raise ValueError(
+                        "Config parameter 'kernel_sizes' must be > 0."
+                        f" Values: {self.kernel_sizes}"
+                    )
+            for size in self.pool_sizes:
+                if int(size) != size:
+                    raise ValueError(
+                        "Config parameter 'pool_sizes' must be a list of integers."
+                        f" Values: {self.pool_sizes}"
+                    )
+                if size <= 0:
+                    raise ValueError(
+                        "Config parameter 'pool_sizes' must be > 0."
+                        f" Values: {self.pool_sizes}"
+                    )
             logger.debug(
                 f"Loaded {self.channels = }, {self.kernel_sizes = }, and"
                 f" {self.pool_sizes = }."
