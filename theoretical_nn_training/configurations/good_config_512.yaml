@@ -1,5 +1,5 @@
 device: 'cuda:1'
-output_directory: '../mike_outputs/good'
+output_directory: '../mike_outputs/nw_good'
 mode: 'good' # Can be 'mixed', 'theta', or 'good'
 resolution: [512, 512]
 layer_sizes: [3200, 2000, 1000, 2]

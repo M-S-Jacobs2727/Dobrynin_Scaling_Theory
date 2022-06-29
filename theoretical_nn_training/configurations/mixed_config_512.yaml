@@ -1,5 +1,5 @@
-device: 'cuda:0'
-output_directory: '../mike_outputs/mixed'
+device: 'cpu'
+output_directory: '../mike_outputs/nw_mixed'
 mode: 'mixed' # Can be 'mixed', 'theta', or 'good'
 resolution: [512, 512]
 layer_sizes: [3200, 2000, 1000, 3]

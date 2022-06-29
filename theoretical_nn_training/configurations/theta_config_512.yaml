@@ -1,5 +1,5 @@
 device: 'cuda:2'
-output_directory: '../mike_outputs/theta'
+output_directory: '../mike_outputs/nw_theta'
 mode: 'theta' # Can be 'mixed', 'theta', or 'good'
 resolution: [512, 512]
 layer_sizes: [3200, 2000, 1000, 2]
