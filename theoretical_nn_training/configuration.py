@@ -24,27 +24,29 @@ class NNConfig:
     corresponding attributes for the returned object. The attributes listed below
     are read from the configuration file with the same hierarchical structure.
 
-    Attributes:
+    ## Attributes
 
     `device` (`torch.device`) : The compute device on which all calculations take
         place. If not specified, the CPU is used.
     `output_directory` (`pathlib.Path`) : The directory in which all output will be
         stored. If not specified, the current working directory is used.
 
+    ### Generator parameters
     `mode` (`data_processing.Mode`) : Selects the features that will be generated
         and trained. Can be set as 'good' (only $B_g$ and $P_e$), 'theta' (only
         $B_{th}$ and $P_e$), or 'mixed' (all three).
     `num_nw_strips` (`int`) : If set, the generated surfaces are stripped down such that
         only this many rows in the $N_w$ dimension have data, to emulate experimental
         data. Default: 0.
-
-    `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
-
     `resolution` (`data_processing.Resolution`) : The resolution of the generated
         surfaces, given as a length 2 or length 3 list of ints in the config file. The
         optional third element denotes the resolution of the $\\eta_{sp}$ dimension for
         voxel-based surface images.
 
+    ### Optimizer parameters
+    `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
+
+    ### Range parameters
     `*_range` (`data_processing.Range`) : These objects define the minimum
         (`.min`), maximum (`.max`), and distribution (`.alpha` and `.beta` for the
         Beta distribution, `.mu` and `.sigma` for the LogNormal distribution) of
@@ -56,6 +58,7 @@ class NNConfig:
     `bth_range` : The range and distribution settings for the blob parameter $B_{th}$.
     `pe_range` : The range and distribution settings for the packing number $P_e$.
 
+    ### Training parameters
     `batch_size` (`int`) : The number of samples given to the model per batch.
     `train_size` (`int`) : The number of samples given to the model over one
         training iteration.
@@ -63,8 +66,9 @@ class NNConfig:
         testing iteration.
     `epochs` (`int`) : The number of training/testing iterations.
 
-    `layer_sizes` (`tuple` of `int`s) : The number of nodes per layer, including
-        the input layer and the final layer (number of features). If the model
+    ### Model parameters
+    `layer_sizes` (`tuple` of `int`s) : The number of nodes per fully connected layer,
+        including the input layer and the final layer (number of features). If the model
         is a convolutional neural network, the number of input nodes must be
         equal to the flattened output of the convolutional layers.
     `channels` (`tuple` of `int`s, optional) : The number of applied
