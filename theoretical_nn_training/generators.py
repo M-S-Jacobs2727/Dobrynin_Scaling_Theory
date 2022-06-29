@@ -5,12 +5,11 @@ $\{B_{g}, B_{th}, P_{e}\}$. The parameter set is sampled from a choice of `Unifo
 
 TODO: update documentation for mode and strip_nw
 """
-from typing import Protocol, Tuple
+import logging
+from typing import Iterable, Protocol, Tuple
 
 import numpy as np
-import scipy.interpolate
 import torch
-from typing_extensions import Self
 
 import theoretical_nn_training.data_processing as data
 from theoretical_nn_training.data_processing import Mode, Range, Resolution
@@ -44,10 +43,10 @@ class Generator(Protocol):
     def __init__(self, config: Config) -> None:
         ...
 
-    def __call__(self, num_batches: int) -> Self:
+    def __call__(self, num_batches: int) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
         ...
 
-    def __iter__(self) -> Self:
+    def __iter__(self) -> Iterable[Tuple[torch.Tensor, torch.Tensor]]:
         ...
 
     def __next__(self) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -73,15 +72,11 @@ class SurfaceGenerator:
         `config` (`data_processing.NNConfig`) : The configuration object.
             Specifically, the generator uses the attributes specified in the Config
             protocol in this module.
-        `strip_nw` (`bool`, default `False`) : If true, then before the generated
-            surfaces are returned, they are stripped down in the Nw dimension to reflect
-            that experiments are usually done with fewer than 8 different molecular
-            weight species. All specific viscosity data is set to 0 for all values of Nw
-            except for several randomly chosen values. Then, the remaining values are
-            interpolated to cover the whole intermediate range.
     """
 
     def __init__(self, config: Config) -> None:
+
+        self.logger = logging.getLogger("__main__")
 
         # Create tensors for phi (concentration) and Nw (chain length)
         # Both are meshed and tiled to cover a 3D tensor of size
@@ -136,16 +131,15 @@ class SurfaceGenerator:
                 config.batch_size,
                 dim=0,
             )
-            print(self.flattened_phi_Nw_mesh.size())
             del phi_mesh, Nw_mesh
 
         self.config = config
 
-    def __call__(self, num_batches: int) -> Self:
+    def __call__(self, num_batches: int):
         self.num_batches = num_batches
         return self
 
-    def __iter__(self) -> Self:
+    def __iter__(self):
         self._index = 0
         return self
 
@@ -174,30 +168,16 @@ class SurfaceGenerator:
             new_surface[:, nw_index_choice] = surface[:, nw_index_choice]
             surface = new_surface
 
-        # Interpolate stripped data
-        ravelled_surfaces = surfaces.ravel()
-        have_values = torch.logical_and(
-            (0 < ravelled_surfaces), (ravelled_surfaces < 1)
-        )
-
-        interp_surfaces = torch.tensor(
-            scipy.interpolate.griddata(
-                points=self.flattened_phi_Nw_mesh[have_values].cpu(),
-                values=ravelled_surfaces[have_values].cpu(),
-                xi=self.flattened_phi_Nw_mesh.cpu(),
-                method="linear",
-                fill_value=0.0,
-            ),
-            dtype=torch.float,
-            device=self.config.device,
-        ).reshape_as(surfaces)
-
-        return interp_surfaces, features
+        return surfaces, features
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Bg = torch.tensor(
+            self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
+        Pe = torch.tensor(
+            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
 
         # Number of repeat units per correlation blob
         g = Bg ** (3 / 0.764) / self.phi ** (1 / 0.764)
@@ -206,16 +186,15 @@ class SurfaceGenerator:
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
         # Ne is simply Pe^2 * g
-        eta_sp = (
+        surfaces = data.preprocess_eta_sp(
             self.Nw
             * (1 + (self.Nw / Pe**2 / g) ** 2)
             * torch.fmin(
                 1 / g,
                 self.phi / Bg ** (1 / (1 - 0.588)),
-            )
+            ),
+            self.config.eta_sp_range,
         )
-
-        surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
                 data.normalize_feature(Bg.ravel(), self.config.bg_range),
@@ -228,8 +207,12 @@ class SurfaceGenerator:
 
     def _mixed_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Bg = torch.tensor(
+            self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
+        Pe = torch.tensor(
+            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
 
         # To ensure that this model doesn't generate the athermal condition
         # (see _good_generatrion), we select Bth uniformly between 0 and Bg^(1/0.824)
@@ -239,6 +222,10 @@ class SurfaceGenerator:
             * (self.config.bth_range.max - self.config.bth_range.min)
             + self.config.bth_range.min
         ) * Bg ** (1 / 0.824)
+        if torch.any(Bg < Bth**0.824):
+            self.logger.warn(
+                "Warning: Athermal parameters generated in _mixed_generation."
+            )
 
         # Number of repeat units per correlation blob
         # The minimum function accounts for the piecewise crossover at the thermal
@@ -263,11 +250,12 @@ class SurfaceGenerator:
         # Specific viscosity crossover function from Rouse to entangled regimes
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
-        eta_sp = (
-            self.Nw * (1 + (self.Nw / Ne) ** 2) * torch.fmin(1 / g, self.phi / Bth**2)
+        surfaces = data.preprocess_eta_sp(
+            self.Nw
+            * (1 + (self.Nw / Ne) ** 2)
+            * torch.fmin(1 / g, self.phi / Bth**2),
+            self.config.eta_sp_range,
         )
-
-        surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
                 data.normalize_feature(Bg.ravel(), self.config.bg_range),
@@ -281,8 +269,12 @@ class SurfaceGenerator:
 
     def _theta_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bth = self.bth_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Bth = torch.tensor(
+            self.bth_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
+        Pe = torch.tensor(
+            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        )
 
         # Number of repeat units per correlation blob
         g = Bth**6 / self.phi**2
@@ -299,11 +291,12 @@ class SurfaceGenerator:
         # Specific viscosity crossover function from Rouse to entangled regimes
         # Viscosity crossover function for entanglements
         # Minimum accounts for crossover where correlation length equals Kuhn length.
-        eta_sp = (
-            self.Nw * (1 + (self.Nw / Ne) ** 2) * torch.fmin(1 / g, self.phi / Bth**2)
+        surfaces = data.preprocess_eta_sp(
+            self.Nw
+            * (1 + (self.Nw / Ne) ** 2)
+            * torch.fmin(1 / g, self.phi / Bth**2),
+            self.config.eta_sp_range,
         )
-
-        surfaces = data.preprocess_eta_sp(eta_sp, self.config.eta_sp_range)
         features = torch.stack(
             (
                 data.normalize_feature(Bth.ravel(), self.config.bth_range),
@@ -334,12 +327,6 @@ class VoxelImageGenerator:
         `config` (`data_processing.NNConfig`) : The configuration object.
             Specifically, the generator uses the attributes specified in the Config
             protocol in this module.
-        `strip_nw` (`bool`, default `False`) : If true, then before the generated
-            surfaces are returned, they are stripped down in the Nw dimension to reflect
-            that experiments are usually done with fewer than 8 different molecular
-            weight species. All specific viscosity data is set to 0 for all values of Nw
-            except for several randomly chosen values. Then, the remaining values are
-            interpolated to cover the whole intermediate range.
     """
 
     def __init__(self, config: Config) -> None:
@@ -366,11 +353,11 @@ class VoxelImageGenerator:
 
         self.surface_generator = SurfaceGenerator(self.config)
 
-    def __call__(self, num_batches: int) -> Self:
+    def __call__(self, num_batches: int):
         self.num_batches = num_batches
         return self
 
-    def __iter__(self) -> Self:
+    def __iter__(self):
         self._surface_generator_iter = iter(self.surface_generator(self.num_batches))
         return self
 
@@ -393,7 +380,6 @@ class VoxelImageGenerator:
         image = torch.logical_and(
             surfaces[:, :-1, :-1, :-1] < self.grid_values[1:],
             surfaces[:, 1:, 1:, 1:] > self.grid_values[:-1],
-        ).to(dtype=torch.int16, device=self.config.device)
-        # TODO: check that this works with int16
+        ).to(dtype=torch.float, device=self.config.device)
 
         return image, features
