@@ -6,8 +6,6 @@ where `<configuration_filename>` is a path to a YAML or JSON configuration file 
 examples in the configurations folder). This will create a model, train it on the
 generated data, and save the results (model, optimizer, and losses and errors over
 training iterations).
-
-TODO: implement distributed_data_parallel?
 """
 
 import argparse
@@ -216,8 +214,7 @@ def main() -> None:
     # raised.
     if args.modelfile:
         if not Path(args.modelfile).is_file():
-            logger.exception(f"File {args.modelfile} not found.")
-            raise
+            raise FileNotFoundError(f"File {args.modelfile} not found.")
         checkpoint = torch.load(args.modelfile)
         model.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])

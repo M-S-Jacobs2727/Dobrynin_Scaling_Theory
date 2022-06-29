@@ -110,8 +110,10 @@ class NNConfig:
             elif extension == ".json":
                 config_dict = dict(json.load(f))
             else:
-                logger.exception(f"Invalid file extension: {extension}")
-                raise
+                raise SyntaxError(
+                    f"Invalid file extension for config file: {extension}\n"
+                    "Please use .yaml or .json."
+                )
 
         # PyTorch device
         if config_dict.get("device") is None or config_dict.get("device") == "cpu":
@@ -150,8 +152,7 @@ class NNConfig:
         elif mode == "theta":
             self.mode = Mode.THETA
         else:
-            logger.exception(f"Invalid `mode` setting: {mode}")
-            raise
+            raise SyntaxError(f"Invalid `mode` setting in config file: {mode}")
 
         # Optimizer learning rate
         self.learning_rate = float(config_dict["learning_rate"])
@@ -209,11 +210,10 @@ class NNConfig:
                 and param_range.alpha
                 and param_range.beta
             ):
-                logger.exception(
+                raise SyntaxError(
                     "Only one pair of (alpha, beta) or (mu, sigma) may be specified."
                     " Instead, both are specified."
                 )
-                raise
             if (param_range.alpha is None) ^ (param_range.beta is None):
                 logger.warn("Only one of alpha/beta is specified. Ignoring.")
                 param_range.alpha = None
@@ -251,18 +251,16 @@ class NNConfig:
         # Number of nodes in each linear NN layer
         self.layer_sizes = tuple(config_dict["layer_sizes"])
         if self.layer_sizes[-1] == 2 and self.mode is Mode.MIXED:
-            logger.exception(
+            raise SyntaxError(
                 "For the 'mixed' mode, the final element in `layer_sizes` must be 3."
             )
-            raise
         if self.layer_sizes[-1] == 3 and (
             self.mode is Mode.GOOD or self.mode is Mode.THETA
         ):
-            logger.exception(
+            raise SyntaxError(
                 f"For the '{self.mode}' mode, the final element in `layer_sizes` must"
                 " be 2."
             )
-            raise
         logger.debug(f"Loaded {self.layer_sizes = }.")
 
         # Define these three hyperparameters in the configuration file with equal
@@ -277,13 +275,12 @@ class NNConfig:
             if not (
                 len(self.channels) == len(self.kernel_sizes) == len(self.pool_sizes)
             ):
-                logger.exception(
+                raise SyntaxError(
                     "Expected configuration parameters `channels`, `kernel_sizes`, and"
                     "`pool_sizes` to have equal length. Instead, the lengths are"
                     f" {len(self.channels)}, {len(self.kernel_sizes)}, and"
                     f" {len(self.pool_sizes)}, respectively."
                 )
-                raise
             logger.debug(
                 f"Loaded {self.channels = }, {self.kernel_sizes = }, and"
                 f" {self.pool_sizes = }."
