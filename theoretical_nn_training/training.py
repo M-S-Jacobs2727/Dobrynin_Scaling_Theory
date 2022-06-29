@@ -7,7 +7,6 @@ from typing import Callable
 import torch
 
 import theoretical_nn_training.generators as generators
-from theoretical_nn_training.configuration import NNConfig
 
 
 def train(
@@ -15,7 +14,8 @@ def train(
     generator: generators.Generator,
     optimizer: torch.optim.Optimizer,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-    config: NNConfig,
+    num_batches: int,
+    avg_loss: torch.Tensor,
 ) -> torch.Tensor:
     """The neural network model is trained based on the configuration parameters,
     evaluated by the loss function, and incrementally adjusted by the optimizer.
@@ -36,13 +36,6 @@ def train(
 
     logger = logging.getLogger("__main__")
 
-    num_batches = config.train_size // config.batch_size
-    avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
-    logger.debug(
-        f"Beginning training on {num_batches} batches with batch size"
-        f" {config.batch_size} for a total of {config.train_size} samples."
-    )
-
     model.train()
     for surfaces, features in generator(num_batches):
         optimizer.zero_grad()
@@ -54,6 +47,7 @@ def train(
         optimizer.step()
 
         avg_loss += loss.mean(dim=0)  # Average over the batches
+        logger.debug(loss.mean(dim=0))
 
     avg_loss /= num_batches
 
@@ -64,7 +58,8 @@ def test(
     model: torch.nn.Module,
     generator: generators.Generator,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-    config: NNConfig,
+    num_batches: int,
+    avg_loss: torch.Tensor,
 ) -> torch.Tensor:
     """Tests the neural network model based on the configuration parameters using
     the loss function.
@@ -84,13 +79,6 @@ def test(
 
     logger = logging.getLogger("__main__")
 
-    num_batches = config.test_size // config.batch_size
-    avg_loss = torch.zeros(config.layer_sizes[-1], device=config.device)
-    logger.debug(
-        f"Beginning testing on {num_batches} batches with batch size"
-        f" {config.batch_size} for a total of {config.test_size} samples."
-    )
-
     model.eval()
     with torch.no_grad():
         for surfaces, features in generator(num_batches):
@@ -98,6 +86,7 @@ def test(
             loss = loss_fn(predicted_features, features)
 
             avg_loss += loss.mean(dim=0)
+            logger.debug(loss.mean(dim=0))
 
     avg_loss /= num_batches
 

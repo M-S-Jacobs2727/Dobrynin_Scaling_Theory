@@ -47,7 +47,8 @@ def run(
         `optimizer` (`torch.optim.Optimizer`) : Incrementally adjusts the model.
     """
 
-    train_losses, test_losses = np.zeros((2, config.epochs, config.layer_sizes[-1]))
+    num_features = 3 if config.mode is Mode.MIXED else 2
+    train_losses, test_losses = np.zeros((2, config.epochs, num_features))
 
     logger = logging.getLogger("__main__")
     logger.info("Running...")
@@ -70,10 +71,11 @@ def run(
             generator=generator,
             optimizer=optimizer,
             loss_fn=loss_fn,
-            config=config,
-        )
+            num_batches=config.train_size // config.batch_size,
+            avg_loss=torch.zeros(num_features),
+        ).numpy()
 
-        table_entry = f"{epoch:6d}"
+        table_entry = f"{epoch+1:6d}"
         for loss in train_losses[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
@@ -83,10 +85,11 @@ def run(
             model=model,
             generator=generator,
             loss_fn=loss_fn,
-            config=config,
-        )
+            num_batches=config.train_size // config.batch_size,
+            avg_loss=torch.zeros(num_features),
+        ).numpy()
 
-        table_entry = f"{epoch:6d}"
+        table_entry = f"{epoch+1:6d}"
         for loss in test_losses[epoch]:
             table_entry += f"  {loss:8.4f}"
         logger.info(table_entry)
