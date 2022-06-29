@@ -9,8 +9,6 @@ class LinearNeuralNet(torch.nn.Module):
     and input resolution. Returns a torch.nn.Module for training and optimizing.
 
     Input:
-        `resolution` (`data_processing.Resolution`) : The 2D or 3D resolution of the
-            generated surfaces.
         `layer_sizes` (`tuple` of `int`s) : Number of nodes in each hidden layer of
             the returned neural network model.
     """
@@ -39,8 +37,6 @@ class ConvNeuralNet2D(torch.nn.Module):
     through linear layers as specified in `layer_sizes`.
 
     Input:
-        `resolution` (`data_processing.Resolution`) : The 2D resolution of the
-            generated surfaces.
         `channels` (`tuple` of `int`s) : Number of convolutions applied in each
             convolutional layer.
         `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
@@ -100,8 +96,6 @@ class ConvNeuralNet3D(torch.nn.Module):
     through linear layers as specified in `layer_sizes`.
 
     Input:
-        `resolution` (`data_processing.Resolution`) : The 3D resolution of the
-            generated surfaces.
         `channels` (`tuple` of `int`s) : Number of convolutions applied in each
             convolutional layer.
         `kernel_sizes` (`tuple` of `int`s) : Size of the square kernel for each set
