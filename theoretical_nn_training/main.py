@@ -22,8 +22,6 @@ import theoretical_nn_training.training as training
 from theoretical_nn_training.configuration import NNConfig
 from theoretical_nn_training.data_processing import Mode
 
-# import theoretical_nn_training.loss_funcs as loss_funcs
-
 
 def run(
     config: NNConfig,
@@ -72,7 +70,7 @@ def run(
             optimizer=optimizer,
             loss_fn=loss_fn,
             num_batches=config.train_size // config.batch_size,
-            avg_loss=torch.zeros(num_features),
+            avg_loss=torch.zeros(num_features, device=config.device),
         ).numpy()
 
         table_entry = f"{epoch+1:6d}"
@@ -86,7 +84,7 @@ def run(
             generator=generator,
             loss_fn=loss_fn,
             num_batches=config.train_size // config.batch_size,
-            avg_loss=torch.zeros(num_features),
+            avg_loss=torch.zeros(num_features, device=config.device),
         ).numpy()
 
         table_entry = f"{epoch+1:6d}"
@@ -122,9 +120,6 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("config_filename", type=str)
     parser.add_argument(
-        "-l", "--logfile", type=str, help="If unspecified, will log to console"
-    )
-    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Log all debug messages."
     )
     parser.add_argument(
@@ -148,10 +143,7 @@ def main() -> None:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
-    if args.logfile:
-        handler = logging.FileHandler(args.logfile, mode="w")
-    else:
-        handler = logging.StreamHandler()
+    handler = logging.StreamHandler()
 
     log_formatter = logging.Formatter(
         fmt="%(asctime)s: %(message)s", datefmt="%H:%M:%S"
@@ -213,7 +205,9 @@ def main() -> None:
     # raised.
     if args.modelfile:
         if not Path(args.modelfile).is_file():
-            raise FileNotFoundError(f"File {args.modelfile} not found.")
+            raise FileNotFoundError(
+                logger.exception(f"File {args.modelfile} not found.")
+            )
         checkpoint = torch.load(args.modelfile)
         model.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
