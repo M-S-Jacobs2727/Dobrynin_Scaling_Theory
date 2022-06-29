@@ -149,7 +149,7 @@ def main() -> None:
     logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     if args.logfile:
-        handler = logging.FileHandler(args.logfile)
+        handler = logging.FileHandler(args.logfile, mode="w")
     else:
         handler = logging.StreamHandler()
 
