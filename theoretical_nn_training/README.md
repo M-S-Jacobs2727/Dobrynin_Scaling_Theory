@@ -16,23 +16,24 @@ If you want to test the surface generators with custom code, just take the files
 
     import torch
 
-    import data_processing
+    from data_processing import Resolution, Range, Mode
     import generators
 
     config = generators.Config(
-        device=torch.device('cuda'),
-        resolution = data_processing.Resolution(256, 256),
-        phi_range = data_processing.Range(1e-6, 0.01),
-        nw_range = data_processing.Range(100, 1e6),
-        eta_sp_range = data_processing.Range(1, 1e7),
-        bg_range = data_processing.Range(0.3, 1.1),
-        bth_range = data_processing.Range(0.2, 0.7),
-        pe_range = data_processing.Range(4, 20),
-        batch_size: 100,
-
+        device = torch.device('cuda'),
+        resolution = Resolution(256, 256),
+        phi_range = Range(1e-6, 0.01),
+        nw_range = Range(100, 1e6),
+        eta_sp_range = Range(1, 1e7),
+        bg_range = Range(0.3, 1.1),
+        bth_range = Range(0.2, 0.7),
+        pe_range = Range(4, 20),
+        mode = Mode.MIXED,
+        batch_size = 100,
+        num_nw_strips = 0,
     )
 
-    generator = generators.SurfaceGenerator(config, strip_nw=True)
+    generator = generators.SurfaceGenerator(config)
 
     for surfaces, features in generator(num_batches=1000):
         ...
@@ -96,7 +97,7 @@ A simple script to test the speed of surface generation as a function of batch
 size and resolution.
 
 ## Requires
-Python >= 3.8
-numpy >= 1.17.4
-PyTorch >= 1.8
-PyYAML >= 5.0
+- Python >= 3.8
+- numpy >= 1.17.4
+- PyTorch >= 1.8
+- PyYAML >= 5.0

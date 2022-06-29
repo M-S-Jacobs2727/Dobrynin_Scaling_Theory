@@ -5,6 +5,7 @@ configuration class, which is initialized from the given configuration file.
 
 TODO: move Resolution to Range? If min and max are attributes of, e.g., nw_range,
 why not num_points?
+TODO: Check for negative values for all ints and floats.
 """
 import json
 import logging
@@ -30,25 +31,31 @@ class NNConfig:
         place. If not specified, the CPU is used.
     `output_directory` (`pathlib.Path`) : The directory in which all output will be
         stored. If not specified, the current working directory is used.
+
     `mode` (`data_processing.Mode`) : Selects the features that will be generated
         and trained. Can be set as 'good' (only $B_g$ and $P_e$), 'theta' (only
         $B_{th}$ and $P_e$), or 'mixed' (all three).
+    `num_nw_strips` (`int`) : If set, the generated surfaces are stripped down such that
+        only this many rows in the $N_w$ dimension have data, to emulate experimental
+        data. Default: 0.
 
     `learning_rate` (`float`) : The learning rate of the PyTorch optimizer Adam.
+
+    `resolution` (`data_processing.Resolution`) : The resolution of the generated
+        surfaces, given as a length 2 or length 3 list of ints in the config file. The
+        optional third element denotes the resolution of the $\\eta_{sp}$ dimension for
+        voxel-based surface images.
 
     `*_range` (`data_processing.Range`) : These objects define the minimum
         (`.min`), maximum (`.max`), and distribution (`.alpha` and `.beta` for the
         Beta distribution, `.mu` and `.sigma` for the LogNormal distribution) of
         their respective parameters.
-    `phi_range` : The desired range of concentrations.
-    `nw_range` : The desired range of weight-average degrees of polymerization.
-    `eta_sp_range` : The desired range of specific viscosity.
-    `bg_range` : The desired range and distribution settings for the parameter
-        $B_g$.
-    `bth_range` : The desired range and distribution settings for the parameter
-        $B_{th}$.
-    `Pe_range` : The desired range and distribution settings for the packing
-        number $P_e$.
+    `phi_range` : The range of concentrations.
+    `nw_range` : The range of weight-average degrees of polymerization.
+    `eta_sp_range` : The range of specific viscosity.
+    `bg_range` : The range and distribution settings for the blob parameter $B_g$.
+    `bth_range` : The range and distribution settings for the blob parameter $B_{th}$.
+    `pe_range` : The range and distribution settings for the packing number $P_e$.
 
     `batch_size` (`int`) : The number of samples given to the model per batch.
     `train_size` (`int`) : The number of samples given to the model over one
@@ -79,6 +86,7 @@ class NNConfig:
     device: torch.device
     output_directory: Path
     mode: Mode
+    num_nw_strips: int
     learning_rate: float
     resolution: Resolution
     phi_range: Range
@@ -87,7 +95,6 @@ class NNConfig:
     bg_range: Range
     bth_range: Range
     pe_range: Range
-    num_nw_strips: int
     batch_size: int
     train_size: int
     test_size: int
@@ -138,7 +145,7 @@ class NNConfig:
             self.output_directory = Path(".")
         logger.debug(f"Set output directory to {self.output_directory.absolute()}")
 
-        # Generator and learning mode
+        # Surface generation mode
         mode = config_dict.get("mode")
         if mode is None:
             self.mode = Mode.MIXED
@@ -154,9 +161,21 @@ class NNConfig:
         else:
             raise SyntaxError(f"Invalid `mode` setting in config file: {mode}")
 
+        # Whether to strip values of Nw from the generated surfaces, for training data
+        # more similar in shape to experimental data.
+        num_nw_strips = config_dict.get("num_nw_strips")
+        if num_nw_strips:
+            self.num_nw_strips = int(num_nw_strips)
+        else:
+            self.num_nw_strips = 0
+
         # Optimizer learning rate
         self.learning_rate = float(config_dict["learning_rate"])
         logger.debug(f"Loaded {self.learning_rate = :.5f}.")
+
+        # Surface resolution
+        self.resolution = Resolution(*config_dict["resolution"])
+        logger.debug(f"Loaded {self.resolution = }.")
 
         # Min and max values of concentration, Nw, and viscosity
         self.phi_range = Range(
@@ -226,14 +245,6 @@ class NNConfig:
             f"Loaded {self.bg_range = }, {self.bth_range = }, {self.pe_range = }."
         )
 
-        # Whether to strip values of Nw from the generated surfaces, for training data
-        # more similar in shape to experimental data.
-        num_nw_strips = config_dict.get("num_nw_strips")
-        if num_nw_strips:
-            self.num_nw_strips = int(num_nw_strips)
-        else:
-            self.num_nw_strips = 0
-
         # Model training parameters
         self.batch_size = int(config_dict["batch_size"])
         self.train_size = int(config_dict["train_size"])
@@ -243,10 +254,6 @@ class NNConfig:
             f"Loaded {self.batch_size = }, {self.train_size = }, {self.test_size = },"
             f" and {self.epochs = }."
         )
-
-        # Surface resolution
-        self.resolution = Resolution(*config_dict["resolution"])
-        logger.debug(f"Loaded {self.resolution = }.")
 
         # Number of nodes in each linear NN layer
         self.layer_sizes = tuple(config_dict["layer_sizes"])
