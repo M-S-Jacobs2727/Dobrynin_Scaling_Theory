@@ -7,7 +7,7 @@ features.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, overload
 
 import numpy as np
 import torch
@@ -93,18 +93,42 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
     return Bth
 
 
-def normalize_feature(
-    feature: torch.Tensor,
-    feature_range: Range,
-) -> torch.Tensor:
+@overload
+def normalize_feature(feature: np.ndarray, feature_range: Range) -> np.ndarray:
+    ...
+
+
+@overload
+def normalize_feature(feature: float, feature_range: Range) -> float:
+    ...
+
+
+@overload
+def normalize_feature(feature: torch.Tensor, feature_range: Range) -> torch.Tensor:
+    ...
+
+
+def normalize_feature(feature, feature_range):
     """Performs simple linear normalization."""
     return (feature - feature_range.min) / (feature_range.max - feature_range.min)
 
 
-def unnormalize_feature(
-    feature: torch.Tensor,
-    feature_range: Range,
-) -> torch.Tensor:
+@overload
+def unnormalize_feature(feature: np.ndarray, feature_range: Range) -> np.ndarray:
+    ...
+
+
+@overload
+def unnormalize_feature(feature: float, feature_range: Range) -> float:
+    ...
+
+
+@overload
+def unnormalize_feature(feature: torch.Tensor, feature_range: Range) -> torch.Tensor:
+    ...
+
+
+def unnormalize_feature(feature, feature_range):
     """Inverts simple linear normalization."""
     return feature * (feature_range.max - feature_range.min) + feature_range.min
 
@@ -112,7 +136,12 @@ def unnormalize_feature(
 def unnormalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Inverts a simple linear normalization of the specific viscosity."""
     return (
-        torch.exp(eta_sp * np.log(eta_sp_range.max / eta_sp_range.min))
+        torch.exp(
+            eta_sp
+            * torch.log(
+                torch.tensor(eta_sp_range.max / eta_sp_range.min, device=eta_sp.device)
+            )
+        )
         * eta_sp_range.min
     )
 
@@ -121,8 +150,8 @@ def normalize_eta_sp(eta_sp: torch.Tensor, eta_sp_range: Range) -> torch.Tensor:
     """Performs a simple linear normalization of the natural log of the specific
     viscosity.
     """
-    return torch.log(eta_sp / eta_sp_range.min) / np.log(
-        eta_sp_range.max / eta_sp_range.min
+    return torch.log(eta_sp / eta_sp_range.min) / torch.log(
+        torch.tensor(eta_sp_range.max / eta_sp_range.min, device=eta_sp.device)
     )
 
 
