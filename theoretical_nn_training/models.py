@@ -12,7 +12,8 @@ def _get_final_resolution(
     resolution: data.Resolution, kernel_size: int, pool_size: int
 ) -> data.Resolution:
     """Determines the resulting resolution after a convolution with a given kernel size
-    and pool size. No dilation or stride is assumed.
+    and pool size. No dilation or stride is assumed. Currently only used for debug
+    purposes.
     """
     return data.Resolution(
         math.floor(((resolution.phi - kernel_size + 1) - pool_size) / pool_size + 1),

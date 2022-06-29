@@ -94,3 +94,9 @@ evaluated features.
 ## `speed_test.py`
 A simple script to test the speed of surface generation as a function of batch
 size and resolution.
+
+## Requires
+Python >= 3.8
+numpy >= 1.17.4
+PyTorch >= 1.8
+PyYAML >= 5.0
