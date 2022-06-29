@@ -18,21 +18,6 @@ from scipy.optimize import curve_fit
 from theoretical_nn_training.configuration import NNConfig
 
 
-def unnormalize_params(
-    Bg: np.ndarray,
-    Bth: np.ndarray,
-    Pe: np.ndarray,
-    bg_range: data.Range,
-    bth_range: data.Range,
-    pe_range: data.Range,
-) -> Tuple[np.ndarray, ...]:
-    """Inverts simple linear normalization."""
-    Bg = Bg * (bg_range.max - bg_range.min) + bg_range.min
-    Bth = Bth * (bth_range.max - bth_range.min) + bth_range.min
-    Pe = Pe * (pe_range.max - pe_range.min) + pe_range.min
-    return Bg, Bth, Pe
-
-
 def unnormalize_feature(
     feature: np.ndarray,
     feature_range: data.Range,
