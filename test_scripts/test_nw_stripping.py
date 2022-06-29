@@ -16,29 +16,32 @@ def main() -> None:
     num_surfaces = 3
     feats = np.zeros((num_surfaces, 3))
 
-    for i, (surf, feat) in enumerate(gen(3)):
+    for i, (surf, feat) in enumerate(gen(num_surfaces)):
         feats[i] = [
-            data.unnormalize_feature(f, r).numpy()
+            data.unnormalize_feature(f, r)
             for f, r in zip(
-                feat.ravel(),
+                feat.ravel().detach().numpy(),
                 [config.bg_range, config.bth_range, config.pe_range],
             )
         ]
+
         surf = data.unnormalize_eta_sp(
             surf.reshape((-1, 1)), config.eta_sp_range
         ).numpy()
+        surf = surf[surf != config.eta_sp_range.min]
+
         flattened_phi_Nw_mesh = gen.flattened_phi_Nw_mesh.numpy()
         df = pd.DataFrame(
             np.concatenate((flattened_phi_Nw_mesh, surf), axis=1),
             columns=["phi", "Nw", "eta_sp"],
         )
-        print(df)
         df.to_csv(f"../mike_outputs/surface_{i}.csv", index=False)
-        np.savetxt(
-            "../mike_outputs/features.csv",
-            feats,
-            delimiter=",",
-        )
+
+    np.savetxt(
+        "../mike_outputs/features.csv",
+        feats,
+        delimiter=",",
+    )
 
 
 if __name__ == "__main__":
