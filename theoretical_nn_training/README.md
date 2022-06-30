@@ -41,7 +41,7 @@ If you want to test the surface generators with custom code, just take the files
 ## `main.py`
 Run this from the command line as
 
-    python3 main.py <configuration_filename> [-l logfile] [-m modelfile] [-v] [-h]
+    python3 main.py <configuration_filename> [-m modelfile] [-v] [-h]
 
 where `<configuration_filename>` is a path to a YAML or JSON configuration file (see
 examples in the configurations folder). This will create a model, train it on the
