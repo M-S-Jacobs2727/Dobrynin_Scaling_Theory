@@ -128,7 +128,7 @@ class NNConfig:
         # PyTorch device
         if config_dict.get("device") is None or config_dict.get("device") == "cpu":
             self.device = torch.device("cpu")
-        elif config_dict["device"] == "cuda" and not torch.cuda.is_available():
+        elif config_dict["device"][:4] == "cuda" and not torch.cuda.is_available():
             logger.warn("Warning: No CUDA-enabled devices found. Falling back to CPU.")
             self.device = torch.device("cpu")
         else:

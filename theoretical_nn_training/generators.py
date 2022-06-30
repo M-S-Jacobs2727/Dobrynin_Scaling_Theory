@@ -172,12 +172,8 @@ class SurfaceGenerator:
 
     def _good_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = torch.tensor(
-            self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
-        Pe = torch.tensor(
-            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
+        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # Number of repeat units per correlation blob
         g = Bg ** (3 / 0.764) / self.phi ** (1 / 0.764)
@@ -207,12 +203,8 @@ class SurfaceGenerator:
 
     def _mixed_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bg = torch.tensor(
-            self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
-        Pe = torch.tensor(
-            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
+        Bg = self.bg_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # To ensure that this model doesn't generate the athermal condition
         # (see _good_generatrion), we select Bth uniformly between 0 and Bg^(1/0.824)
@@ -269,12 +261,8 @@ class SurfaceGenerator:
 
     def _theta_generation(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Bth = torch.tensor(
-            self.bth_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
-        Pe = torch.tensor(
-            self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
-        )
+        Bth = self.bth_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
+        Pe = self.pe_distribution.sample(torch.Size((self.config.batch_size, 1, 1)))
 
         # Number of repeat units per correlation blob
         g = Bth**6 / self.phi**2
