@@ -120,19 +120,6 @@ class SurfaceGenerator:
         else:
             self.generation_function = self._theta_generation
 
-        # self.xi is used in the 2D interpolation after stripping the surface of most
-        # Nw values. It is here so it will only be computed once.
-        if config.num_nw_strips:
-            phi_mesh, Nw_mesh = torch.meshgrid(
-                self.phi.ravel(), self.Nw.ravel(), indexing="xy"
-            )
-            self.flattened_phi_Nw_mesh = torch.repeat_interleave(
-                torch.stack((phi_mesh.ravel(), Nw_mesh.ravel()), dim=1),
-                config.batch_size,
-                dim=0,
-            )
-            del phi_mesh, Nw_mesh
-
         self.config = config
 
     def __call__(self, num_batches: int):
@@ -160,13 +147,13 @@ class SurfaceGenerator:
         nw_index_choices = torch.randint(
             0,
             self.config.resolution.Nw,
-            torch.Size((self.config.batch_size, 1, self.config.num_nw_strips)),
+            torch.Size((self.config.batch_size, self.config.num_nw_strips)),
             device=self.config.device,
         )
-        for surface, nw_index_choice in zip(surfaces, nw_index_choices):
+        for i, (surface, nw_index_choice) in enumerate(zip(surfaces, nw_index_choices)):
             new_surface = torch.zeros_like(surface)
             new_surface[:, nw_index_choice] = surface[:, nw_index_choice]
-            surface = new_surface
+            surfaces[i] = new_surface
 
         return surfaces, features
 
