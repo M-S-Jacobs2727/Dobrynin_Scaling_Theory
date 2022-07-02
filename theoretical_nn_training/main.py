@@ -131,14 +131,6 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Get configuration file from command line
-    config_filename = Path(args.config_filename)
-
-    if not config_filename.is_file():
-        raise FileNotFoundError(
-            f"Configuration file not found: `{config_filename.absolute()}`."
-        )
-
     # Initialize logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
@@ -152,12 +144,14 @@ def main() -> None:
     handler.setFormatter(log_formatter)
     logger.addHandler(handler)
 
-    # Configuration
     logger.info("Initializing...")
+
+    # Get configuration file from command line
+    config_filename = Path(args.config_filename)
     config = configuration.read_config_from_file(config_filename)
     logger.debug(f"Read config from {config_filename.absolute()}")
 
-    # Model and generator
+    # Model
     logger.debug("Selecting model...")
     if (
         config.channels
@@ -171,8 +165,7 @@ def main() -> None:
             pool_sizes=config.pool_sizes,
             layer_sizes=config.layer_sizes,
         )
-        generator = generators.VoxelImageGenerator(config=config)
-        logger.debug("\tInitialized ConvNeuralNet3D with VoxelImageGenerator")
+        logger.debug("\tInitialized ConvNeuralNet3D")
     elif config.channels and config.kernel_sizes and config.pool_sizes:
         model = models.ConvNeuralNet2D(
             channels=config.channels,
@@ -180,17 +173,20 @@ def main() -> None:
             pool_sizes=config.pool_sizes,
             layer_sizes=config.layer_sizes,
         )
-        generator = generators.SurfaceGenerator(config=config)
-        logger.debug("\tInitialized ConvNeuralNet2D with SurfaceGenerator")
+        logger.debug("\tInitialized ConvNeuralNet2D")
     else:
         model = models.LinearNeuralNet(layer_sizes=config.layer_sizes)
-        if config.resolution.eta_sp:
-            generator = generators.VoxelImageGenerator(config=config)
-            logger.debug("\tInitialized LinearNeuralNet with VoxelImageGenerator.")
-        else:
-            generator = generators.SurfaceGenerator(config=config)
-            logger.debug("\tInitialized LinearNeuralNet with SurfaceGenerator.")
+        logger.debug("\tInitialized LinearNeuralNet.")
+
     model = model.to(config.device)
+
+    # Generator
+    if config.resolution.eta_sp:
+        generator = generators.VoxelImageGenerator(config=config)
+        logger.debug("Initialized VoxelImageGenerator.")
+    else:
+        generator = generators.SurfaceGenerator(config=config)
+        logger.debug("Initialized SurfaceGenerator.")
 
     # Loss function
     loss_fn = torch.nn.MSELoss(reduction="none")

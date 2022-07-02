@@ -118,6 +118,12 @@ def read_config_from_file(config_filename: Union[Path, str]) -> NNConfig:
     # Load configuration file and assign to config_dictionary
     if isinstance(config_filename, str):
         config_filename = Path(config_filename)
+
+    if not config_filename.is_file():
+        raise FileNotFoundError(
+            f"Configuration file not found: `{config_filename.absolute()}`."
+        )
+
     extension = config_filename.suffix
     with open(config_filename, "r") as f:
         if extension == ".yaml":
