@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.data_processing as data
 import torch
-from theoretical_nn_training.configuration import NNConfig
 
 
 def sample_and_plot(
@@ -15,7 +15,9 @@ def sample_and_plot(
 
 
 def main() -> None:
-    config = NNConfig("theoretical_nn_training/configurations/mixed_config_512.yaml")
+    config = configuration.read_config_from_file(
+        "theoretical_nn_training/configurations/mixed_config_512.yaml"
+    )
     config.batch_size = 10000
 
     sample_and_plot(config.bg_range, config.batch_size, "Bg", config.device)

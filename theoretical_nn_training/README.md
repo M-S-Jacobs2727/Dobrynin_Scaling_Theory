@@ -12,14 +12,15 @@ sample a small number of molecular weights. Finally, the data is evaluated on
 experimental datasets that were previously analyzed by hand.
 
 If you want to test the surface generators with custom code, just take the files
-`generators.py` and `data_processing.py` and follow this example:
+`generators.py`, `configuration.py` and `data_processing.py` and follow this example:
 
     import torch
 
     from data_processing import Resolution, Range, Mode
+    import configuration
     import generators
 
-    config = generators.Config(
+    config = configuration.NNConfig(
         device = torch.device('cuda'),
         resolution = Resolution(256, 256),
         phi_range = Range(1e-6, 0.01),
@@ -38,6 +39,12 @@ If you want to test the surface generators with custom code, just take the files
     for surfaces, features in generator(num_batches=1000):
         ...
 
+## Requirements
+- Python >= 3.8
+- numpy >= 1.17.4
+- PyTorch >= 1.8
+- PyYAML >= 5.0
+
 ## `main.py`
 Run this from the command line as
 
@@ -54,7 +61,8 @@ and optimizer will be loaded from the given file as a dictionary with keys 'mode
 Sample configurations that define the model, training, and testing are defined in YAML 
 or JSON files in the configurations directory. One of these is passed as the first
 command line argument into the main module. The `configuration.py` module defines 
-`NNConfig`, the configuration class, initialized from the given configuration file.
+`NNConfig`, the configuration class, and the `read_config_from_file` function, to
+initialize a config from the given configuration file.
 
 
 ## `generators.py`
@@ -78,26 +86,6 @@ features.
 Three flexible classes for neural networks: a fully-connected dense network, a 2D 
 convolutional neural network, and a 3D convolutional neural network.
 
-## `loss_funcs.py`
-Two custom loss functions, `LogCoshLoss` is taken from a stackexchange post (cite) and 
-`CustomMSELoss` applies an MSE loss without punishing in the case of an athermal solvent
-($B_{g} < B_{th}^{0.824}$). We have rejected `CustomMSELoss` in favor of splitting the
-athermal condition into a separate model (see data_processing.Mode).
-
 ## `training.py`
 Contains the train and test functions used to iterate the NN model in the main
 module.
-
-## `test_checkpoint_accuracy.py`
-This loads a model and generates new surfaces to create parity plots for each of the 
-evaluated features.
-
-## `speed_test.py`
-A simple script to test the speed of surface generation as a function of batch
-size and resolution.
-
-## Requires
-- Python >= 3.8
-- numpy >= 1.17.4
-- PyTorch >= 1.8
-- PyYAML >= 5.0

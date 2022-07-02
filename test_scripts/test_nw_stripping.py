@@ -1,13 +1,15 @@
 import numpy as np
 import pandas as pd
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.data_processing as data
 import torch
-from theoretical_nn_training.configuration import NNConfig
 from theoretical_nn_training.generators import SurfaceGenerator
 
 
 def main() -> None:
-    config = NNConfig("theoretical_nn_training/configurations/mixed_config_512.yaml")
+    config = configuration.read_config_from_file(
+        "theoretical_nn_training/configurations/mixed_config_512.yaml"
+    )
     config.batch_size = 1
     config.device = torch.device("cpu")
 
@@ -29,10 +31,11 @@ def main() -> None:
             surf.reshape((-1, 1)), config.eta_sp_range
         ).numpy()
         surf = surf[surf != config.eta_sp_range.min]
-
-        flattened_phi_Nw_mesh = gen.flattened_phi_Nw_mesh.numpy()
+        phi_nw_mesh = torch.stack(
+            torch.meshgrid(gen.phi.ravel(), gen.Nw.ravel(), indexing="ij"), dim=-1
+        ).reshape(-1, 2)
         df = pd.DataFrame(
-            np.concatenate((flattened_phi_Nw_mesh, surf), axis=1),
+            np.concatenate((phi_nw_mesh, surf), axis=1),
             columns=["phi", "Nw", "eta_sp"],
         )
         df.to_csv(f"../mike_outputs/surface_{i}.csv", index=False)

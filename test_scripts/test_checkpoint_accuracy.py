@@ -10,12 +10,12 @@ from typing import Callable, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.data_processing as data
 import theoretical_nn_training.generators as generators
 import theoretical_nn_training.models as models
 import torch
 from scipy.optimize import curve_fit
-from theoretical_nn_training.configuration import NNConfig
 
 
 def unnormalize_feature(
@@ -29,7 +29,7 @@ def unnormalize_feature(
 def test_accuracy(
     model: torch.nn.Module,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-    config: NNConfig,
+    config: configuration.NNConfig,
     generator: generators.Generator,
     num_samples: int,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, torch.Tensor]:
@@ -157,7 +157,7 @@ def main() -> None:
         )
 
     # Set config, loss function, and generator
-    config = NNConfig(args.config_filename)
+    config = configuration.read_config_from_file(args.config_filename)
     if (
         config.channels is None
         or config.kernel_sizes is None
@@ -181,7 +181,6 @@ def main() -> None:
         kernel_sizes=config.kernel_sizes,
         pool_sizes=config.pool_sizes,
         layer_sizes=config.layer_sizes,
-        resolution=config.resolution,
     ).to(config.device)
     model.load_state_dict(checkpoint["model"])
 

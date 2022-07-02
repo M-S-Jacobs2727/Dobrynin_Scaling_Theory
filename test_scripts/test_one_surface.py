@@ -2,9 +2,9 @@ import argparse
 from pathlib import Path
 
 import pandas
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.data_processing as data
 import torch
-from theoretical_nn_training.configuration import NNConfig
 from theoretical_nn_training.generators import SurfaceGenerator
 
 
@@ -21,7 +21,7 @@ def main() -> None:
     if not output_file.parent.is_dir():
         raise FileNotFoundError(output_file.parent.absolute())
 
-    config = NNConfig(config_file)
+    config = configuration.read_config_from_file(config_file)
     config.batch_size = 1
     gen = SurfaceGenerator(config)
     surf, feat = next(iter(gen(1)))

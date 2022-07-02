@@ -16,15 +16,15 @@ from typing import Callable
 import numpy as np
 import torch
 
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.generators as generators
 import theoretical_nn_training.models as models
 import theoretical_nn_training.training as training
-from theoretical_nn_training.configuration import NNConfig
 from theoretical_nn_training.data_processing import Mode
 
 
 def run(
-    config: NNConfig,
+    config: configuration.NNConfig,
     model: torch.nn.Module,
     generator: generators.Generator,
     loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
@@ -154,7 +154,7 @@ def main() -> None:
 
     # Configuration
     logger.info("Initializing...")
-    config = NNConfig(config_filename)
+    config = configuration.read_config_from_file(config_filename)
     logger.debug(f"Read config from {config_filename.absolute()}")
 
     # Model and generator

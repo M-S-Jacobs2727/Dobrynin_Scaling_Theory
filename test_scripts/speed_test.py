@@ -3,9 +3,9 @@ size and resolution.
 """
 import time
 
+import theoretical_nn_training.configuration as configuration
 import theoretical_nn_training.data_processing as data
 import theoretical_nn_training.generators as generators
-from theoretical_nn_training.configuration import NNConfig
 
 
 def main() -> None:
@@ -16,7 +16,9 @@ def main() -> None:
 
     batches = [32, 64, 128]
     resolutions = [64, 128, 256, 512]
-    config = NNConfig("theoretical_nn_training/configurations/mixed_config_512.yaml")
+    config = configuration.read_config_from_file(
+        "theoretical_nn_training/configurations/mixed_config_512.yaml"
+    )
 
     print(f"{batches = }\n{resolutions = }")
     print()
