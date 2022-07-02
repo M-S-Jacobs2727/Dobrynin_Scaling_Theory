@@ -7,9 +7,8 @@ features.
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, overload
+from typing import Optional
 
-import numpy as np
 import torch
 import torch.distributions
 
@@ -17,7 +16,7 @@ import torch.distributions
 class Mode(Enum):
     """An enum for selecting the features to use and train against.
 
-    Attributes:
+    Values:
         `MIXED`: All features Bg, Bth, and Pe
         `THETA`: Only Bth and Pe
         `GOOD`: Only Bg and Pe
@@ -93,42 +92,12 @@ def get_Bth_from_Bg(Bg: torch.Tensor) -> torch.Tensor:
     return Bth
 
 
-@overload
-def normalize_feature(feature: np.ndarray, feature_range: Range) -> np.ndarray:
-    ...
-
-
-@overload
-def normalize_feature(feature: float, feature_range: Range) -> float:
-    ...
-
-
-@overload
-def normalize_feature(feature: torch.Tensor, feature_range: Range) -> torch.Tensor:
-    ...
-
-
-def normalize_feature(feature, feature_range):
+def normalize_feature(feature, feature_range: Range):
     """Performs simple linear normalization."""
     return (feature - feature_range.min) / (feature_range.max - feature_range.min)
 
 
-@overload
-def unnormalize_feature(feature: np.ndarray, feature_range: Range) -> np.ndarray:
-    ...
-
-
-@overload
-def unnormalize_feature(feature: float, feature_range: Range) -> float:
-    ...
-
-
-@overload
-def unnormalize_feature(feature: torch.Tensor, feature_range: Range) -> torch.Tensor:
-    ...
-
-
-def unnormalize_feature(feature, feature_range):
+def unnormalize_feature(feature, feature_range: Range):
     """Inverts simple linear normalization."""
     return feature * (feature_range.max - feature_range.min) + feature_range.min
 
