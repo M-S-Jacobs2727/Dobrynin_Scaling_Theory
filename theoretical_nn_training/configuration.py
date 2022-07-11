@@ -276,7 +276,7 @@ def read_config_from_file(config_filename: Union[Path, str]) -> NNConfig:
         mu=config_dict["bg_range"].get("mu"),
         sigma=config_dict["bg_range"].get("sigma"),
     )
-    if bg_range.min <= 0 or bg_range.max <= 0:
+    if bg_range.min < 0 or bg_range.max < 0:
         raise ValueError(
             "Min and max values of config parameter 'bg_range' must be > 0."
             f" Values: ({bg_range.min=}, {bg_range.max=})"
@@ -294,7 +294,7 @@ def read_config_from_file(config_filename: Union[Path, str]) -> NNConfig:
         mu=config_dict["bth_range"].get("mu"),
         sigma=config_dict["bth_range"].get("sigma"),
     )
-    if bth_range.min <= 0 or bth_range.max <= 0:
+    if bth_range.min < 0 or bth_range.max < 0:
         raise ValueError(
             "Min and max values of config parameter 'bth_range' must be > 0."
             f" Values: ({bth_range.min=}, {bth_range.max=})"
@@ -317,7 +317,7 @@ def read_config_from_file(config_filename: Union[Path, str]) -> NNConfig:
         mu=config_dict["pe_range"].get("mu"),
         sigma=config_dict["pe_range"].get("sigma"),
     )
-    if pe_range.min <= 0 or pe_range.max <= 0:
+    if pe_range.min < 0 or pe_range.max < 0:
         raise ValueError(
             "Min and max values of config parameter 'pe_range' must be > 0."
             f" Values: ({pe_range.min=}, {pe_range.max=})"
