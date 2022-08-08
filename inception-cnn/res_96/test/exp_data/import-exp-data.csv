@@ -1,0 +1,809 @@
+ID,Polymer,Solvent,group,Bg,Bth,Pe,phi,Nw,eta_sp
+1,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.000410138,1250,1.91788
+2,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.000581427,1250,2.84924
+3,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.00072552,1250,3.85298
+4,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.000923626,1250,5.29068
+5,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.001187649,1250,7.67311
+6,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.001525235,1250,11.67684
+7,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.001743666,1250,14.75536
+8,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.002422907,1250,28.62382
+9,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.002822364,1250,39.6499
+10,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.003868213,1250,86.74745
+11,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.004312932,1250,130.00576
+12,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.005707677,1250,305.04897
+13,sodium carboxymethylcellulose,water,1,0.389,0.282,9.7,0.006954917,1250,602.20641
+14,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.000369692,1250,1.34869
+15,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.000632255,1250,2.50434
+16,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.001108688,1250,5.62477
+17,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.001990893,1250,15.51652
+18,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.003848908,1250,76.24665
+19,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.005435917,1250,252.19723
+20,sodium carboxymethylcellulose,water,2,0.411,0.282,9.7,0.006954917,1250,561.5042
+21,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000375283,1250,1.08614
+22,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000426353,1250,1.29097
+23,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000484374,1250,1.46876
+24,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000572765,1250,1.80792
+25,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000663864,1250,2.27957
+26,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000804895,1250,2.82443
+27,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.000919014,1250,3.35708
+28,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.001141048,1250,4.6911
+29,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.001409654,1250,6.68554
+30,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.001803564,1250,10.81643
+31,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.00227317,1250,16.93499
+32,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.002687981,1250,27.16023
+33,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.003337394,1250,47.12738
+34,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.003848908,1250,67.60579
+35,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.004102445,1250,85.4296
+36,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.005074514,1250,174.27321
+37,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.006300509,1250,362.57739
+38,sodium carboxymethylcellulose,water,3,0.435,0.282,9.7,0.007744814,1250,765.98301
+39,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.00042211,1250,1.11502
+40,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.000489245,1250,1.31375
+41,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.000564231,1250,1.57523
+42,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.000653972,1250,1.88462
+43,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.000862219,1250,2.79983
+44,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.00105987,1250,3.78615
+45,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.001335835,1250,5.52722
+46,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.001650293,1250,8.13982
+47,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.002079991,1250,13.19812
+48,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.002585745,1250,22.11341
+49,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.003242747,1250,38.03616
+50,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.003868213,1250,62.62421
+51,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.00582306,1250,256.64831
+52,sodium carboxymethylcellulose,water,4,0.45,0.282,9.7,0.009296611,1250,1593.63635
+53,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.000553743,1250,1.40591
+54,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.000857915,1250,2.59352
+55,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.001152523,1250,4.15947
+56,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.001423831,1250,5.82507
+57,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.001803564,1250,9.67489
+58,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.002228127,1250,15.51652
+59,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.002808276,1250,27.63958
+60,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.003721087,1250,63.72948
+61,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.005594581,1250,250.00073
+62,sodium carboxymethylcellulose,water,5,0.46,0.282,9.7,0.007487612,1250,715.77501
+63,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.000730725,3462.182316,1.26644
+64,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.000977961,3462.182316,1.65877
+65,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.001219405,3462.182316,2.28192
+66,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.001464644,3462.182316,2.98885
+67,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.001735945,3462.182316,3.57799
+68,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.001938547,3462.182316,4.19658
+69,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.002444103,3462.182316,6.29072
+70,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.00489869,3462.182316,23.3741
+71,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.007320526,3462.182316,56.30327
+72,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.009229916,3462.182316,142.44327
+73,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.014511443,3462.182316,646.68204
+74,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.015781074,3462.182316,1274.89636
+75,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.018296272,3462.182316,2683.31641
+76,2-vinyl pyridine,glycerol,6,0.69,0.39,13.3,0.028387321,3462.182316,26929.44777
+77,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.001322202,9090.909091,0.99601
+78,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.002650914,9090.909091,3.99002
+79,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.005328803,9090.909091,10.97605
+80,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.010765968,9090.909091,47.9022
+81,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.016315215,9090.909091,253.49102
+82,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.021979801,9090.909091,647.70259
+83,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.033670101,9090.909091,4190.61677
+84,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.04586733,9090.909091,16965.06786
+85,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.058605904,9090.909091,54889.21956
+86,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.001322202,22727.27273,2.99202
+87,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.002650914,22727.27273,8.98004
+88,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.005328803,22727.27273,40.91617
+89,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.010765968,22727.27273,328.34132
+90,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.016315215,22727.27273,1735.52695
+91,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.021979801,22727.27273,7084.82834
+92,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.033670101,22727.27273,69859.27944
+93,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.04586733,22727.27273,274450.0978
+94,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.058605904,22727.27273,1297404.19
+95,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.00052809,90909.09091,2.99202
+96,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.001322202,90909.09091,11.97405
+97,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.002650914,90909.09091,95.80639
+98,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.004254485,90909.09091,507.98204
+99,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.005328803,90909.09091,1496.00599
+100,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.008033666,90909.09091,10977.04391
+101,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.010765968,90909.09091,44909.17964
+102,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.013526407,90909.09091,121755.487
+103,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.016315215,90909.09091,239519.9581
+104,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.021979801,90909.09091,693611.7745
+105,poly(ethylene oxide),water,7,1.12,0.62,7.2,0.027763445,90909.09091,3097803.391
+106,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,7.21E-05,75000,2.34826087
+107,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000236191,75000,9.12426087
+108,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000399412,75000,17.82315217
+109,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000641364,75000,48.02526087
+110,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000735456,75000,89.68041304
+111,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001087822,75000,322.2821522
+112,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001603409,75000,1105.035717
+113,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.002774762,75000,10979.47187
+114,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000410934,17307.69231,4.293478261
+115,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000466621,17307.69231,5.12973913
+116,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000582796,17307.69231,7.412021739
+117,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001055178,17307.69231,16.51463043
+118,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001143509,17307.69231,18.26417391
+119,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.002258215,17307.69231,72.43019565
+120,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.003098325,17307.69231,224.4888913
+121,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.004176545,17307.69231,478.2547174
+122,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.00551208,17307.69231,915.6176739
+123,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.005301812,17307.69231,1783.978043
+124,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.007406407,17307.69231,4280.528413
+125,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.00872562,17307.69231,10482.47248
+126,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.00949372,17307.69231,11952.6367
+127,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000796904,5769.230769,3.44373913
+128,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001058058,5769.230769,5.020304348
+129,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001577486,5769.230769,8.715891304
+130,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.002095954,5769.230769,13.11
+131,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.002725796,5769.230769,21.13593478
+132,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.00520772,5769.230769,93.9793913
+133,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.006752562,5769.230769,239.4716087
+134,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.008124581,5769.230769,456.5626304
+135,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.014290506,5769.230769,4280.528413
+136,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000545351,3750,1.676652174
+137,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.000869874,3750,2.877195652
+138,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.001091663,3750,2.927413043
+139,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.002287019,3750,6.767043478
+140,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.004116058,3750,19.38619565
+141,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.005929734,3750,48.91632609
+142,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.007638758,3750,96.20471739
+143,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.009325698,3750,193.2260217
+144,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.00972799,3750,203.4835435
+145,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.011780738,3750,290.662
+146,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.012090859,3750,484.4607609
+147,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.013155638,3750,484.4607609
+148,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.015076849,3750,880.9115217
+149,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.017111355,3750,1400.468891
+150,polystyrene,tetrahydrofuran,8,0.61,0,6.287673698,0.018861663,3750,1917.333848
+151,polystyrene,toluene,9,0.74,0.42,4.4,0.000960125,2557.692308,1.101
+152,polystyrene,toluene,9,0.74,0.42,4.4,0.001440188,2557.692308,1.867
+153,polystyrene,toluene,9,0.74,0.42,4.4,0.001920251,2557.692308,2.746
+154,polystyrene,toluene,9,0.74,0.42,4.4,0.013787401,2557.692308,248
+155,polystyrene,toluene,9,0.74,0.42,4.4,0.000960125,3201.923077,1.298
+156,polystyrene,toluene,9,0.74,0.42,4.4,0.001440188,3201.923077,2.267
+157,polystyrene,toluene,9,0.74,0.42,4.4,0.001920251,3201.923077,3.411
+158,polystyrene,toluene,9,0.74,0.42,4.4,0.000480063,6740.384615,1.099
+159,polystyrene,toluene,9,0.74,0.42,4.4,0.000960125,6740.384615,2.875
+160,polystyrene,toluene,9,0.74,0.42,4.4,0.001440188,6740.384615,5.205
+161,polystyrene,toluene,9,0.74,0.42,4.4,0.001920251,6740.384615,8.592
+162,polystyrene,toluene,9,0.74,0.42,4.4,0.005184677,6740.384615,99
+163,polystyrene,toluene,9,0.74,0.42,4.4,0.01363378,6740.384615,3924
+164,polystyrene,toluene,9,0.74,0.42,4.4,0.002592339,9798.076923,26.2
+165,polystyrene,toluene,9,0.74,0.42,4.4,0.003456451,9798.076923,45.5
+166,polystyrene,toluene,9,0.74,0.42,4.4,0.004416577,9798.076923,115.5
+167,polystyrene,toluene,9,0.74,0.42,4.4,0.002592339,17884.61538,113
+168,polystyrene,toluene,9,0.74,0.42,4.4,0.003456451,17884.61538,300.4
+169,polystyrene,toluene,9,0.74,0.42,4.4,0.004464583,17884.61538,1074
+170,polystyrene,toluene,9,0.74,0.42,4.4,0.009601254,17884.61538,43010
+171,polystyrene,toluene,9,0.74,0.42,4.4,0.013768198,17884.61538,170200
+172,polystyrene,toluene,9,0.74,0.42,4.4,0.002592339,30769.23077,513.3
+173,polystyrene,toluene,9,0.74,0.42,4.4,0.003456451,30769.23077,1375
+174,polystyrene,toluene,9,0.74,0.42,4.4,0.004416577,30769.23077,3780
+175,polystyrene,toluene,9,0.74,0.42,4.4,0.002592339,87980.76923,13977
+176,polystyrene,toluene,9,0.74,0.42,4.4,0.003456451,87980.76923,67463
+177,polystyrene,toluene,9,0.74,0.42,4.4,0.004416577,87980.76923,127060
+178,polystyrene,toluene,9,0.74,0.42,4.4,3.84E-05,226923.0769,1.185
+179,polystyrene,toluene,9,0.74,0.42,4.4,5.76E-05,226923.0769,2.026
+180,polystyrene,toluene,9,0.74,0.42,4.4,7.68E-05,226923.0769,3.041
+181,polystyrene,toluene,9,0.74,0.42,4.4,9.60E-05,226923.0769,4.119
+182,polystyrene,toluene,9,0.74,0.42,4.4,0.000192025,226923.0769,14.73
+183,polystyrene,toluene,9,0.74,0.42,4.4,0.000883315,226923.0769,2741
+184,polystyrene,toluene,9,0.74,0.42,4.4,0.000940923,226923.0769,2866
+185,polystyrene,toluene,9,0.74,0.42,4.4,0.003456451,226923.0769,1254000
+186,polystyrene,toluene,9,0.74,0.42,4.4,0.006019834,144.2307692,1.26
+187,polystyrene,toluene,9,0.74,0.42,4.4,0.009753655,144.2307692,2.53
+188,polystyrene,toluene,9,0.74,0.42,4.4,0.015544887,144.2307692,5.83
+189,polystyrene,toluene,9,0.74,0.42,4.4,0.0179071,144.2307692,7.89
+190,polystyrene,toluene,9,0.74,0.42,4.4,0.027736956,144.2307692,25.35
+191,polystyrene,toluene,9,0.74,0.42,4.4,0.002665117,490.3846154,1.06
+192,polystyrene,toluene,9,0.74,0.42,4.4,0.003997675,490.3846154,2
+193,polystyrene,toluene,9,0.74,0.42,4.4,0.007175314,490.3846154,4.84
+194,polystyrene,toluene,9,0.74,0.42,4.4,0.015580682,490.3846154,20.71
+195,polystyrene,toluene,9,0.74,0.42,4.4,0.024635246,490.3846154,74.63
+196,polystyrene,toluene,9,0.74,0.42,4.4,0.002010263,1538.461538,2.15
+197,polystyrene,toluene,9,0.74,0.42,4.4,0.002850372,1538.461538,3.57
+198,polystyrene,toluene,9,0.74,0.42,4.4,0.004710615,1538.461538,8.14
+199,polystyrene,toluene,9,0.74,0.42,4.4,0.008101058,1538.461538,20.59
+200,polystyrene,toluene,9,0.74,0.42,4.4,0.010216334,1538.461538,38.22
+201,polystyrene,toluene,9,0.74,0.42,4.4,0.000344796,17019.23077,1.84
+202,polystyrene,toluene,9,0.74,0.42,4.4,0.000368667,17019.23077,2.14
+203,polystyrene,toluene,9,0.74,0.42,4.4,0.000641852,17019.23077,4.81
+204,polystyrene,toluene,9,0.74,0.42,4.4,0.001320835,17019.23077,16.96
+205,polystyrene,toluene,9,0.74,0.42,4.4,0.002318093,17019.23077,63.81
+206,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.000500264,3061,1.28775
+207,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.00100552,3061,2.45651
+208,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.002009043,3061,5.36092
+209,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.003003579,3061,9.8219
+210,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,11,0.62,0.38,12.55502896,0.004013094,3061,15.51936
+211,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.005969215,3061,33.86846
+212,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.00701168,3061,54.23968
+213,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.008061136,3061,75.92835
+214,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.00907065,3061,100.72029
+215,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,11,0.62,0.38,12.55502896,0.010098138,3061,148.79137
+216,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.013204566,3061,413.69654
+217,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.015018896,3061,611.14277
+218,poly(methyl methacrylate),C4mim bis(trifluoromethylsulfonyl)imide,10,0.62,0.38,12.55502896,0.020174308,3061,3513.94126
+219,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.001000527,3061,1.320542
+220,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.002009043,3061,3.082415
+221,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.003003579,3061,5.647386
+222,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.004013094,3061,10.486906
+223,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.005054561,3061,18.453271
+224,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.006033121,3061,22.580081
+225,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.007049625,3061,42.498034
+226,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.008061136,3061,69.916138
+227,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.010044217,3061,129.830673
+228,poly(methyl methacrylate),C8mim2 bis(trifluoromethylsulfonyl)imide2,11,0.72,0.41,8.08229989,0.015181656,3061,1102.782636
+229,galactomannan - guar gum,water,12,0,0.27,6.5,0.001020271,950,2.14823
+230,galactomannan - guar gum,water,12,0,0.27,6.5,0.001730173,950,6.10231
+231,galactomannan - guar gum,water,12,0,0.27,6.5,0.003578342,950,39.33446
+232,galactomannan - guar gum,water,12,0,0.27,6.5,0.006970206,950,428.21477
+233,galactomannan - guar gum,water,12,0,0.27,6.5,0.000851966,1918,3.04664
+234,galactomannan - guar gum,water,12,0,0.27,6.5,0.001391651,1918,10.96984
+235,galactomannan - guar gum,water,12,0,0.27,6.5,0.002157049,1918,25.84188
+236,galactomannan - guar gum,water,12,0,0.27,6.5,0.003160756,1918,73.10223
+237,galactomannan - guar gum,water,12,0,0.27,6.5,0.003536662,1918,175.82738
+238,galactomannan - guar gum,water,12,0,0.27,6.5,0.00742493,1918,6666.57404
+239,galactomannan - guar gum,water,12,0,0.27,6.5,0.010798633,1918,98733.9842
+240,galactomannan - guar gum,water,12,0,0.27,6.5,0.000956718,2501,6.12775
+241,galactomannan - guar gum,water,12,0,0.27,6.5,0.001252882,2501,9.13519
+242,galactomannan - guar gum,water,12,0,0.27,6.5,0.001801799,2501,22.06378
+243,galactomannan - guar gum,water,12,0,0.27,6.5,0.002016088,2501,44.93439
+244,galactomannan - guar gum,water,12,0,0.27,6.5,0.0034317,2501,78.7855
+245,galactomannan - guar gum,water,12,0,0.27,6.5,0.003671055,2501,212.90315
+246,galactomannan - guar gum,water,12,0,0.27,6.5,0.006887907,2501,13633.51858
+247,galactomannan - guar gum,water,12,0,0.27,6.5,0.010130801,2501,210492.2781
+248,galactomannan - guar gum,water,12,0,0.27,6.5,0.000802645,4212,7.05861
+249,galactomannan - guar gum,water,12,0,0.27,6.5,0.001107708,4212,15.2373
+250,galactomannan - guar gum,water,12,0,0.27,6.5,0.001629226,4212,30.01619
+251,galactomannan - guar gum,water,12,0,0.27,6.5,0.002265359,4212,65.33669
+252,galactomannan - guar gum,water,12,0,0.27,6.5,0.00276284,4212,155.20072
+253,galactomannan - guar gum,water,12,0,0.27,6.5,0.00352448,4212,651.79444
+254,galactomannan - guar gum,water,12,0,0.27,6.5,0.007234918,4212,69618.85726
+255,galactomannan - guar gum,water,12,0,0.27,6.5,0.009762804,4212,761065.0147
+256,galactomannan - guar gum,water,12,0,0.27,6.5,0.000213372,12004,1.13684
+257,galactomannan - guar gum,water,12,0,0.27,6.5,0.000241446,12004,1.29869
+258,galactomannan - guar gum,water,12,0,0.27,6.5,0.000428267,12004,3.92657
+259,galactomannan - guar gum,water,12,0,0.27,6.5,0.000558749,12004,13.17295
+260,galactomannan - guar gum,water,12,0,0.27,6.5,0.000742763,12004,29.8916
+261,galactomannan - guar gum,water,12,0,0.27,6.5,0.000991084,12004,70.70974
+262,galactomannan - guar gum,water,12,0,0.27,6.5,0.00154773,12004,221.02425
+263,galactomannan - guar gum,water,12,0,0.27,6.5,0.002152041,12004,2003.75968
+264,galactomannan - guar gum,water,12,0,0.27,6.5,0.002426092,12004,3024.69643
+265,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.00019455,4778,1.13078
+266,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.000275729,4778,1.73802
+267,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.001090991,4778,24.693
+268,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.001642904,4778,138.3247
+269,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.0022057,4778,740.87762
+270,galactomannan - M. flocculosa,water,13,0.49,0.28,3.3,0.00275104,4778,2813.53739
+271,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.000264416,3405,1.02606
+272,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.000316495,3405,1.20047
+273,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.000399043,3405,1.81775
+274,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.000474543,3405,2.70147
+275,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.000528823,3405,3.35544
+276,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.001053055,3405,10.03151
+277,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.001589214,3405,25.25302
+278,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.002115212,3405,88.00036
+279,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.002643901,3405,151.87329
+280,galactomannan - M. bimucronata,water,14,0.49,0.27,7.2,0.003955614,3405,1570.44628
+281,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.000419696,1934,1.23691
+282,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.000505631,1934,1.55948
+283,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.000563466,1934,1.61887
+284,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.000564689,1934,1.87994
+285,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.001119612,1934,4.87614
+286,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.001660631,1934,15.02032
+287,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.002244034,1934,46.44146
+288,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.00416032,1934,270.06261
+289,galactomannan - M. aspericarpa,water,15,0.49,0.28,5.8,0.0055734,1934,2404.78076
+290,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.000395485,1664,0.91722
+291,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.000459239,1664,1.20496
+292,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.000532116,1664,1.21855
+293,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.001059612,1664,3.73959
+294,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.001606053,1664,7.98633
+295,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.002146903,1664,15.02032
+296,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.004014876,1664,93.42363
+297,galactomannan - M. taimbensis,water,16,0.5,0.28,7.6,0.005343717,1664,335.43929
+298,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.000230711,3373,0.88017
+299,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.000452031,3373,3.17069
+300,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.000912581,3373,12.34456
+301,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.001409938,3373,36.82499
+302,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.00224495,3373,259.58435
+303,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.003659451,3373,5338.79747
+304,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.004736297,3373,19555.14546
+305,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.007642869,3373,320359.3699
+306,galactomannan - Cassia nodosa,water,17,0,0.24,7.2,0.009627733,3373,1021452.351
+307,chitosan,water,18,0.45,0.27,12.7,0.000696455,1168,1.907303615
+308,chitosan,water,18,0.45,0.27,12.7,0.001225379,1168,4.320048614
+309,chitosan,water,18,0.45,0.27,12.7,0.003120465,1168,27.55387785
+310,chitosan,water,18,0.45,0.27,12.7,0.005872072,1168,119.6531427
+311,chitosan,water,18,0.45,0.27,12.7,0.010498299,1168,605.8438294
+312,chitosan,water,18,0.45,0.27,12.7,0.015613793,1168,4115.140968
+313,chitosan,water,18,0.45,0.27,12.7,0.020927384,1168,36047.06075
+314,chitosan,water,19,0.43,0.25,12.7,0.000609248,1168,2.03215
+315,chitosan,water,19,0.43,0.25,12.7,0.001068483,1168,5.30468
+316,chitosan,water,19,0.43,0.25,12.7,0.002710602,1168,36.14648
+317,chitosan,water,19,0.43,0.25,12.7,0.005096184,1168,176.12823
+318,chitosan,water,19,0.43,0.25,12.7,0.009130869,1168,1093.40042
+319,chitosan,water,19,0.43,0.25,12.7,0.013663215,1168,8409.68602
+320,chitosan,water,19,0.43,0.25,12.7,0.018175046,1168,66825.18208
+321,sodium hyaluronate,water,20,0.61,0,3.7,0.001580355,623,0.94021
+322,sodium hyaluronate,water,20,0.61,0,3.7,0.002354289,623,1.49789
+323,sodium hyaluronate,water,20,0.61,0,3.7,0.003158206,623,2.20029
+324,sodium hyaluronate,water,20,0.61,0,3.7,0.006303247,623,6.94421
+325,sodium hyaluronate,water,20,0.61,0,3.7,0.012418464,623,29.6831
+326,sodium hyaluronate,water,20,0.61,0,3.7,0.031205636,623,508.68525
+327,sodium hyaluronate,water,20,0.61,0,3.7,0.062442598,623,6463.98949
+328,sodium hyaluronate,water,20,0.61,0,3.7,0.001223745,972,1.08258
+329,sodium hyaluronate,water,20,0.61,0,3.7,0.001624708,972,1.65964
+330,sodium hyaluronate,water,20,0.61,0,3.7,0.003259473,972,4.51037
+331,sodium hyaluronate,water,20,0.61,0,3.7,0.006513783,972,16.25088
+332,sodium hyaluronate,water,20,0.61,0,3.7,0.016262537,972,204.74687
+333,sodium hyaluronate,water,20,0.61,0,3.7,0.032247943,972,2450.70524
+334,sodium hyaluronate,water,20,0.61,0,3.7,0.048164963,972,12010.33742
+335,sodium hyaluronate,water,20,0.61,0,3.7,0.000724915,2492,1.29536
+336,sodium hyaluronate,water,20,0.61,0,3.7,0.000977498,2492,1.99435
+337,sodium hyaluronate,water,20,0.61,0,3.7,0.001933327,2492,5.46653
+338,sodium hyaluronate,water,20,0.61,0,3.7,0.003853605,2492,20.73209
+339,sodium hyaluronate,water,20,0.61,0,3.7,0.009645977,2492,341.88741
+340,sodium hyaluronate,water,20,0.61,0,3.7,0.019326632,2492,5023.69502
+341,sodium hyaluronate,water,20,0.61,0,3.7,0.028716882,2492,31275.05815
+342,sodium hyaluronate,water,20,0.61,0,3.7,0.0004975,3364,1.16912
+343,sodium hyaluronate,water,20,0.61,0,3.7,0.000665656,3364,1.69548
+344,sodium hyaluronate,water,20,0.61,0,3.7,0.001325103,3364,4.70726
+345,sodium hyaluronate,water,20,0.61,0,3.7,0.002644683,3364,17.62513
+346,sodium hyaluronate,water,20,0.61,0,3.7,0.006611358,3364,249.21404
+347,sodium hyaluronate,water,20,0.61,0,3.7,0.013212244,3364,3661.95211
+348,sodium hyaluronate,water,20,0.61,0,3.7,0.019555619,3364,20841.1172
+349,sodium hyaluronate,water,20,0.61,0,3.7,0.000291011,5482,0.94424
+350,sodium hyaluronate,water,20,0.61,0,3.7,0.000583068,5482,2.21917
+351,sodium hyaluronate,water,20,0.61,0,3.7,0.000726548,5482,2.9547
+352,sodium hyaluronate,water,20,0.61,0,3.7,0.001080954,5482,6.00529
+353,sodium hyaluronate,water,20,0.61,0,3.7,0.001444448,5482,9.98491
+354,sodium hyaluronate,water,20,0.61,0,3.7,0.002157403,5482,27.13581
+355,sodium hyaluronate,water,20,0.61,0,3.7,0.002890347,5482,58.55197
+356,sodium hyaluronate,water,20,0.61,0,3.7,0.004328159,5482,214.5993
+357,sodium hyaluronate,water,20,0.61,0,3.7,0.005738861,5482,654.52542
+358,sodium hyaluronate,water,20,0.61,0,3.7,0.008638277,5482,4216.43848
+359,sodium hyaluronate,water,20,0.61,0,3.7,0.011483484,5482,14067.29231
+360,sodium hyaluronate,water,20,0.61,0,3.7,0.014346394,5482,37422.36004
+361,sodium hyaluronate,water,21,0.6,0,3.2,0.000484425,3115,1.11502
+362,sodium hyaluronate,water,21,0.6,0,3.2,0.000747386,3115,2.07956
+363,sodium hyaluronate,water,21,0.6,0,3.2,0.001187984,3115,4.14583
+364,sodium hyaluronate,water,21,0.6,0,3.2,0.002444693,3115,19.59577
+365,sodium hyaluronate,water,21,0.6,0,3.2,0.003759207,3115,87.22841
+366,sodium hyaluronate,water,21,0.6,0,3.2,0.005819068,3115,454.13783
+367,sodium hyaluronate,water,21,0.6,0,3.2,0.000261796,9968,1.35575
+368,sodium hyaluronate,water,21,0.6,0,3.2,0.000361681,9968,2.26058
+369,sodium hyaluronate,water,21,0.6,0,3.2,0.000670798,9968,5.61816
+370,sodium hyaluronate,water,21,0.6,0,3.2,0.001355137,9968,32.27228
+371,sodium hyaluronate,water,21,0.6,0,3.2,0.002253369,9968,165.71404
+372,sodium hyaluronate,water,21,0.6,0,3.2,0.004553041,9968,3367.04941
+373,sodium hyaluronate,water,22,0.99,0,3.2,0.00162698,3987,0.91596
+374,sodium hyaluronate,water,22,0.99,0,3.2,0.002184498,3987,1.33046
+375,sodium hyaluronate,water,22,0.99,0,3.2,0.003530026,3987,2.79771
+376,sodium hyaluronate,water,22,0.99,0,3.2,0.006798693,3987,6.90373
+377,sodium hyaluronate,water,22,0.99,0,3.2,0.008599816,3987,10.68344
+378,sodium hyaluronate,water,22,0.99,0,3.2,0.016617506,3987,129.26087
+379,sodium hyaluronate,water,22,0.99,0,3.2,0.029267882,3987,1166.37987
+380,sodium hyaluronate,water,23,0.54,0,3.2,0.000293829,3987,1.11502
+381,sodium hyaluronate,water,23,0.54,0,3.2,0.000450354,3987,1.9133
+382,sodium hyaluronate,water,23,0.54,0,3.2,0.000914685,3987,6.8123
+383,sodium hyaluronate,water,23,0.54,0,3.2,0.00180884,3987,26.71672
+384,sodium hyaluronate,water,23,0.54,0,3.2,0.003472076,3987,171.02516
+385,sodium hyaluronate,water,23,0.54,0,3.2,0.006821261,3987,1410.42337
+386,sodium hyaluronate,PBS,24,0.63,0,3.2,0.000548607,3738,1.24103
+387,sodium hyaluronate,PBS,24,0.63,0,3.2,0.001097287,3738,3.32517
+388,sodium hyaluronate,PBS,24,0.63,0,3.2,0.002190468,3738,12.34818
+389,sodium hyaluronate,PBS,24,0.63,0,3.2,0.002920964,3738,24.40666
+390,sodium hyaluronate,PBS,24,0.63,0,3.2,0.003656862,3738,43.72685
+391,sodium hyaluronate,PBS,24,0.63,0,3.2,0.004368618,3738,72.14466
+392,sodium hyaluronate,PBS,24,0.63,0,3.2,0.005814351,3738,253.86145
+393,sodium hyaluronate,PBS,24,0.63,0,3.2,0.007272241,3738,656.88273
+394,sodium hyaluronate,PBS,24,0.63,0,3.2,0.012529729,3738,6577.49607
+395,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.000399289,811,1.04566
+396,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.00079757,811,2.47453
+397,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.001195988,811,4.64679
+398,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.002398901,811,20.44309
+399,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.003982766,811,73.80017
+400,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.007988603,811,755.56639
+401,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.011954353,811,4302.79484
+402,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.015990222,811,17525.26062
+403,sodium carboxymethylcellulose,water,25,0.4,0.25,9.6,0.019971267,811,61386.72403
+404,sodium alginate,water,26,0.64,0,3.6,0.005749303,252,1.6662
+405,sodium alginate,water,26,0.64,0,3.6,0.011507968,252,4.33096
+406,sodium alginate,water,26,0.64,0,3.6,0.019185608,252,11.1823
+407,sodium alginate,water,26,0.64,0,3.6,0.038322775,252,64.1092
+408,sodium alginate,water,26,0.64,0,3.6,0.057347173,252,302.60943
+409,sodium alginate,water,26,0.64,0,3.6,0.076548767,252,781.32019
+410,sodium alginate,water,26,0.64,0,3.6,0.095805771,252,1746.55811
+411,sodium alginate,water,26,0.64,0,3.6,0.114787817,252,3983.55559
+412,sodium alginate,water,26,0.64,0,3.6,0.134423166,252,12660.97777
+413,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.00030315,2281,1.59516
+414,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.000504351,2281,3.07687
+415,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.000756293,2281,7.16029
+416,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.001108463,2281,18.6743
+417,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.001513813,2281,34.71666
+418,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.002016489,2281,117.99053
+419,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.002523769,2281,217.88613
+420,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.003023809,2281,327.95772
+421,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.003526369,2281,547.68523
+422,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.004027893,2281,1096.09665
+423,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.005041168,2281,4663.22144
+424,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.006052542,2281,8756.82491
+425,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.00654978,2281,9946.28842
+426,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.007559423,2281,16947.59468
+427,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.008062346,2281,20378.31912
+428,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.009076014,2281,35906.39428
+429,hydroxypropyl methyl cellulose,water,27,0.43,0,3,0.010090552,2281,69725.05084
+430,methyl cellulose,water,28,0.43,0,3.4,0.000497194,1200,1.54258
+431,methyl cellulose,water,28,0.43,0,3.4,0.000744016,1200,2.36902
+432,methyl cellulose,water,28,0.43,0,3.4,0.00109047,1200,4.74118
+433,methyl cellulose,water,28,0.43,0,3.4,0.001486152,1200,8.60976
+434,methyl cellulose,water,28,0.43,0,3.4,0.001987884,1200,15.17031
+435,methyl cellulose,water,28,0.43,0,3.4,0.002482801,1200,20.58059
+436,methyl cellulose,water,28,0.43,0,3.4,0.002980911,1200,38.26058
+437,methyl cellulose,water,28,0.43,0,3.4,0.003476343,1200,69.47936
+438,methyl cellulose,water,28,0.43,0,3.4,0.00396251,1200,128.73417
+439,methyl cellulose,water,28,0.43,0,3.4,0.004969651,1200,246.65409
+440,methyl cellulose,water,28,0.43,0,3.4,0.005954294,1200,490.33722
+441,methyl cellulose,water,28,0.43,0,3.4,0.00644346,1200,632.59189
+442,methyl cellulose,water,28,0.43,0,3.4,0.007436714,1200,1164.26114
+443,methyl cellulose,water,28,0.43,0,3.4,0.007964503,1200,1700.34836
+444,methyl cellulose,water,28,0.43,0,3.4,0.008947261,1200,2745.96287
+445,methyl cellulose,water,28,0.43,0,3.4,0.009926756,1200,3312.91728
+446,methyl cellulose,water,28,0.43,0,3.4,0.012372459,1200,15901.96809
+447,methyl cellulose,water,28,0.43,0,3.4,0.014885549,1200,24751.16092
+448,methyl cellulose,water,28,0.43,0,3.4,0.017359551,1200,56832.23031
+449,methyl cellulose,water,28,0.43,0,3.4,0.019869686,1200,99135.95885
+450,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.001562955,1053,1.415169661
+451,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.001666549,1053,1.48502994
+452,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.003152499,1053,3.520958084
+453,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.004870223,1053,6.804391218
+454,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.006684028,1053,13.00199601
+455,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.011840962,1053,48.05189621
+456,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.015906947,1053,116.6247505
+457,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.017880156,1053,130.2175649
+458,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.018661698,1053,196.6047904
+459,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.022113145,1053,379.7984032
+460,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.029285806,1053,998.8902196
+461,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.037160714,1053,3576.42515
+462,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.037320034,1053,3999.02994
+463,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.002151348,1298,2.36109
+464,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.00572419,1298,10.92299
+465,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.008583653,1298,28.67916
+466,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.012194633,1298,68.55407
+467,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.014310319,1298,127.87409
+468,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.021503501,1298,493.63522
+469,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.028643964,1298,1677.704
+470,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.035775367,1298,5156.50315
+471,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.042952708,1298,10961.61782
+472,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.049987559,1298,28877.20055
+473,sodium kappa-carrageenan,water,29,0.63,0.39,10.8,0.057334594,1298,88458.46438
+474,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.001242783,465,1.12371
+475,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.001789374,465,1.72102
+476,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.002423705,465,3.01412
+477,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.00358022,465,5.27878
+478,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.004782981,465,9.56023
+479,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.008570135,465,35.51568
+480,hydroxypropyl cellulose,water,30,0.5,0,3.4,0.012461545,465,102.85042
+481,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.000442998,1703,1.113
+482,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.000465366,1703,1.31613
+483,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.00078598,1703,2.85943
+484,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.001129437,1703,5.15387
+485,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.001671658,1703,12.9896
+486,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.002233245,1703,24.2109
+487,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.004521464,1703,189.87204
+488,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.006892874,1703,1188.90095
+489,hydroxypropyl cellulose,water,31,0.49,0,2.9,0.00908237,1703,3143.47021
+490,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.000240855,6361,1.6803
+491,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.000476245,6361,4.79658
+492,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.000830118,6361,15.73259
+493,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.001140009,6361,50.86616
+494,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.001762055,6361,236.67172
+495,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.00239141,6361,725.92819
+496,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.003574524,6361,4013.24152
+497,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.004709959,6361,11903.69447
+498,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.005954511,6361,25738.34087
+499,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.007137911,6361,67081.6712
+500,hydroxypropyl cellulose,water,32,0.51,0,2.7,0.009725612,6361,287712.8958
+501,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.000313041,1963,1.1562986
+502,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.00033791,1963,1.391489713
+503,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.000421775,1963,1.904101083
+504,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.000768584,1963,7.337025019
+505,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.000926896,1963,10.99284236
+506,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.001229904,1963,17.56264812
+507,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.001657109,1963,36.83239844
+508,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.002232704,1963,76.08516732
+509,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.002503982,1963,87.83346179
+510,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.003054507,1963,194.2092898
+511,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.003532004,1963,509.0143195
+512,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.00432515,1963,1246.349948
+513,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.005196144,1963,3354.208074
+514,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.006218722,1963,9233.790141
+515,hydroxyethyl cellulose,water,33,0,0.23,9.7,0.006947701,1963,19291.6778
+516,xanthan gum,water,34,0,0,4.4,0.000239895,12335,0.943820225
+517,xanthan gum,water,34,0,0,4.4,0.000277511,12335,1.438202247
+518,xanthan gum,water,34,0,0,4.4,0.000352834,12335,2.011235955
+519,xanthan gum,water,34,0,0,4.4,0.000448013,12335,2.640449438
+520,xanthan gum,water,34,0,0,4.4,0.000541908,12335,3.056179775
+521,xanthan gum,water,34,0,0,4.4,0.00073765,12335,4.033707865
+522,xanthan gum,water,34,0,0,4.4,0.000934181,12335,7.853932584
+523,xanthan gum,water,34,0,0,4.4,0.001135913,12335,10.98876404
+524,xanthan gum,water,34,0,0,4.4,0.001536103,12335,20.93258427
+525,xanthan gum,water,34,0,0,4.4,0.001940267,12335,34.39325843
+526,xanthan gum,water,34,0,0,4.4,0.002356165,12335,50.38202247
+527,xanthan gum,water,34,0,0,4.4,0.003207233,12335,110.2921348
+528,xanthan gum,water,34,0,0,4.4,0.004099214,12335,231.6966292
+529,xanthan gum,water,34,0,0,4.4,0.0049259,12335,493.258427
+530,xanthan gum,water,34,0,0,4.4,0.006254696,12335,965.7752809
+531,xanthan gum,water,34,0,0,4.4,0.008525129,12335,4735.157303
+532,xanthan gum,water,34,0,0,4.4,0.013127917,12335,39559.46067
+533,xanthan gum,water,34,0,0,4.4,0.017706449,12335,151954.0899
+534,xanthan gum,water,35,0.41,0,2.6,5.36E-05,8047,0.66986
+535,xanthan gum,water,35,0.41,0,2.6,0.000111123,8047,2.16006
+536,xanthan gum,water,35,0.41,0,2.6,0.000222162,8047,7.37026
+537,xanthan gum,water,35,0.41,0,2.6,0.000436683,8047,40.23113
+538,xanthan gum,water,35,0.41,0,2.6,0.00086366,8047,374.61243
+539,xanthan gum,water,35,0.41,0,2.6,0.00129391,8047,1793.8734
+540,xanthan gum,water,35,0.41,0,2.6,0.001783534,8047,6610.91279
+541,apple pectin,water,36,0.78,0.43,8.7,0.001221552,2380,1.09059
+542,apple pectin,water,36,0.78,0.43,8.7,0.002429544,2380,3.06636
+543,apple pectin,water,36,0.78,0.43,8.7,0.003641067,2380,6.09181
+544,apple pectin,water,36,0.78,0.43,8.7,0.007270646,2380,22.33837
+545,apple pectin,water,36,0.78,0.43,8.7,0.009629738,2380,58.11592
+546,apple pectin,water,36,0.78,0.43,8.7,0.014345741,2380,202.08375
+547,apple pectin,water,36,0.78,0.43,8.7,0.018812095,2380,660.92094
+548,apple pectin,water,36,0.78,0.43,8.7,0.023563692,2380,1991.94217
+549,apple pectin,water,36,0.78,0.43,8.7,0.027802478,2380,5289.2371
+550,apple pectin,water,37,0.75,0.42,8.3,0.001134073,2400,0.99277
+551,apple pectin,water,37,0.75,0.42,8.3,0.002251048,2400,2.59338
+552,apple pectin,water,37,0.75,0.42,8.3,0.003400573,2400,5.11023
+553,apple pectin,water,37,0.75,0.42,8.3,0.004715211,2400,9.78573
+554,apple pectin,water,37,0.75,0.42,8.3,0.006844758,2400,27.51397
+555,apple pectin,water,37,0.75,0.42,8.3,0.008816208,2400,57.17378
+556,apple pectin,water,37,0.75,0.42,8.3,0.013344885,2400,245.87228
+557,apple pectin,water,37,0.75,0.42,8.3,0.017851885,2400,797.58797
+558,apple pectin,water,37,0.75,0.42,8.3,0.022450272,2400,2619.21564
+559,apple pectin,water,37,0.75,0.42,8.3,0.026647609,2400,6382.9599
+560,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.01110311,29,1.55
+561,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.016571615,29,3.060869565
+562,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.02339447,29,5.85
+563,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.006832001,67,1.995652174
+564,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.011219961,67,4.286956522
+565,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.016223037,67,8.973913043
+566,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.022186208,67,19.21086957
+567,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.003741812,112,1.506521739
+568,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.006961596,112,3.747826087
+569,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.011371458,112,9.42826087
+570,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.016659278,112,23.71521739
+571,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.02333248,112,58.35869565
+572,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.002195805,150,1.095652174
+573,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.003701656,150,2.189130435
+574,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.005599941,150,4.054347826
+575,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.008768617,150,9.760869565
+576,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.01215085,150,19.39130435
+577,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.01600948,150,36.96086957
+578,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.020652978,150,73.22826087
+579,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.026221889,150,158.4282609
+580,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.001719408,289,1.517391304
+581,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.003586664,289,4.57826087
+582,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.00688676,289,15.30652174
+583,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.010725311,289,45.62826087
+584,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.017017032,289,226.973913
+585,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.023834431,289,619.5608696
+586,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.001295945,447,1.802173913
+587,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.002809097,447,6.293478261
+588,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.005227585,447,22.73913043
+589,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.007927166,447,59.97391304
+590,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.011926342,447,250.5347826
+591,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.017062663,447,878.473913
+592,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.024409392,447,2861.75
+593,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.000562184,866,0.976086957
+594,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.001358004,866,3.480434783
+595,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.002794495,866,13.32391304
+596,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.005130846,866,64.49347826
+597,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.007969147,866,297.1086957
+598,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.012085141,866,1355.906522
+599,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.017153927,866,5140.880435
+600,cellulose tris(phenyl carbamate),tetrahydrofuran,38,0.46,0,3.4,0.022843307,866,20465.83478
+601,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,8.51E-04,22318,1.10044
+602,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.00138,22318,2.04097
+603,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.0017,22318,2.77954
+604,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.00218,22318,3.90827
+605,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.00318,22318,7.19736
+606,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.00424,22318,14.744
+607,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.0053,22318,25.92747
+608,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.00849,22318,95.75022
+609,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.01061,22318,222.09797
+610,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.01273,22318,341.27264
+611,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.01594,22318,983.00471
+612,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.02181,22318,3708.3947
+613,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,39,1.19,0,3.5,0.03182,22318,26694.54461
+614,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,8.51E-04,22318,1.37625
+615,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00138,22318,2.57071
+616,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.0017,22318,3.75859
+617,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00217,22318,5.39868
+618,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00318,22318,10.48584
+619,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00423,22318,18.63689
+620,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00528,22318,35.30987
+621,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.00846,22318,136.55859
+622,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.01058,22318,346.15343
+623,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.01267,22318,545.27811
+624,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.01583,22318,1343.48657
+625,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.02115,22318,5421.97782
+626,poly(ethylene oxide),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,40,1.12,0,3.5,0.03166,22318,33149.1084
+627,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.0032,9000,1.52436
+628,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.0043,9000,2.52838
+629,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.0054,9000,3.49711
+630,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.00848,9000,8.02285
+631,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.01062,9000,13.1355
+632,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.01264,9000,20.68525
+633,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.00169,22318,1.26662
+634,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.00216,22318,1.83566
+635,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.00317,22318,3.22145
+636,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.0042,22318,5.00872
+637,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.00841,22318,24.45702
+638,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.01007,22318,39.38635
+639,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.01262,22318,86.01917
+640,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.01575,22318,161.32108
+641,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.02094,22318,1064.09063
+642,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,41,1.43,0.65,11.5,0.03133,22318,5552.53473
+643,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.0017,22318,1.22287
+644,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.00217,22318,1.82137
+645,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.00318,22318,3.20889
+646,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.00423,22318,5.14755
+647,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.00529,22318,7.91021
+648,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.00846,22318,23.70465
+649,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.01058,22318,47.50788
+650,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.01589,22318,224.83926
+651,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.02094,22318,825.51038
+652,poly(ethylene oxide),1-butyl-3-methylimidazolium hexafluorophosphate,42,1.44,0.65,11.5,0.03174,22318,5956.94702
+653,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00175,22318,1.06389
+654,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00212,22318,1.33391
+655,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00319,22318,2.09691
+656,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00419,22318,3.22264
+657,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00532,22318,4.52432
+658,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.00851,22318,14.01813
+659,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.01066,22318,36.65697
+660,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.01279,22318,61.67081
+661,poly(ethylene oxide),1-butyl-3-methylimidazolium tetrafluoroborate,43,1.53,0.8,7.6,0.01589,22318,274.39769
+662,poly(ethylene oxide),water,44,1.11,0,3.9,6.50E-04,22318,1.05193
+663,poly(ethylene oxide),water,44,1.11,0,3.9,8.72E-04,22318,1.42756
+664,poly(ethylene oxide),water,44,1.11,0,3.9,0.00109,22318,1.91553
+665,poly(ethylene oxide),water,44,1.11,0,3.9,0.00131,22318,2.45663
+666,poly(ethylene oxide),water,44,1.11,0,3.9,0.00168,22318,3.4489
+667,poly(ethylene oxide),water,44,1.11,0,3.9,0.00227,22318,5.67258
+668,poly(ethylene oxide),water,44,1.11,0,3.9,0.00318,22318,10.32959
+669,poly(ethylene oxide),water,44,1.11,0,3.9,0.00426,22318,19.45897
+670,poly(ethylene oxide),water,44,1.11,0,3.9,0.00536,22318,32.00517
+671,poly(ethylene oxide),water,44,1.11,0,3.9,0.00851,22318,113.57784
+672,poly(ethylene oxide),water,44,1.11,0,3.9,0.0108,22318,303.79651
+673,poly(ethylene oxide),water,44,1.11,0,3.9,0.01274,22318,585.38588
+674,poly(ethylene oxide),water,44,1.11,0,3.9,0.02111,22318,5748.29404
+675,poly(ethylene oxide),water,44,1.11,0,3.9,0.0261,22318,17610.21272
+676,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.00309,741,1.07037
+677,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.00434,741,2.05663
+678,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.00621,741,3.58352
+679,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.00939,741,9.36267
+680,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.01254,741,20.11661
+681,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.01898,741,91.26025
+682,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.02558,741,365.09656
+683,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.03239,741,1230.88079
+684,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.04617,741,4788.59982
+685,cellulose,1-allyl-3-methylimidazolium formate,45,0,0.44,6.1,0.06835,741,39748.69786
+686,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00131,220,1.43333
+687,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00193,220,2.26707
+688,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00255,220,2.91223
+689,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00316,220,4.16332
+690,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00378,220,6.9984
+691,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.00499,220,11.46125
+692,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.0062,220,25.06627
+693,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.0092,220,54.15249
+694,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.01214,220,236.89622
+695,cellulose,1-allyl-3-methylimidazolium chloride,46,0.4,0,3,0.01811,220,1424.85734
+696,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,7.10E-04,741,1.2547
+697,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.00143,741,3.27567
+698,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.00214,741,7.30343
+699,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.00285,741,9.76071
+700,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.00357,741,21.03247
+701,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.0057,741,43.42864
+702,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.00714,741,147.69915
+703,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.01448,741,2986.95647
+704,cellulose,1-ethyl-3-methylimidazolium methylphosphonate,47,0.45,0,3.6,0.02191,741,22746.24898
+705,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.0033,741,1.02231
+706,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00395,741,1.45903
+707,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00461,741,2.1654
+708,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00529,741,2.41783
+709,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00596,741,3.5377
+710,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00662,741,3.86671
+711,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.00999,741,10.10275
+712,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.0134,741,18.69354
+713,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.02032,741,126.25652
+714,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.02741,741,493.0779
+715,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.03458,741,1221.35455
+716,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.04186,741,2038.42251
+717,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.04934,741,4769.8364
+718,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.05711,741,13333.7772
+719,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.06509,741,20432.91068
+720,cellulose,1-ethyl-3-methylimidazolium acetate,48,0,0.45,6.1,0.07295,741,39316.51678
+721,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.00329,1000,1.31685
+722,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.00462,1000,2.15273
+723,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.00662,1000,4.54948
+724,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.01339,1000,13.71061
+725,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.02032,1000,37.54165
+726,cellulose SSP,1-ethyl-3-methylimidazolium acetate,49,0.8,0,3.2,0.03467,1000,305.81966
+727,cellulose SSP,1-ethyl-3-methylimidazolium acetate,50,0.9,0,3.2,0.00442,1000,1.15787
+728,cellulose SSP,1-ethyl-3-methylimidazolium acetate,50,0.9,0,3.2,0.00633,1000,2.10176
+729,cellulose SSP,1-ethyl-3-methylimidazolium acetate,50,0.9,0,3.2,0.01281,1000,6.17282
+730,cellulose SSP,1-ethyl-3-methylimidazolium acetate,50,0.9,0,3.2,0.01942,1000,14.89275
+731,cellulose SSP,1-ethyl-3-methylimidazolium acetate,50,0.9,0,3.2,0.0331,1000,78.54657
+732,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.00126,741,1.1613
+733,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.00191,741,1.76286
+734,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.00318,741,3.09635
+735,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.00642,741,8.18912
+736,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.00971,741,32.61206
+737,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.01292,741,42.43993
+738,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.01624,741,153.34768
+739,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.01963,741,547.39385
+740,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.02644,741,1430.23324
+741,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.03338,741,3907.26814
+742,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.04048,741,10545.31919
+743,cellulose,1-butyl-3-methylimidazolium chloride,51,0.59,0,3.6,0.05519,741,36001.70346
+744,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00123,780,1.08486
+745,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00184,780,1.70452
+746,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00307,780,4.27473
+747,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00461,780,11.16728
+748,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00615,780,20.51099
+749,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00922,780,67.18071
+750,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.01229,780,115.0989
+751,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.01844,780,1007.88889
+752,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.02458,780,4624.15263
+753,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00123,780,1.01439
+754,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00184,780,1.73022
+755,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00307,780,3.82014
+756,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00461,780,10.8741
+757,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00615,780,20.55036
+758,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.00922,780,67.69424
+759,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.01229,780,113.92446
+760,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.01844,780,966.03237
+761,cellulose,1-butyl-3-methylimidazolium acetate,52,0.58,0.34,8.2,0.02458,780,4034.97122
+762,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.00184,780,1.5339
+763,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.00461,780,9.6822
+764,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.00615,780,17.68664
+765,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.00922,780,47.52119
+766,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.01229,780,96.02966
+767,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.01844,780,759.22881
+768,cellulose,1-butyl-3-methylimidazolium acetate,53,0,0.35,8.3,0.02458,780,3176.9661
+769,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.00184,780,1.43494
+770,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.00461,780,8.75836
+771,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.00615,780,15.26394
+772,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.00922,780,45.07807
+773,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.01229,780,78.88848
+774,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.01844,780,550.78439
+775,cellulose,1-butyl-3-methylimidazolium acetate,54,0,0.35,8.3,0.02458,780,2006.43494
+776,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.00184,780,1.1351
+777,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.00461,780,7.03804
+778,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.00615,780,12.33812
+779,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.00922,780,34.19153
+780,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.01229,780,63.68108
+781,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.01844,780,394.11974
+782,cellulose,1-butyl-3-methylimidazolium acetate,55,0,0.36,8.3,0.02458,780,1782.43937
+783,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,8.09E-04,9950,1.26279
+784,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00119,9950,2.05525
+785,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00199,9950,4.35795
+786,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00299,9950,8.97295
+787,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00397,9950,15.16633
+788,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00586,9950,34.8294
+789,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00804,9950,106.41767
+790,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.00998,9950,248.52695
+791,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,56,0.92,0.47,9.9,0.012,9950,544.97904
+792,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00118,100,2.65523
+793,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00198,100,5.19843
+794,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00297,100,12.08949
+795,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00396,100,20.09367
+796,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00594,100,48.12385
+797,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00792,100,124.30414
+798,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.00988,100,319.73287
+799,poly(methyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,57,0.86,0.44,9.9,0.01186,100,854.08491
+800,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.00134,1532,1.06
+801,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.00173,1532,1.48
+802,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.00192,1532,1.61
+803,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.00388,1532,4.69
+804,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.00589,1532,10.81
+805,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.01002,1532,37.46
+806,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.01215,1532,60.25
+807,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.01655,1532,88.94
+808,poly(acrylonitrile-co-itaconic-acid),1-butyl-3-methylimidazolium chloride,58,0.71,0,3.7,0.02114,1532,299.8

@@ -1,0 +1,54 @@
+device = device(type='cuda')
+Epoch	train_loss	train_err[0]	train_err[1]	train_err[2]	test_loss	test_err[0]	test_err[1]	test_err[2]	time
+Traceback (most recent call last):
+  File "googlenet_serial.py", line 315, in <module>
+    main()
+  File "googlenet_serial.py", line 275, in main
+    train_loss, train_error, train_pred, train_y = train( 
+  File "googlenet_serial.py", line 177, in train
+    pred = model(X)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "googlenet_serial.py", line 58, in forward
+    x = self.conv1(x)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "googlenet_serial.py", line 153, in forward
+    x = self.conv(x)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/nn/modules/conv.py", line 457, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/nn/modules/conv.py", line 453, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: Given groups=1, weight of size [64, 2, 7, 7], expected input[64, 3, 96, 96] to have 2 channels, but got 3 channels instead
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 13874) of binary: /bin/python3
+Traceback (most recent call last):
+  File "/home/sayko/.local/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 345, in wrapper
+    return f(*args, **kwargs)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/distributed/run.py", line 761, in main
+    run(args)
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/distributed/run.py", line 752, in run
+    elastic_launch(
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 131, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/sayko/.local/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 245, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+googlenet_serial.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2022-08-04_13:10:48
+  host      : sayko-X399-AORUS-Gaming-7
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 13874)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
