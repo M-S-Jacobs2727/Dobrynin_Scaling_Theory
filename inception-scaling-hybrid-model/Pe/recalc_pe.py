@@ -108,7 +108,8 @@ def get_pe(table_vals, df, device):
         table_vals['Pred Pe'][table_vals['Subgroup']==i] = np.around(popt[0], 3)
 
         x_fit = np.geomspace(0.5, 1e5, 100000)
-        y_fit = x_fit*(1+(x_fit/popt_arr[counter].detach().numpy()**2)**2)
+        pe_val = popt[0]
+        y_fit = x_fit*(1+(x_fit/pe_val**2)**2)
 
         plt.scatter(x, y)
         plt.plot(x_fit, y_fit, color='black')
@@ -216,7 +217,8 @@ def get_pe_combo(table_vals, df, device):
         table_vals['Pred Pe Combo'][table_vals['Subgroup']==i] = np.around(popt[0], 3)
 
         x_fit = np.geomspace(0.5, 1e5, 100000)
-        y_fit = x_fit*(1+(x_fit/popt_arr[counter].detach().numpy()**2)**2)
+        pe_val = popt[0]
+        y_fit = x_fit*(1+(x_fit/pe_val**2)**2)
 
         plt.scatter(x, y)
         plt.plot(x_fit, y_fit, color='black')
@@ -296,7 +298,8 @@ def get_pe_g(table_vals, df, device):
         table_vals['Pred Pe g'][table_vals['Subgroup']==i] = np.around(popt[0], 3)
 
         x_fit = np.geomspace(0.5, 1e5, 100000)
-        y_fit = x_fit*(1+(x_fit/popt_arr[counter].detach().numpy()**2)**2)
+        pe_val = popt[0]
+        y_fit = x_fit*(1+(x_fit/pe_val**2)**2)
 
         plt.scatter(x, y)
         plt.plot(x_fit, y_fit, color='black')
@@ -384,7 +387,8 @@ def get_pe_th(table_vals, df, device):
         table_vals['Pred Pe th'][table_vals['Subgroup']==i] = np.around(popt[0], 3)
 
         x_fit = np.geomspace(0.5, 1e5, 100000)
-        y_fit = x_fit*(1+(x_fit/popt_arr[counter].detach().numpy()**2)**2)
+        pe_val = popt[0]
+        y_fit = x_fit*(1+(x_fit/pe_val**2)**2)
 
         plt.scatter(x, y)
         plt.plot(x_fit, y_fit, color='black')
