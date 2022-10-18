@@ -4,10 +4,7 @@ import scaling_torch_lib as mike
 import time
 import pandas as pd
 import torch.nn.functional as F
-from torch.jit.annotations import Optional, Tuple
-
 from ax.service.managed_loop import optimize
-from ax.utils.tutorials.cnn_utils import train
 
 torch.cuda.empty_cache()
 
@@ -74,7 +71,6 @@ class InceptionV1(torch.nn.Module):
 
 class Inception(torch.nn.Module):
 
-    #def __init__(self, in_channels, ch1x1out, ch3x3red, ch3x3out, ch5x5red, ch5x5out, pool_out):
     def __init__(self, in_channels, ch1x1out, ch3x3red, ch3x3out, ch3x3redb, ch3x3redb2, ch3x3bout, pool_out):
         super(Inception, self).__init__()
 
@@ -124,7 +120,7 @@ def train(
 
     counter = 0
 
-    for b, (X, y) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
+    for b, (X, y) in enumerate(mike.surface_generator_Bth(num_batches, batch_size, device, return_nw=False, resolution=resolution)):
 
         optimizer.zero_grad()
         pred = model(X)

@@ -4,15 +4,13 @@ import scaling_torch_lib as mike
 import time
 import pandas as pd
 import torch.nn.functional as F
-from torch.jit.annotations import Optional, Tuple
-
 from ax.service.managed_loop import optimize
-from ax.utils.tutorials.cnn_utils import train
 
 torch.cuda.empty_cache()
 
 device = torch.device(f'cuda') if torch.cuda.is_available() else torch.device('cpu')
 dtype=torch.float
+
 class InceptionV1(torch.nn.Module):
 
     def __init__(self):
@@ -124,7 +122,7 @@ def train(
 
     counter = 0
 
-    for b, (X, y) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
+    for b, (X, y) in enumerate(mike.surface_generator_Bg(num_batches, batch_size, device, return_nw=False, resolution=resolution)):
 
         optimizer.zero_grad()
         pred = model(X)
