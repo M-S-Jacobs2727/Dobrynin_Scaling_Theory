@@ -125,7 +125,7 @@ def train(
 
     counter = 0
 
-    for b, (X, y, Nw_min, Nw_max, Num_Nw) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
+    for b, (X, y, Nw_min, Nw_max, Num_Nw) in enumerate(mike.surface_generator_Bg(num_batches, batch_size, device, return_nw=True, resolution=resolution)):
 
         optimizer.zero_grad()
         pred = model(X)
@@ -165,7 +165,7 @@ def validate(
     valid_num_Nw = np.zeros(num_samples)
 
     with torch.no_grad():
-        for b, (X, y, Nw_min, Nw_max, Num_Nw) in enumerate(mike.surface_generator(num_batches, batch_size, device, resolution=resolution)):
+        for b, (X, y, Nw_min, Nw_max, Num_Nw) in enumerate(mike.surface_generator_Bg(num_batches, batch_size, device, return_nw=True, resolution=resolution)):
             pred = model(X)
             loss = loss_fn(pred, y)
             avg_loss += loss
