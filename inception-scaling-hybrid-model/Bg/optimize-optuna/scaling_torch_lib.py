@@ -194,31 +194,35 @@ def surface_generator_Bth(num_batches: int, batch_size: int,
         # Nw trim
 
         if return_nw:
-            Nw_used = {}
             Nw_min = np.zeros(batch_size)
             Nw_max = np.zeros(batch_size)
             Num_Nw = np.zeros(batch_size)
 
-        eta_sp_copy = eta_sp.clone()
+        #eta_sp_copy = eta_sp.clone()
 
         for i in range(0,batch_size):
-            # declare eta_sp cutoff values
-            eta_sp_lo_cutoff = 1.0
-            eta_sp_hi_cutoff = 10.0
 
             # make sure that random Nw selector selects a range where all Nw have at least one value of eta_sp > 1
             arr_all = torch.arange(0, 224).to(device)
 
-            choose_num = 100
+            # set number of eta_sp values in range to count
+            num_eta_sp_threshold = 100
+            # set minimum number of nw vales needed before trimming nw
+            min_num_nw = 20
+            # max number of nw values to select
+            num_nw_max = 12
 
-            while len(arr_all[torch.sum(eta_sp[i] > 0, dim=1) > choose_num]) < 20:
-                choose_num -= 1
+            # count how many nw columns have at least num_eta_sp_threshold 
+            while len(arr_all[torch.sum(eta_sp[i] > 0, dim=1) > num_eta_sp_threshold]) < min_num_nw:
+                num_eta_sp_threshold -= 1
 
+            # get idx range of nw's that have at least choose_num eta_sp values in our range
             arr_choose = arr_all[torch.sum(eta_sp[i] > 0, dim=1) > choose_num]
 
-            num_nw = torch.randint(1, 13, (1,1))[0][0]
+            # to do : try to mimic measurements that would generate both rouse and entangled regimes
+            # generate number of nw values to select between 1 and num_nw_max
+            num_nw = torch.randint(1, num_nw_max+1, (1,1))[0][0]
             trim_nw_arr = torch.randint(arr_choose.min(), arr_choose.max(), (1, num_nw)).unique().to(device)
-
             
             if return_nw:
 
@@ -412,9 +416,6 @@ def surface_generator_Bg(num_batches: int, batch_size: int,
         eta_sp_copy = eta_sp.clone()
 
         for i in range(0,batch_size):
-            # declare eta_sp cutoff values
-            eta_sp_lo_cutoff = 1.0
-            eta_sp_hi_cutoff = 10.0
 
             # make sure that random Nw selector selects a range where all Nw have at least one value of eta_sp > 1
             arr_all = torch.arange(0, 224).to(device)
