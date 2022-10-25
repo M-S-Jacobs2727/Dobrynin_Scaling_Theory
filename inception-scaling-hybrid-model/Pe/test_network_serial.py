@@ -328,7 +328,8 @@ def main():
     path_read = "/media/sayko/storage1/model-data-filter/exp-data/"
     #df = pd.read_csv(f"{path_read}import-exp-data-neutral.csv")
     df = pd.read_csv(f"{path_read}import-exp-data-rcs.csv")
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device('cpu')
+    #device = torch.device("cuda") if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device('cpu')
     model = InceptionV1()
     model.to(device)
     #loss_fn = torch.nn.MSELoss()
@@ -337,16 +338,10 @@ def main():
     table_vals = get_all_systems_table(df, device)
 
     # init Bg run
-    optimizer = torch.optim.Adam(model.parameters(),
-    lr=0.00032847455024321627,
-    betas=(0.9,0.8829179550373253),
-    weight_decay=0,
-    eps=3.354127206879641e-09
-    )
 
-    checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bg-test/model_lowest_loss.pt")
+    #checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bg-test/model_lowest_loss.pt")
+    checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bg-train-fin/model_lowest_loss.pt")
     model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
     print(f'{epoch=}')
 
@@ -365,15 +360,9 @@ def main():
 
     table_vals["Pred Bg"] = bg_pred.tolist()
 
-    optimizer = torch.optim.Adam(model.parameters(),
-    lr=0.0006014336443018368,
-    betas=(0.8575299702326074,0.999),
-    weight_decay=0,
-    eps=4.062223668757783e-09
-    )
-    checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bth-test/model_lowest_loss.pt")
+    #checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bth-test/model_lowest_loss.pt")
+    checkpoint = torch.load("/media/sayko/storage1/BgBth-models/Bth-train-fin/model_lowest_loss.pt")
     model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
     #print(f'{epoch=}')
     X_2 = X_2.to(device)
@@ -390,7 +379,7 @@ def main():
     table_vals["Pred Bth"] = bth_pred.tolist()
     bg_error, bth_error = get_error_bg_bth(table_vals)
 
-    print(f'{bg_error=}, {bth_error}')
+    print(f'{bg_error=}, {bth_error=}')
 
     df_complete, pe_error = ryan.get_pe(table_vals, df, device)
 
@@ -406,6 +395,7 @@ def main():
 
     output.state_diagram(df, df_th, device)
     output.universal_plot(df, df_th, device)
+    df.to_csv("df-input.csv")
 
 if __name__ == '__main__':
     main()

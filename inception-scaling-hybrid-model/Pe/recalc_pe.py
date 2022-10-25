@@ -29,7 +29,7 @@ def pe_fit_master_curve_charged(x, Pe):
 
 def get_pe(table_vals, df, device):
 
-    folder = "pe_fit_results_HI"
+    folder = "pe_fit_results_Human_Guess"
 
     df2 = df.copy()
     # remember to cut out points that lie outside our (Nw, phi, eta_sp) range!
@@ -119,6 +119,8 @@ def get_pe(table_vals, df, device):
         plt.ylim(0.5,1e7)
         plt.xlabel('Nw/lam_g_g')
         plt.ylabel('eta_sp*lam')
+        title=table_eta_sp_slice['Polymer'].iloc[0],table_eta_sp_slice['Solvent'].iloc[0]
+        plt.title(title)
         plt.savefig(f'{folder}/pe_fit_{counter}_curve.png')
         plt.clf()
 

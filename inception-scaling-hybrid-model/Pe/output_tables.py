@@ -4,8 +4,6 @@ import pandas as pd
 import torch
 import random
 
-
-
 Param = collections.namedtuple('Param', ('min', 'max'))
 
 PHI = Param(3e-5, 2e-2)
@@ -142,8 +140,8 @@ def universal_plot(df_all, df_table, device):
     df2 = df2[(df2['Bg'] > 0) | (df2['Bth'] > 0)]
 
     df_table2 = df_table.copy()
-    num_points = len(df2)
-    init = np.zeros(num_points)
+    #num_points = len(df2)
+    #init = np.zeros(num_points)
 
     #df2["Pred Bg"] = np.zeros(init)
     #df2["Pred Bth"] = np.zeros(init)
@@ -195,28 +193,45 @@ def universal_plot(df_all, df_table, device):
         df2.loc[mask, "Pred Bth"] = Bth
         df2.loc[mask, "Pred Pe"] = Pe
 
+    #Bg_true = torch.tensor(df2["Bg"].values)
+    #Bth_true = torch.tensor(df2["Bth"].values)
+
+
     Bg_true = torch.tensor(df2["Bg"].values)
+    Bth_true = torch.tensor(df2["Bth"].values)
     Bg_t = torch.tensor(df2["Pred Bg"].values)
     Bth_t = torch.tensor(df2["Pred Bth"].values)
+
+    Bg_t[Bg_true==0] = torch.nan
+    Bth_t[Bth_true==0] = torch.nan
+
     Nw_t = torch.tensor(df2["Nw"].values)
 
     phi_star = torch.where(Bg_true > 0, Bg_t**3*Nw_t**(1-3*0.588), Bth_t**3*Nw_t**(-0.5))
     phi_t = torch.tensor(df2["phi"].values)
 
-    df2.loc[mask, "phi_star"] = df2.loc[mask, "Bg"]**3*df2.loc[mask, "Nw"]**(1-3*0.588)
-    df2.loc[~mask, "phi_star"] = df2.loc[~mask, "Bth"]**3*df2.loc[~mask, "Nw"]**(-0.5)
+    #df2.loc[mask, "phi_star"] = phi_t.numpy()
 
-    mask = (df2.loc[:, "Bth"] > 0) | (df2.loc[:, "Bg"] > 0)
+    #df2.loc[mask, "phi_star"] = df2.loc[mask, "Bg"]**3*df2.loc[mask, "Nw"]**(1-3*0.588)
+    #df2.loc[~mask, "phi_star"] = df2.loc[~mask, "Bth"]**3*df2.loc[~mask, "Nw"]**(-0.5)
+
+    df2["phi_star"] = phi_star.numpy()
+
 
     phi_th_t = Bth_t**3*(Bg_t/Bth_t)**(1/(2*0.588-1))
     Bth6_t = Bth_t**6
     phi_star_star_t = Bth_t**4
     param_t = (Bth_t/Bg_t)**(1/(2*0.588-1))/Bth_t**3
 
-    df2.loc[mask, "phi_th"] = phi_th_t.numpy()
-    df2.loc[mask, "Bth6"] = Bth6_t.numpy()
-    df2.loc[mask, "phi_star_star"] = phi_star_star_t.numpy()
-    df2.loc[mask, "param"] = param_t.numpy()
+    df2["phi_th"] = phi_th_t.numpy()
+    df2["Bth6"] = Bth6_t.numpy()
+    df2["phi_star_star"] = phi_star_star_t.numpy()
+    df2["param"] = param_t.numpy()
+
+    #df2.loc[mask, "phi_th"] = phi_th_t.numpy()
+    #df2.loc[mask, "Bth6"] = Bth6_t.numpy()
+    #df2.loc[mask, "phi_star_star"] = phi_star_star_t.numpy()
+    #df2.loc[mask, "param"] = param_t.numpy()
 
     #df2.loc[mask, "phi_th"] = df2.loc[mask, "Pred Bth"]**3*(df2.loc[mask, "Pred Bg"]/df2.loc[mask, "Pred Bth"])**(1/(2*0.588-1))
     #df2.loc[mask, "Bth6"] = df2.loc[mask, "Pred Bth"]**6
@@ -245,10 +260,13 @@ def universal_plot(df_all, df_table, device):
     lam_RC = 1 / lam_g_RC * torch.where(phi_t < phi_star_star_t, 1, (phi_t/phi_star_star_t)**(-1/2))
     lam_Bth = 1 / lam_g_Bth * torch.where(phi_t < phi_star_star_t, 1, (phi_t/phi_star_star_t)**(-1/2))
 
-    param_t = torch.tensor(df2["param"].values)
+    #param_t = torch.tensor(df2["param"].values)
 
     lam_g = torch.where(torch.isnan(param_t), lam_Bth, torch.where(param_t >= 1, lam_g_KN, lam_g_RC))
+    lam_g = torch.where(Bth_t.isnan(), 1, lam_g)
+
     lam = 1 / lam_g * torch.where(phi_t < phi_star_star_t, 1, (phi_t/phi_star_star_t)**(-1/2))
+    lam = torch.where(Bth_t.isnan(), 1, lam)
 
     df2["lam_g"] = lam_g.numpy()
     df2["lam"] = lam.numpy()
