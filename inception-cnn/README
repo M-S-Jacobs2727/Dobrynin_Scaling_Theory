@@ -1,6 +1,0 @@
-This folder is scratch code for training/testing an inception-based CNN on predicting Bg and Bth,
-and then using those values to fit an equation to predict Pe. Loss function of Bg and Bth is backpropogated
-to train the network.
-
-Folder optim (inside res_96_fit) attempts to implement Bayesian optimization in an attempt to tune the
-hyperparameters lr (learning rate), batch_size, weight_decay, resolution of input surfaces, beta_1 and beta_2, and epsilon.

@@ -1,9 +1,0 @@
-device = device(type='cuda')
-Epoch	train_loss	train_err[0]	train_err[1]	train_err[2]	test_loss	test_err[0]	test_err[1]	test_err[2]	time
-/home/sayko/.local/lib/python3.8/site-packages/scipy/optimize/minpack.py:833: OptimizeWarning: Covariance of the parameters could not be estimated
-  warnings.warn('Covariance of the parameters could not be estimated',
-1	0.119895	3.4177	6.9134	42.8697	0.083516	4.8203	18.9623	6.0488	201.94
-2	0.082102	5.7819	6.0387	4.9929	0.082388	4.6434	11.2919	4.5463	201.88
-3	0.082056	4.6387	8.2583	4.5417	0.082093	8.2306	6.9651	4.5890	202.02
-4	0.082082	5.4459	5.4531	4.4927	0.082382	7.8385	10.4483	4.5572	203.36
-5	0.081641	5.4014	6.0325	4.5225	0.081733	6.2073	5.8655	4.4370	203.57

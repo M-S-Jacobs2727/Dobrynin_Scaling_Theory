@@ -1,0 +1,5 @@
+- testGetConfig (include bad cases)
+- testSurfaceGenerator (mostly shapes, members, methods)
+- testCheckpoint
+- testSaveEpoch (true and pred values of Bg, Bth, and Pe, unnormalized)
+- testTraining (shapes given irregular inputs)

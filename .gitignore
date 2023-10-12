@@ -1,2 +1,4 @@
-theoretical_nn_training/__pycache__/
-__pycache__/
+psst/.test_psst
+__pycache__
+*.pyc
+psst.egg-info

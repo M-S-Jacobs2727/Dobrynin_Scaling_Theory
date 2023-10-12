@@ -1,62 +1,24 @@
-# Dobrynin_Scaling_Theory
-Code that applies the polymer solution scaling theory outlined in the works of 
-Dobrynin, Jacobs, and Sayko [1-5] to polymer solution viscosity data over a wide 
-concentration range.
+# PSST (Polymer Solution Scaling Theory) Library
 
-The ultimate goal of this project is for the user to load a web app, upload their data, 
-and receive accurate values of scaling parameters $B_g$ and $B_{th}$ and entanglement 
-packing number $P_e$, as well as moleucular characteristics such as Kuhn length, 
-excluded volume, and thermal blob size.
+The `psst` library allows users to study and implement our deep learning scaling theory methods and test similar approaches.
 
-## Folders
+## `psst` Module
 
-### *theoretical_nn_training*
-This will be the production code cited in the eventual publication. I'm making it as
-modular as possible, with a single config file to change all the settings. The user can
-select a convolutional NN instead of a fully connected linear neural network by setting
-the number of channels, kernel sizes, and pool sizes per convolution. The user can 
-choose to build a model around a 2D or 3D representation of the generated surfaces by
-setting the resolution to have length 2 or 3, respectively.
+The novel parts of the code are grouped into the module `psst`, which will be added to PyPI in the near future. For now, the library can be installed using the command `pip install .` in the head directory (the directory containing `pyproject.toml`). Dependencies will be handled by pip. Users may wish to create a new virtual environment first.
 
-Additionally, the user can use `generators.py` (req. `data_processing.py`) with their
-own ML code.
+- The `models` submodule contains two convolutional neural network (CNN) models we used in our initial research, `models.Inception3` and `models.Vgg13`.
+- `psst.configuration` defines the reading and structure of the system configuration, as specified in a YAML or JSON file.
+- `psst.surface_generator` contains the `SurfaceGenerator` class that is used to procedurally generate viscosity curves as functions of concentration (`phi`) and chain degree of polymerization (`Nw`). The submodule also contains `normalize` and `unnormalize` functions. Normalizing transforms the true values, optionally on a log scale, to values between 0 and 1.
+- `psst.training` contains the `train` and `validate` functions, as well as checkpointing functionality for the model and optimizer.
 
-### *Molecular-Fingerprint-Code*
-Ryan's individual setups for training CNN models on the generated data. Notably, he is 
-using parallel computing to train his models much quicker on a higher resolution, 
-currently 512x512.
+NOTE: The normalize/unnormalize functions and the checkpointing functionality may move to different submodules, perhaps new files.
 
-### *CSV_files*
-This contains a few .csv files of real, experimental data with three columns: 
-concentration $\varphi$, $N_w$, and $\eta_{sp}$.
+## Other Directories
 
-###  *Data* 
-This contains theoretically generated data as well as experimental data studied in refs 
-[1-5].
+The `examples` directory contains scripts to optimize and train networks, and one to evaluate experimental data. These are similar to the scripts used during our research. Details are in `examples/README.md`.
 
-### *Mike gui test*
-Mike's first attempt at creating a standalone gui for piecewise fitting of data to be 
-loaded by the user. Will likely be scrapped for a web version.
+The `deprecated` directory contains deprecated code that may be useful in the future.
 
-## Glossary
-| Term      | Explanation | Variable reference |
-| ---------------- | ---------------- | ------------- |
-| $c$ | polymer repeat unit concentration (number per unit volume)|
-| $l$ | repeat unit projection length (e.g., nm) |
-| $\varphi=cl^3$ | reduced polymer concentration | `phi` |
-| $N_w$ | weight-average degree of polymerization (number of repeat units per chain) | `Nw` |
-| $\eta_{sp}$ | specific viscosity | `eta_sp` |
-| $B_g$ | good solvent scaling parameter | `Bg` |
-| $B_{th}$ | thermal blob scaling parameter | `Bth` |
-| $P_e$ | entanglement packing number[6-8] | `Pe` |
+The `doc` directory contains a markdown file of the mathematical derivation transforming the details in the original publications to the representations used in the code.
 
-
-## Refs
-1. Dobrynin, A. V.; Jacobs, M., When Do Polyelectrolytes Entangle? *Macromolecules* 2021, 54, 1859−1869.
-2. Dobrynin, A. V.;  Jacobs, M.; Sayko, R., Scaling of Polymer Solutions as a Quantitative Tool. *Macromolecules* 2021, 54, 2288−2295.
-3. Jacobs, M.;  Lopez, C. G.; Dobrynin, A. V., Quantifying the Effect of Multivalent Ions in Polyelectrolyte Solutions. *Macromolecules* 2021, 54, 9577−9586.
-4. Sayko, R.; Jacobs, M.; Dobrynin, A. V., Quantifying Properties of Polysaccharide Solutions. *ACS Polymers Au* 2021, 1, 196–205.
-5. Sayko, R.; Jacobs, M.; Dobrynin, A. V., Universality in Solution Properties of Polymers in Ionic Liquids. *ACS Appl. Polym. Mater.* 2022, 4, 1966–1973.
-6. Kavassalis, T. A.; Noolandi, J., New View of Entanglements in Dense Polymer Systems. *Phys. Rev. Lett.* 1987, 59, 2674. 
-7. Kavassalis, T. A.; Noolandi, J., A new theory of entanglements and dynamics in dense polymer systems. *Macromolecules* 1988, 21, 9, 2869–2879.
-8. Kavassalis, T. A.; Noolandi, J., Entanglement scaling in polymer melts and solutions. *Macromolecules* 1989, 22, 6, 2709–2720.
+The `img` directory will contain images used in this README and in the `derivations.md` file.

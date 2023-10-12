@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psst"
+version = "0.0.1"
+dependencies = [
+    "attrs",
+    "numpy",
+    "pyyaml",
+    "torch",
+    'importlib-metadata; python_version<"3.8"',
+]
+
+[tool.setuptools.packages.find]
+where = ["psst"]
