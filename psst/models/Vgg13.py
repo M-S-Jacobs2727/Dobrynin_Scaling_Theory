@@ -1,48 +1,48 @@
-import torch
+from torch import Tensor
+from torch.nn import Module, Conv2d, ReLU, MaxPool2d, Sequential, Flatten, Linear
 
-class Vgg13(torch.nn.Module):
 
+class Vgg13(Module):
     def __init__(self):
         super().__init__()
 
-        self.conv_stack = torch.nn.Sequential(
+        self.conv_stack = Sequential(
             # Convolutional layers
-            torch.nn.Conv2d(1, 64, 3, padding=1),       # 224, 224, 64
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(64, 64, 3, padding=1),      # 224, 224, 64
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2),                      # 112, 112, 64
-            torch.nn.Conv2d(64, 128, 3, padding=1),     # 112, 112, 128
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(128, 128, 3, padding=1),    # 112, 112, 128
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2),                      # 56, 56, 128
-            torch.nn.Conv2d(128, 256, 3, padding=1),    # 56, 56, 256
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(256, 256, 3, padding=1),     # 56, 56, 256
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2),                      # 28, 28, 256
-            torch.nn.Conv2d(256, 512, 3, padding=1),    # 28, 28, 512
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(512, 512, 3, padding=1),    # 28, 28, 512
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2),                      # 14, 14, 512
-            torch.nn.Conv2d(512, 512, 3, padding=1),    # 14, 14, 512
-            torch.nn.ReLU(),
-            torch.nn.Conv2d(512, 512, 3, padding=1),    # 14, 14, 512
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2),                      # 7, 7, 512
-
+            Conv2d(1, 64, 3, padding=1),  # 224, 224, 64
+            ReLU(),
+            Conv2d(64, 64, 3, padding=1),  # 224, 224, 64
+            ReLU(),
+            MaxPool2d(2),  # 112, 112, 64
+            Conv2d(64, 128, 3, padding=1),  # 112, 112, 128
+            ReLU(),
+            Conv2d(128, 128, 3, padding=1),  # 112, 112, 128
+            ReLU(),
+            MaxPool2d(2),  # 56, 56, 128
+            Conv2d(128, 256, 3, padding=1),  # 56, 56, 256
+            ReLU(),
+            Conv2d(256, 256, 3, padding=1),  # 56, 56, 256
+            ReLU(),
+            MaxPool2d(2),  # 28, 28, 256
+            Conv2d(256, 512, 3, padding=1),  # 28, 28, 512
+            ReLU(),
+            Conv2d(512, 512, 3, padding=1),  # 28, 28, 512
+            ReLU(),
+            MaxPool2d(2),  # 14, 14, 512
+            Conv2d(512, 512, 3, padding=1),  # 14, 14, 512
+            ReLU(),
+            Conv2d(512, 512, 3, padding=1),  # 14, 14, 512
+            ReLU(),
+            MaxPool2d(2),  # 7, 7, 512
             # Fully connected layers
-            torch.nn.Flatten(),
-            torch.nn.Linear(25088,4096),
-            torch.nn.ReLU(),
-            torch.nn.Linear(4096,4096),
-            torch.nn.ReLU(),
-            torch.nn.Linear(4096,1000),
-            torch.nn.ReLU(),
-            torch.nn.Linear(1000, 1)
+            Flatten(),
+            Linear(25088, 4096),
+            ReLU(),
+            Linear(4096, 4096),
+            ReLU(),
+            Linear(4096, 1000),
+            ReLU(),
+            Linear(1000, 1),
         )
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return self.conv_stack(x)
