@@ -1,71 +1,113 @@
-"""Sample configurations that define the model, training, and testing are defined in
-YAML or JSON files in the configurations directory. One of these is passed as the first
-command line argument into the main module. This module defines `NNConfig`, the
-configuration class, which is initialized from the given configuration file.
+"""This module defines three configuration classes: RunConfig, AdamConfig, and
+GeneratorConfig, which are used to configure the machine learning run settings,
+the Adam optimizer settings, and the settings for the SurfaceGenerator class.
+Each one has a respective `get*ConfigFromFile()` function to easily create a
+config object from a YAML or JSON file (see examples directory).
 """
-from enum import Enum
 import json
 import logging
 from pathlib import Path
-from typing import NamedTuple
+from typing import Literal, NamedTuple
 
 from attrs import define, field, asdict
-import numpy as np
-import torch
 import yaml
 
 
-class ParameterChoice(Enum):
-    Bg = "Bg"
-    Bth = "Bth"
-
-def convertToRange(d):
-    if isinstance(d, np.ndarray):
-        return torch.as_tensor(d)
-    if isinstance(d, torch.Tensor):
-        return d
-    if isinstance(d, dict):
-        return getRange(**d)
-    if isinstance(d, list) or isinstance(d, tuple):
-        return getRange(*d)
-    raise ValueError("Invalid type %s" % type(d))
+Parameter = Literal["Bg", "Bth"]
+"""Selects either 'Bg' (good solvent parameter) or 'Bth' (thermal blob parameter).
+"""
 
 
-def getRange(min: float, max: float, num: int, geom: bool = True) -> torch.Tensor:
-    if geom:
-        return torch.logspace(np.log10(min), np.log10(max), num, dtype=torch.float32)
-    return torch.linspace(min, max, num, dtype=torch.float32)
+def getDictFromFile(filepath: str | Path):
+    """Reads a YAML or JSON file and returns the contents as a dictionary.
+
+    Raises a `ValueError` if the extension is incorrect.
+    """
+    log = logging.getLogger("psst.main")
+
+    if isinstance(filepath, str):
+        filepath = Path(filepath)
+
+    ext = filepath.suffix
+    if ext == ".json":
+        load = json.load
+    elif ext in [".yaml", ".yml"]:
+        load = yaml.safe_load
+    else:
+        raise ValueError(
+            f"Invalid file extension for config file: {ext}\n"
+            "Please use .yaml or .json."
+        )
+
+    log.info("Loading configuration from %s", str(filepath))
+
+    with open(filepath, "r") as f:
+        config_dict = dict(load(f))
+        log.debug("Loaded configuration: %s", str(config_dict))
+
+    return config_dict
 
 
-# class DistType(Enum):
-#     uniform = 1
-#     normal = 2
-#     beta = 3
+def dictToRange(d: dict[str]):
+    """Simple converter for the GeneratorConfig attrs class."""
+    return Range(**d)
 
-def getDist(d: list):
-    return Dist(*d)
 
-class Dist(NamedTuple):
+class Range(NamedTuple):
+    """Specifies a range of values between :code:`min` and :code:`max`,
+    optionally specifying :code:`num` for number of points and :code:`log_scale`
+    for logarithmic spacing. For use in, e.g., `torch.linspace`,
+    `torch.logspace`.
+
+    Usage:
+      >>> Range(1.0, 1e6, num = 100, log_scale = True)
+    """
+
     min: float
     max: float
-    # dist_type: DistType = DistType.uniform
+    num: int = 0
+    log_scale: bool = False
 
-# TODO: Include stripping/trimming
+
 @define(kw_only=True)
-class GeneratorConfig:
-    parameter: ParameterChoice = field(converter=ParameterChoice)
-    batch_size: int = field(default=64, converter=int)
+class RunConfig:
+    """Configuration class for training/testing run settings.
 
-    phi_range: torch.Tensor = field(default=getRange(3e-5, 2e-2, 224), converter=convertToRange)
-    nw_range: torch.Tensor = field(default=getRange(100, 1e5, 224), converter=convertToRange)
+    Fields (keyword-only):
 
-    eta_sp_dist: Dist = field(default=Dist(1, 1e6), converter=getDist)
-    bg_dist: Dist = field(default=Dist(0.36, 1.55), converter=getDist)
-    bth_dist: Dist = field(default=Dist(0.22, 0.82), converter=getDist)
-    pe_dist: Dist = field(default=Dist(3.2, 13.5), converter=getDist)
+    :param train_size: Number of samples to run through model training per epoch
+    :type train_size: int
+    :param test_size: Number of samples to run through model testing/validation per epoch
+    :type test_size: int
+    :param num_epochs: Number of epochs to run
+    :type num_epochs: int
+    :param read_checkpoint_file: Name of checkpoint file from which to read the model
+        and optimizer. Defaults to `None`, starting with a fresh model.
+    :type read_checkpoint_file: str, optional
+    :param write_checkpoint_file: Name of checkpoint file into which to save the model
+        and optimizer. Defaults to `"chk.pt"`.
+    :type write_checkpoint_file: str, optional
+    """
 
-    def asdict(self):
-        return asdict(self)
+    train_size: int = field(converter=int)
+    test_size: int = field(converter=int)
+    num_epochs: int = field(converter=int)
+    read_checkpoint_file: str | None = field(default=None)
+    write_checkpoint_file: str = field(default="chk.pt")
+
+
+def getRunConfigFromFile(filename: str | Path):
+    """Reads a YAML or JSON file containing run settings for a training/testing
+    run and returns a :class:`RunConfig` object.
+
+    :param filename: The name of a YAML or JSON file
+    :type filename: Path-like
+    :return: The run configuration settings.
+    :rtype: :class:`RunConfig`
+    """
+    config_dict = getDictFromFile(filename)
+    return RunConfig(**config_dict)
+
 
 @define(kw_only=True)
 class AdamConfig:
@@ -77,47 +119,30 @@ class AdamConfig:
     def asdict(self):
         return asdict(self)
 
-@define(eq=False, kw_only=True)
-class Configuration:
-    generator_config: GeneratorConfig
-    adam_config: AdamConfig
 
-    checkpoint_file: str
-    continuing: bool = field(converter=bool, default=False)
-    train_size: int = field(converter=int, default=51200)
-    test_size: int = field(converter=int, default=21952)
-    epochs: int = field(converter=int, default=300)
+def getAdamConfigFromFile(filename: str | Path):
+    config_dict = getDictFromFile(filename)
+    return AdamConfig(**config_dict)
 
 
+# TODO: Include stripping/trimming
+@define(kw_only=True)
+class GeneratorConfig:
+    parameter: Parameter
+    batch_size: int = field(default=64, converter=int)
 
-def getConfig(filepath: Path | str) -> Configuration:
-    log = logging.getLogger("psst.main")
+    phi_range: Range = field(default=Range(3e-5, 2e-2, 224), converter=dictToRange)
+    nw_range: Range = field(default=Range(100, 1e5, 224), converter=dictToRange)
+    visc_range: Range = field(default=Range(1, 1e6), converter=dictToRange)
 
-    if isinstance(filepath, str):
-        filepath = Path(filepath)
+    bg_range: Range = field(default=Range(0.36, 1.55), converter=dictToRange)
+    bth_range: Range = field(default=Range(0.22, 0.82), converter=dictToRange)
+    pe_range: Range = field(default=Range(3.2, 13.5), converter=dictToRange)
 
-    log.info("Loading configuration from %s", str(filepath))
+    def asdict(self) -> dict[str]:
+        return asdict(self)
 
-    with open(filepath, "r") as f:
-        extension = filepath.suffix
-        if extension in [".yaml", ".yml"]:
-            config_dict = dict(yaml.safe_load(f))
-        elif extension == ".json":
-            config_dict = dict(json.load(f))
-        else:
-            raise SyntaxError(
-                f"Invalid file extension for config file: {extension}\n"
-                "Please use .yaml or .json."
-            )
-        log.debug("Loaded configuration: %s", str(config_dict))
 
-    generator_dict = config_dict.pop("generator", dict())
-    adam_dict = config_dict.pop("adam", dict())
-    config = Configuration(
-        generator_config=GeneratorConfig(**generator_dict),
-        adam_config=AdamConfig(**adam_dict),
-        **config_dict
-    )
-
-    log.debug("Fully initialized configuration: \n%s", config)
-    return config
+def getGeneratorConfigFromFile(filename: str | Path):
+    config_dict = getDictFromFile(filename)
+    return GeneratorConfig(**config_dict)
