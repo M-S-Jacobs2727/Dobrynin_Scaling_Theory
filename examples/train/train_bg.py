@@ -2,35 +2,34 @@ import sys
 
 import torch
 
-from psst.configuration import *
-from psst.surface_generator import SurfaceGenerator
-from psst.training import *
+import psst
 from psst.models import Inception3
 
 
 def main():
     device = torch.device("cpu")
 
-    config = getConfig(sys.argv[1])
+    config = psst.getConfig(sys.argv[1])
     run_config = config.run_config
     adam_config = config.adam_config
     generator_config = config.generator_config
 
     checkpoint_file = None if len(sys.argv) < 3 else sys.argv[2]
 
-    model = Inception3().to(device)
+    model = Inception3()
+    model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), **adam_config.asdict())
     if checkpoint_file:
-        chkpt: Checkpoint = torch.load(checkpoint_file)
+        chkpt: psst.Checkpoint = torch.load(checkpoint_file)
         start_epoch = chkpt.epoch
         model.load_state_dict(chkpt.model_state)
         optimizer.load_state_dict(chkpt.optimizer_state)
         run_config.num_epochs -= start_epoch
 
     loss_fn = torch.nn.MSELoss()
-    generator = SurfaceGenerator(generator_config, device)
+    generator = psst.SampleGenerator(**generator_config.asdict(), device=device)
 
-    train_model(
+    psst.train_model(
         model,
         optimizer,
         loss_fn,
@@ -43,12 +42,12 @@ def main():
     )
 
     torch.save(
-        Checkpoint(
+        psst.Checkpoint(
             run_config.num_epochs,
             model.state_dict(),
             optimizer.state_dict(),
         ),
-        "train_bg_final_state.pt"
+        "train_bg_final_state.pt",
     )
 
 
