@@ -27,10 +27,12 @@ def unnormalize(arr: torch.Tensor, min: float, max: float, log_scale: bool = Fal
     if log_scale:
         min = np.log10(min)
         max = np.log10(max)
-        torch.pow(10, out_arr, out=out_arr)
 
     out_arr = arr * (max - min)
     out_arr += min
+
+    if log_scale:
+        torch.pow(10, out_arr, out=out_arr)
     return out_arr
 
 
