@@ -1,20 +1,46 @@
-r"""This file contains two efficient generator clasees based on PyTorch to quickly
-generate $(\varphi, N_{w}, \eta_{sp})$ surfaces defined by the parameter set
-$\{B_{g}, B_{th}, P_{e}\}$. The parameter set is sampled from 3 uniform distributions.
+r"""Efficiently generate batched samples of molecular parameters in a uniform
+distribution, construct specific viscosity as a function of concentration and 
+degree of polymerization of the polymer solution from the samples of molecular
+parameters, and yield the normalized values (between 0 and 1).
 """
 import logging
+from math import log10
 
-import numpy as np
 import torch
 
-from psst.configuration import Parameter, Range
+import psst
 
 
-def normalize(arr: torch.Tensor, min: float, max: float, log_scale: bool = False):
+def normalize(
+    arr: torch.Tensor, min: float, max: float, log_scale: bool = False
+) -> torch.Tensor:
+    r"""Normalize a Tensor from its true values into a [0, 1] scale using given minimum
+    and maximum values following the equation for each value of :math:`x` in `arr`:
+
+    ..math::
+        y = (x - min) / (max - min)
+
+    If `log_scale` is `True`, the equation is instead
+
+    ..math::
+        y = (\log_{10}(x) - \log_{10}(min)) / (\log_{10}(max) - \log_{10}(min))
+
+    :param arr: The Tensor to be normalized
+    :type arr: torch.Tensor
+    :param min: The value to map to 0
+    :type min: float
+    :param max: The value to map to 1
+    :type max: float
+    :param log_scale: When True, the base-10 logarithm of the values of `arr`, `min`,
+    and `max` are used instead of the given values, defaults to False
+    :type log_scale: bool, optional
+    :return: The normalized Tensor
+    :rtype: torch.Tensor
+    """
     out_arr = arr.clone()
     if log_scale:
-        min = np.log10(min)
-        max = np.log10(max)
+        min = log10(min)
+        max = log10(max)
         out_arr.log10_()
 
     out_arr -= min
@@ -22,11 +48,37 @@ def normalize(arr: torch.Tensor, min: float, max: float, log_scale: bool = False
     return out_arr
 
 
-def unnormalize(arr: torch.Tensor, min: float, max: float, log_scale: bool = False):
+def unnormalize(
+    arr: torch.Tensor, min: float, max: float, log_scale: bool = False
+) -> torch.Tensor:
+    r"""Unnormalize a Tensor from the [0, 1] scale to its true values using given minimum
+    and maximum values following the equation for each value of :math:`x` in `arr`:
+
+    ..math::
+        y = x (max - min) + min
+
+    If `log_scale` is `True`, the equation is instead
+
+    ..math::
+        y^\prime = x (\log_{10}(max) - \log_{10}(min)) + \log_{10}(min)
+        y = 10^{y^\prime}
+
+    :param arr: The Tensor to be unnormalized
+    :type arr: torch.Tensor
+    :param min: The value to map to from 0
+    :type min: float
+    :param max: The value to map to from 1
+    :type max: float
+    :param log_scale: When True, the base-10 logarithm of the values of `arr`, `min`,
+    and `max` are used instead of the given values, defaults to False
+    :type log_scale: bool, optional
+    :return: The unnormalized Tensor
+    :rtype: torch.Tensor
+    """
     out_arr = arr.clone()
     if log_scale:
-        min = np.log10(min)
-        max = np.log10(max)
+        min = log10(min)
+        max = log10(max)
 
     out_arr = arr * (max - min)
     out_arr += min
@@ -36,14 +88,14 @@ def unnormalize(arr: torch.Tensor, min: float, max: float, log_scale: bool = Fal
     return out_arr
 
 
-class SurfaceGenerator:
+class SampleGenerator:
     """Creates a callable, iterable object to procedurally generate viscosity
     curves as functions of concentration (`phi`) and chain degree of polymerization
     (`nw`).
 
     Usage:
 
-    >>> generator = SurfaceGenerator("Bg", batch_size=64, device=torch.device("cuda"))
+    >>> generator = SampleGenerator("Bg", batch_size=64, device=torch.device("cuda"))
     >>> for viscosity, bg, bth, pe in generator(512000):
     >>>     pred_bg = model(viscosity)
     >>>     loss = loss_fn(bg, pred_bg)
@@ -79,22 +131,21 @@ class SurfaceGenerator:
 
     def __init__(
         self,
-        parameter: Parameter,
         *,
-        phi_range: Range,
-        nw_range: Range,
-        visc_range: Range,
-        bg_range: Range,
-        bth_range: Range,
-        pe_range: Range,
+        parameter: psst.Parameter,
+        phi_range: psst.Range,
+        nw_range: psst.Range,
+        visc_range: psst.Range,
+        bg_range: psst.Range,
+        bth_range: psst.Range,
+        pe_range: psst.Range,
         batch_size: int = 1,
         device: torch.device = torch.device("cpu"),
         generator: torch.Generator | None = None,
     ) -> None:
-        
         self._log = logging.getLogger("psst.main")
-        self._log.info("Initializing SurfaceGenerator")
-        self._log.debug("SurfaceGenerator: device = %s", str(device))
+        self._log.info("Initializing SampleGenerator")
+        self._log.debug("SampleGenerator: device = %s", str(device))
 
         self.parameter = parameter
         self.batch_size = batch_size
@@ -113,17 +164,17 @@ class SurfaceGenerator:
             self.generator = generator
         self._log.debug("Initialized random number generator")
 
-        assert isinstance(parameter, Parameter)
+        assert isinstance(parameter, psst.Parameter)
         if parameter == "Bg":
             # self.primary_B = self.Bg
             self._other_B = self.bth
-            self._get_single_surfaces = self._get_bg_surfaces
+            self._get_single_samples = self._get_bg_samples
             self.denominator = self.nw * self.phi ** (1 / 0.764)
             self._log.debug("Initialized Bg-specific members")
         else:
             # self.primary_B = self.Bth
             self._other_B = self.bg
-            self._get_single_surfaces = self._get_bth_surfaces
+            self._get_single_samples = self._get_bth_samples
             self.denominator = self.nw * self.phi**2
             self._log.debug("Initialized Bth-specific members")
 
@@ -132,8 +183,8 @@ class SurfaceGenerator:
         # for simple, element-wise operations
         if phi_range.log_scale:
             self.phi = torch.logspace(
-                np.log10(phi_range.min),
-                np.log10(phi_range.max),
+                log10(phi_range.min),
+                log10(phi_range.max),
                 phi_range.num,
                 device=device,
             )
@@ -145,8 +196,8 @@ class SurfaceGenerator:
 
         if nw_range.log_scale:
             self.nw = torch.logspace(
-                np.log10(nw_range.min),
-                np.log10(nw_range.max),
+                log10(nw_range.min),
+                log10(nw_range.max),
                 nw_range.num,
                 device=device,
             )
@@ -164,7 +215,7 @@ class SurfaceGenerator:
             device=device,
         )
 
-        self.norm_visc_range = Range(
+        self.norm_visc_range = psst.Range(
             visc_range.min / self.denominator.max(),
             visc_range.max / self.denominator.min(),
         )
@@ -223,11 +274,11 @@ class SurfaceGenerator:
 
         self._log.debug("Chose combo and single samples")
 
-        self.visc[is_combo] = self._get_combo_surfaces(
+        self.visc[is_combo] = self._get_combo_samples(
             self.bg[is_combo], self.bth[is_combo], self.pe[is_combo]
         )
         self._log.debug("Computed combo samples")
-        self.visc[~is_combo] = self._get_single_surfaces(
+        self.visc[~is_combo] = self._get_single_samples(
             self.bg[~is_combo], self.bth[~is_combo], self.pe[~is_combo]
         )
         self._log.debug("Computed single samples")
@@ -248,9 +299,7 @@ class SurfaceGenerator:
 
         return self.visc, self.bg.flatten(), self.bth.flatten(), self.pe.flatten()
 
-    def _get_combo_surfaces(
-        self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor
-    ):
+    def _get_combo_samples(self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor):
         # print(Bg.shape, Bth.shape, Pe.shape, self.phi.shape, self.Nw.shape)
         g = torch.minimum((Bg**3 / self.phi) ** (1 / 0.764), Bth**6 / self.phi**2)
         Ne = Pe**2 * torch.minimum(
@@ -265,13 +314,13 @@ class SurfaceGenerator:
             * torch.minimum(1 / g, self.phi / Bth**2)
         )
 
-    def _get_bg_surfaces(self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor):
+    def _get_bg_samples(self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor):
         # print(Bg.shape, Bth.shape, Pe.shape, self.phi.shape, self.Nw.shape)
         g = (Bg**3 / self.phi) ** (1 / 0.764)
         Ne = Pe**2 * g
         return self.nw / g * (1 + (self.nw / Ne)) ** 2
 
-    def _get_bth_surfaces(self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor):
+    def _get_bth_samples(self, Bg: torch.Tensor, Bth: torch.Tensor, Pe: torch.Tensor):
         # print(Bg.shape, Bth.shape, Pe.shape, self.phi.shape, self.Nw.shape)
         g = Bth**6 / self.phi**2
         Ne = Pe**2 * torch.minimum(
@@ -286,17 +335,17 @@ class SurfaceGenerator:
     # @torch.compile
     def _trim(
         self,
-        surfaces: torch.Tensor,
+        samples: torch.Tensor,
         max_num_rows_select: int = 12,
         max_num_rows_nonzero: int = 48,
-        num_concentrations_per_surface: int = 65,
+        num_concentrations_per_sample: int = 65,
     ) -> torch.Tensor:
-        num_batches = surfaces.shape[0]
+        num_batches = samples.shape[0]
         indices = torch.arange(self.nw.size(2), device=self.device)
 
         self._log.debug("Trimming Nw rows")
         for i in range(num_batches):
-            num_nonzero_per_row = torch.sum(surfaces[i] > 0, dim=0)
+            num_nonzero_per_row = torch.sum(samples[i] > 0, dim=0)
             top_rows = torch.argsort(num_nonzero_per_row, descending=True, dim=0)[
                 :max_num_rows_nonzero
             ]
@@ -308,18 +357,18 @@ class SurfaceGenerator:
                 generator=self.generator,
             )
             deselected_rows = torch.isin(indices, top_rows[selected], invert=True)
-            surfaces[i, deselected_rows, :] = 0.0
+            samples[i, deselected_rows, :] = 0.0
 
         self._log.debug("Trimming phi rows")
         for i in range(num_batches):
-            nonzero_rows = surfaces[i].nonzero(as_tuple=True)[0]
+            nonzero_rows = samples[i].nonzero(as_tuple=True)[0]
             deselected_rows = torch.randint(
                 nonzero_rows.min(),
                 nonzero_rows.max(),
-                size=(num_concentrations_per_surface,),
+                size=(num_concentrations_per_sample,),
                 device=self.device,
                 generator=self.generator,
             )
-            surfaces[i, deselected_rows, :] = 0.0
+            samples[i, deselected_rows, :] = 0.0
 
-        return surfaces
+        return samples
