@@ -1,18 +1,5 @@
-from typing import Protocol
-
 from torch import Tensor, cat
 from torch.nn import *
-
-
-class Module(Protocol):
-    def __init__(self):
-        ...
-
-    def forward(self, x: Tensor) -> Tensor:
-        ...
-
-    def __call__(self, x: Tensor) -> Tensor:
-        ...
 
 
 class BasicConv2d(Module):
@@ -23,6 +10,30 @@ class BasicConv2d(Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         return functional.relu(x, inplace=True)
+
+
+class Conv2dTo2Channels(Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        *,
+        kernel_size: tuple[int, int],
+        padding: tuple[int, int]
+    ):
+        super().__init__()
+        self.channel1 = BasicConv2d(
+            in_channels, out_channels, kernel_size=kernel_size, padding=padding
+        )
+        self.channel2 = BasicConv2d(
+            in_channels,
+            out_channels,
+            kernel_size=(kernel_size[1], kernel_size[0]),
+            padding=(padding[1], padding[0]),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        return cat((self.channel1(x), self.channel2(x)), 1)
 
 
 class InceptionA(Module):
@@ -44,7 +55,7 @@ class InceptionA(Module):
             BasicConv2d(in_channels, pool_features, kernel_size=1),
         )
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         return cat(
             (
                 self.branch1x1(x),
@@ -127,30 +138,6 @@ class InceptionD(Module):
         return cat((self.branch3x3(x), self.branch7x7x3(x), self.branch_pool(x)), 1)
 
 
-class Conv2dTo2Channels(Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        *,
-        kernel_size: tuple[int, int],
-        padding: tuple[int, int]
-    ):
-        super().__init__()
-        self.channel1 = BasicConv2d(
-            in_channels, out_channels, kernel_size=kernel_size, padding=padding
-        )
-        self.channel1 = BasicConv2d(
-            in_channels,
-            out_channels,
-            kernel_size=(kernel_size[1], kernel_size[0]),
-            padding=(padding[1], padding[0]),
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        return cat((self.channel1(x), self.channel2(x)), 1)
-
-
 class InceptionE(Module):
     def __init__(self, in_channels: int):
         super().__init__()
@@ -218,6 +205,6 @@ class Inception3(Module):
             x.unsqueeze_(1)
         return x
 
-    def forward(self, x: Tensor):
+    def forward(self, x: Tensor) -> Tensor:
         x = self._transform_input(x)
         return self.stack(x)

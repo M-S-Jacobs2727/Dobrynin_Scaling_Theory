@@ -1,5 +1,5 @@
 from torch import Tensor
-from torch.nn import Module, Conv2d, ReLU, MaxPool2d, Sequential, Flatten, Linear
+from torch.nn import *
 
 
 class Vgg13(Module):
