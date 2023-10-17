@@ -2,12 +2,9 @@ import logging
 from pathlib import Path
 from typing import NamedTuple
 
-import numpy as np
 import torch
-from torch.nn import Module
-from torch.optim import Optimizer
 
-from psst.surface_generator import SurfaceGenerator
+from psst.samplegenerator import SampleGenerator
 
 
 class Checkpoint(NamedTuple):
@@ -17,22 +14,23 @@ class Checkpoint(NamedTuple):
 
 
 def train(
-    model: Module,
-    optimizer: Optimizer,
-    loss_fn: Module,
-    generator: SurfaceGenerator,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: torch.nn.Module,
+    generator: SampleGenerator,
     num_samples: int,
-) -> tuple[float, np.ndarray, np.ndarray]:
+) -> float:
     """The neural network model is trained based on the configuration parameters,
     evaluated by the loss function, and incrementally adjusted by the optimizer.
 
     :param model: PyTorch ML model to be validated
     :type model: torch.nn.Module
-    :param optimizer: PyTorch Optimizer used to train the model
+    :param optimizer: PyTorch torch.optim.Optimizer used to train the model
+    :type optimizer: torch.optim.Optimizer
     :param loss_fn: PyTorch loss function to evaluate model accuracy
     :type loss_fn: torch.nn.Module
     :param generator: Procedurally generates data for model training
-    :type generator: psst.surface_generator.SurfaceGenerator
+    :type generator: psst.samplegenerator.SampleGenerator
     :param num_samples: Number of samples to generate and train
     :type num_samples: int
     :return: Average loss over training cycle
@@ -59,10 +57,10 @@ def train(
     model.train()
     count = 0
     log.info("Starting training run of %d batches", num_batches)
-    for surfaces, *batch_values in generator(num_batches):
+    for samples, *batch_values in generator(num_batches):
         optimizer.zero_grad()
         log.debug("Training batch %d", count / batch_size)
-        pred: torch.Tensor = model(surfaces)
+        pred: torch.Tensor = model(samples)
 
         log.debug("Computing loss")
         loss: torch.Tensor = loss_fn(pred, batch_values[choice])
@@ -74,9 +72,9 @@ def train(
 
 
 def validate(
-    model: Module,
-    loss_fn: Module,
-    generator: SurfaceGenerator,
+    model: torch.nn.Module,
+    loss_fn: torch.nn.Module,
+    generator: SampleGenerator,
     num_samples: int,
 ) -> float:
     """Tests the neural network model based on the configuration parameters using
@@ -87,7 +85,7 @@ def validate(
     :param loss_fn: PyTorch loss function to evaluate model accuracy
     :type loss_fn: torch.nn.Module
     :param generator: Procedurally generates data for model evaluation
-    :type generator: psst.surface_generator.SurfaceGenerator
+    :type generator: psst.samplegenerator.SampleGenerator
     :param num_samples: Number of samples to generate and validate
     :type num_samples: int
     :return: Average loss over validation cycle
@@ -114,9 +112,9 @@ def validate(
     model.eval()
     log.info("Starting validation run of %d batches", num_batches)
     with torch.no_grad():
-        for i, (surfaces, *batch_values) in enumerate(generator(num_batches)):
+        for i, (samples, *batch_values) in enumerate(generator(num_batches)):
             log.debug("Testing batch %d", i)
-            pred = model(surfaces)
+            pred = model(samples)
 
             log.debug("Computing loss")
             loss = loss_fn(pred, batch_values[choice])
@@ -126,10 +124,10 @@ def validate(
 
 
 def train_model(
-    model: Module,
-    optimizer: Optimizer,
-    loss_fn: Module,
-    generator: SurfaceGenerator,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: torch.nn.Module,
+    generator: SampleGenerator,
     *,
     num_epochs: int,
     num_samples_train: int,
@@ -137,10 +135,35 @@ def train_model(
     checkpoint_filename: str | Path,
     checkpoint_frequency: int,
 ):
+    """Run the model through `num_epochs` train/test cycles.
+
+    :param model: PyTorch ML model to be validated
+    :type model: torch.nn.Module
+    :param optimizer: PyTorch torch.optim.Optimizer used to train the model
+    :type optimizer: torch.optim.Optimizer
+    :param loss_fn: PyTorch loss function to evaluate model accuracy
+    :type loss_fn: torch.nn.Module
+    :param generator: Procedurally generates data for model training
+    :type generator: psst.samplegenerator.SampleGenerator
+    :param num_epochs: Number of train/test cycles to run
+    :type num_epochs: int
+    :param num_samples_train: Number of samples to generate during a single training
+        session
+    :type num_samples_train: int
+    :param num_samples_test: Number of samples to generate during a single validation
+        session
+    :type num_samples_test: int
+    :param checkpoint_filename: Filename to save the model and optimizer to at a given
+        checkpoint
+    :type checkpoint_filename: str | Path
+    :param checkpoint_frequency: If positive, save the model and optimizer every this
+        many epochs. If negative, save the model and optimizer when the loss reaches
+        a new minimum. If zero, do not checkpoint.
+    :type checkpoint_frequency: int
+    """
     chkpt = Checkpoint(0, model.state_dict(), optimizer.state_dict())
     min_loss = 1e6
 
-    # save model and optimizer states and true/pred values when test loss < min(loss)
     for epoch in range(num_epochs):
         train(model, optimizer, loss_fn, generator, num_samples_train)
         loss = validate(model, loss_fn, generator, num_samples_test)
