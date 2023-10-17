@@ -48,11 +48,6 @@ def getDictFromFile(filepath: str | Path):
     return config_dict
 
 
-def dictToRange(d: dict[str]):
-    """Simple converter for the GeneratorConfig attrs class."""
-    return Range(**d)
-
-
 class Range(NamedTuple):
     """Specifies a range of values between :code:`min` and :code:`max`,
     optionally specifying :code:`num` for number of points and :code:`log_scale`
@@ -71,42 +66,28 @@ class Range(NamedTuple):
 
 @define(kw_only=True)
 class RunConfig:
-    """Configuration class for training/testing run settings.
-
-    Fields (keyword-only):
-
-    :param train_size: Number of samples to run through model training per epoch
-    :type train_size: int
-    :param test_size: Number of samples to run through model testing/validation per epoch
-    :type test_size: int
+    """
     :param num_epochs: Number of epochs to run
     :type num_epochs: int
-    :param read_checkpoint_file: Name of checkpoint file from which to read the model
-        and optimizer. Defaults to `None`, starting with a fresh model.
-    :type read_checkpoint_file: str, optional
-    :param write_checkpoint_file: Name of checkpoint file into which to save the model
+    :param num_samples_train: Number of samples to run through model training per epoch
+    :type num_samples_train: int
+    :param num_samples_test: Number of samples to run through model testing/validation
+    per epoch
+    :type num_samples_test: int
+    :param checkpoint_frequency: Frequency with which to save the model and optimizer.
+        Positive values are number of epochs. Negative values indicate to save when
+        the value of the loss function hits a new minimum. Defaults to 0, never saving.
+    :type checkpoint_frequency: int, optional
+    :param checkpoint_filename: Name of checkpoint file into which to save the model
         and optimizer. Defaults to `"chk.pt"`.
-    :type write_checkpoint_file: str, optional
+    :type checkpoint_filename: str, optional
     """
 
-    train_size: int = field(converter=int)
-    test_size: int = field(converter=int)
-    num_epochs: int = field(converter=int)
-    read_checkpoint_file: str | None = field(default=None)
-    write_checkpoint_file: str = field(default="chk.pt")
-
-
-def getRunConfigFromFile(filename: str | Path):
-    """Reads a YAML or JSON file containing run settings for a training/testing
-    run and returns a :class:`RunConfig` object.
-
-    :param filename: The name of a YAML or JSON file
-    :type filename: Path-like
-    :return: The run configuration settings.
-    :rtype: :class:`RunConfig`
-    """
-    config_dict = getDictFromFile(filename)
-    return RunConfig(**config_dict)
+    num_epochs: int
+    num_samples_train: int
+    num_samples_test: int
+    checkpoint_frequency: int = 0
+    checkpoint_filename: str = "chk.pt"
 
 
 @define(kw_only=True)
@@ -120,29 +101,60 @@ class AdamConfig:
         return asdict(self)
 
 
-def getAdamConfigFromFile(filename: str | Path):
-    config_dict = getDictFromFile(filename)
-    return AdamConfig(**config_dict)
-
-
 # TODO: Include stripping/trimming
 @define(kw_only=True)
 class GeneratorConfig:
     parameter: Parameter
-    batch_size: int = field(default=64, converter=int)
 
-    phi_range: Range = field(default=Range(3e-5, 2e-2, 224), converter=dictToRange)
-    nw_range: Range = field(default=Range(100, 1e5, 224), converter=dictToRange)
-    visc_range: Range = field(default=Range(1, 1e6), converter=dictToRange)
+    batch_size: int = 64
 
-    bg_range: Range = field(default=Range(0.36, 1.55), converter=dictToRange)
-    bth_range: Range = field(default=Range(0.22, 0.82), converter=dictToRange)
-    pe_range: Range = field(default=Range(3.2, 13.5), converter=dictToRange)
+    phi_range: Range
+    nw_range: Range
+    visc_range: Range
+
+    bg_range: Range
+    bth_range: Range
+    pe_range: Range
 
     def asdict(self) -> dict[str]:
         return asdict(self)
 
 
-def getGeneratorConfigFromFile(filename: str | Path):
+def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
+    phi_range = Range(**(config_dict.pop("phi_range")))
+    nw_range = Range(**(config_dict.pop("nw_range")))
+    visc_range = Range(**(config_dict.pop("visc_range")))
+    bg_range = Range(**(config_dict.pop("bg_range")))
+    bth_range = Range(**(config_dict.pop("bth_range")))
+    pe_range = Range(**(config_dict.pop("pe_range")))
+    return GeneratorConfig(
+        phi_range=phi_range,
+        nw_range=nw_range,
+        visc_range=visc_range,
+        bg_range=bg_range,
+        bth_range=bth_range,
+        pe_range=pe_range,
+        **config_dict,
+    )
+
+
+@define
+class Config:
+    run_config: RunConfig
+    adam_config: AdamConfig
+    generator_config: GeneratorConfig
+
+
+def getConfig(filename: str | Path) -> Config:
     config_dict = getDictFromFile(filename)
-    return GeneratorConfig(**config_dict)
+
+    run_dict = config_dict.get("run", dict())
+    run_config = RunConfig(**run_dict)
+
+    adam_dict = config_dict.get("adam", dict())
+    adam_config = AdamConfig(**adam_dict)
+
+    generator_dict = config_dict.get("generator", dict())
+    generator_config = getGeneratorConfig(generator_dict)
+
+    return Config(run_config, adam_config, generator_config)

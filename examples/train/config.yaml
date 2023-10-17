@@ -1,38 +1,40 @@
 ---
-train_size: 512000
-test_size: 219500
-epochs: 3
-write_checkpoint_file: "bg_train.pt"
-...
----
-parameter: Bg
-batch_size: 64
-phi_range:
-  min: 3e-5
-  max: 0.02
-  num: 224
-  geom: True
-nw_range:
-  min: 100
-  max: 1e5
-  num: 224
-  geom: True
-visc_range:
-  min: 1
-  max: 1e6
-bg_range:
-  min: 0.36
-  max: 1.55
-bth_range:
-  min: 0.22
-  max: 0.82
-pe_range:
-  min: 3.2
-  max: 13.5
-...
----
-lr: 0.001
-betas: [0.7, 0.9]
-eps: 1e-9
-weight_decay: 0.0
+run:
+  num_epochs: 3
+  num_samples_train: 512000
+  num_samples_test: 219500
+  checkpoint_filename: "bg_train.pt"
+  checkpoint_frequency: 0
+
+generator:
+  parameter: Bg
+  batch_size: 64
+  phi_range:
+    min: 3e-5
+    max: 0.02
+    num: 224
+    log_scale: True
+  nw_range:
+    min: 100
+    max: 1e5
+    num: 224
+    log_scale: True
+  visc_range:
+    min: 1
+    max: 1e6
+  bg_range:
+    min: 0.36
+    max: 1.55
+  bth_range:
+    min: 0.22
+    max: 0.82
+  pe_range:
+    min: 3.2
+    max: 13.5
+
+adam:
+  lr: 0.001
+  betas: [0.7, 0.9]
+  eps: 1e-9
+  weight_decay: 0.0
 ...

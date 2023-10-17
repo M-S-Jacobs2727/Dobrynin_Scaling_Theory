@@ -1,22 +1,13 @@
 import logging
-from typing import NamedTuple, Callable, Protocol
+from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import torch
+from torch.nn import Module
+from torch.optim import Optimizer
 
 from psst.surface_generator import SurfaceGenerator
-from psst.configuration import *
-
-
-class Model(Protocol):
-    def __call__(self, inp: torch.Tensor) -> torch.Tensor:
-        ...
-    
-    def train(self) -> None:
-        ...
-    
-    def eval(self) -> None:
-        ...
 
 
 class Checkpoint(NamedTuple):
@@ -25,57 +16,27 @@ class Checkpoint(NamedTuple):
     optimizer_state: dict
 
 
-def save_checkpoint(
-        filename: str,
-        epoch: int,
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-):
-    checkpoint = Checkpoint(
-        epoch,
-        model.state_dict(),
-        optimizer.state_dict(),
-    )
-    torch.save(checkpoint, filename)
-
-
-def load_checkpoint(
-        filename: str,
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-) -> int:
-    checkpoint: Checkpoint = torch.load(filename)
-
-    model.load_state_dict(checkpoint.model_state)
-    optimizer.load_state_dict(checkpoint.optimizer_state)
-    
-    return checkpoint.epoch
-
-
 def train(
-    model: Model,
+    model: Module,
+    optimizer: Optimizer,
+    loss_fn: Module,
     generator: SurfaceGenerator,
-    optimizer: torch.optim.Optimizer,
-    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     num_samples: int,
 ) -> tuple[float, np.ndarray, np.ndarray]:
     """The neural network model is trained based on the configuration parameters,
     evaluated by the loss function, and incrementally adjusted by the optimizer.
 
-    Input:
-    - `model` (`torch.nn.Module`) : The neural network model.
-    - `generator` (`generators.Generator`) : The iterable function that returns
-    representations of polymer solution specific viscosity data.
-    - `optimizer` (`torch.optim.Optimizer`) : Incrementally adjusts the model.
-    - `loss_fn` (`torch.nn.Module`) : Determines the errors between the true values of
-    the features and those predicted by the model.
-    - `num_samples` (`int`): The number of sample surfaces to run through training.
-
-    Returns:
-    - `true_values` (`torch.Tensor`) : A 1D tensor with `num_samples` elements containing
-    the true (generated) values of the parameter to predict.
-    - `predicted_values` (`torch.Tensor`) : A 1D tensor with `num_samples` elements containing
-    the predicted values from the model.
+    :param model: PyTorch ML model to be validated
+    :type model: torch.nn.Module
+    :param optimizer: PyTorch Optimizer used to train the model
+    :param loss_fn: PyTorch loss function to evaluate model accuracy
+    :type loss_fn: torch.nn.Module
+    :param generator: Procedurally generates data for model training
+    :type generator: psst.surface_generator.SurfaceGenerator
+    :param num_samples: Number of samples to generate and train
+    :type num_samples: int
+    :return: Average loss over training cycle
+    :rtype: float
     """
 
     log = logging.getLogger("psst.main")
@@ -85,13 +46,15 @@ def train(
     if num_batches * batch_size < num_samples:
         log.warn(
             "num_samples (%d) is not evenly divisible by batch_size (%d)."
-            "\nResetting num_samples to %d.", num_samples, batch_size, num_batches*batch_size)
+            "\nResetting num_samples to %d.",
+            num_samples,
+            batch_size,
+            num_batches * batch_size,
+        )
         num_samples = num_batches * batch_size
 
-    choice = int(generator.parameter is ParameterChoice.Bth)
+    choice = 1 if generator.parameter == "Bth" else 0
     avg_loss: float = 0.0
-    true_values = np.zeros(num_samples)
-    predicted_values = np.zeros_like(true_values)
 
     model.train()
     count = 0
@@ -99,42 +62,36 @@ def train(
     for surfaces, *batch_values in generator(num_batches):
         optimizer.zero_grad()
         log.debug("Training batch %d", count / batch_size)
-        pred = model(surfaces)
+        pred: torch.Tensor = model(surfaces)
 
         log.debug("Computing loss")
-        loss = loss_fn(pred, batch_values[choice])
+        loss: torch.Tensor = loss_fn(pred, batch_values[choice])
         loss.backward()
         avg_loss += loss
         optimizer.step()
 
-        log.debug("Storing results")
-        true_values[count:count + batch_size] = batch_values[choice].numpy(force=True)
-        predicted_values[count:count + batch_size] = pred.numpy(force=True)
-        count += batch_size
-
-    return avg_loss / num_batches, true_values, predicted_values
+    return avg_loss / num_batches
 
 
 def validate(
-    model: Model,
+    model: Module,
+    loss_fn: Module,
     generator: SurfaceGenerator,
-    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     num_samples: int,
-) -> tuple[float, np.ndarray, np.ndarray]:
+) -> float:
     """Tests the neural network model based on the configuration parameters using
     the loss function.
 
-    Input:
-    - `model` (`torch.nn.Module`) : The neural network model.
-    - `generator` (`generators.Generator`) : The iterable function that returns
-    representations of polymer solution specific viscosity data.
-    - `num_samples` (`int`): The number of sample surfaces to run through validation.
-
-    Returns:
-    - `true_values` (`torch.Tensor`) : A 1D tensor with `num_samples` elements containing
-    the true (generated) values of the parameter to predict.
-    - `predicted_values` (`torch.Tensor`) : A 1D tensor with `num_samples` elements containing
-    the predicted values from the model.
+    :param model: PyTorch ML model to be validated
+    :type model: torch.nn.Module
+    :param loss_fn: PyTorch loss function to evaluate model accuracy
+    :type loss_fn: torch.nn.Module
+    :param generator: Procedurally generates data for model evaluation
+    :type generator: psst.surface_generator.SurfaceGenerator
+    :param num_samples: Number of samples to generate and validate
+    :type num_samples: int
+    :return: Average loss over validation cycle
+    :rtype: float
     """
 
     log = logging.getLogger("psst.main")
@@ -144,31 +101,55 @@ def validate(
     if num_batches * batch_size < num_samples:
         log.warn(
             "num_samples (%d) is not evenly divisible by batch_size (%d)."
-            "\nResetting num_samples to %d.", num_samples, batch_size, num_batches*batch_size)
+            "\nResetting num_samples to %d.",
+            num_samples,
+            batch_size,
+            num_batches * batch_size,
+        )
         num_samples = num_batches * batch_size
 
-    choice = int(generator.parameter is ParameterChoice.Bth)
+    choice = 0 if generator.parameter == "Bg" else 1
     avg_loss: float = 0.0
-    true_values = np.zeros((3, num_samples))
-    predicted_values = np.zeros(num_samples)
 
     model.eval()
-    count = 0
     log.info("Starting validation run of %d batches", num_batches)
     with torch.no_grad():
-        for surfaces, *batch_values in generator(num_batches):
-            log.debug("Testing batch %d", count / batch_size)
+        for i, (surfaces, *batch_values) in enumerate(generator(num_batches)):
+            log.debug("Testing batch %d", i)
             pred = model(surfaces)
-            
+
             log.debug("Computing loss")
             loss = loss_fn(pred, batch_values[choice])
             avg_loss += loss
 
-            log.debug("Storing results")
-            true_values[0, count:count + batch_size] = batch_values[0].numpy(force=True)
-            true_values[1, count:count + batch_size] = batch_values[1].numpy(force=True)
-            true_values[2, count:count + batch_size] = batch_values[2].numpy(force=True)
-            predicted_values[count:count + batch_size] = pred.numpy(force=True)
-            count += batch_size
+    return avg_loss / num_batches
 
-    return avg_loss / num_batches, true_values, predicted_values
+
+def train_model(
+    model: Module,
+    optimizer: Optimizer,
+    loss_fn: Module,
+    generator: SurfaceGenerator,
+    *,
+    num_epochs: int,
+    num_samples_train: int,
+    num_samples_test: int,
+    checkpoint_filename: str | Path,
+    checkpoint_frequency: int,
+):
+    chkpt = Checkpoint(0, model.state_dict(), optimizer.state_dict())
+    min_loss = 1e6
+
+    # save model and optimizer states and true/pred values when test loss < min(loss)
+    for epoch in range(num_epochs):
+        train(model, optimizer, loss_fn, generator, num_samples_train)
+        loss = validate(model, loss_fn, generator, num_samples_test)
+        if (checkpoint_frequency < 0 and loss < min_loss) or (
+            checkpoint_frequency > 0 and epoch % checkpoint_frequency == 0
+        ):
+            min_loss = loss
+            chkpt.epoch = epoch
+            chkpt.model_state = model.state_dict()
+            chkpt.optimizer_state = optimizer.state_dict()
+
+    torch.save(chkpt, checkpoint_filename)
