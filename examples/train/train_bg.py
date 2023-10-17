@@ -1,53 +1,56 @@
-from functools import partial
-import logging
 import sys
-import numpy as np
+
 import torch
 
 from psst.configuration import *
-from psst.surface_generator import *
+from psst.surface_generator import SurfaceGenerator
 from psst.training import *
-from psst.models.Inception3 import Inception3
-
-
-def run(
-        config: Configuration,
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-        loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-        generator: SurfaceGenerator,
-        last_epoch: int,
-):
-    log = logging.getLogger("psst.main")
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(levelname)s - %(asctime)s: %(message)s"))
-    log.addHandler(handler)
-    log.setLevel(logging.DEBUG)
-    
-    log.info("Starting run of %d epochs", config.epochs)
-    for epoch in range(last_epoch, config.epochs):
-        log.info("Running epoch %d", epoch)
-        avg_loss_train, true_values_train, pred_values_train = train(model, generator, optimizer, loss_fn, config.train_size)
-        avg_loss_test, true_values_test, pred_values_test = validate(model, generator, loss_fn, config.test_size)
-    
-    save_checkpoint(config.checkpoint_file, config.epochs, model, optimizer)
+from psst.models import Inception3
 
 
 def main():
     device = torch.device("cpu")
+
     config = getConfig(sys.argv[1])
+    run_config = config.run_config
+    adam_config = config.adam_config
+    generator_config = config.generator_config
+
+    checkpoint_file = None if len(sys.argv) < 3 else sys.argv[2]
 
     model = Inception3().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), **config.adam_config.asdict())
-    generator = SurfaceGenerator(config.generator_config, device)
+    optimizer = torch.optim.Adam(model.parameters(), **adam_config.asdict())
+    if checkpoint_file:
+        chkpt: Checkpoint = torch.load(checkpoint_file)
+        start_epoch = chkpt.epoch
+        model.load_state_dict(chkpt.model_state)
+        optimizer.load_state_dict(chkpt.optimizer_state)
+        run_config.num_epochs -= start_epoch
+
     loss_fn = torch.nn.MSELoss()
-    last_epoch = 0
+    generator = SurfaceGenerator(generator_config, device)
 
-    if config.continuing:
-        last_epoch = load_checkpoint(config.checkpoint_file, model, optimizer)
-    
-    run(config, model, optimizer, loss_fn, generator, last_epoch)
+    train_model(
+        model,
+        optimizer,
+        loss_fn,
+        generator,
+        num_epochs=run_config.num_epochs,
+        num_samples_train=run_config.train_size,
+        num_samples_test=run_config.test_size,
+        checkpoint_filename=run_config.checkpoint_filename,
+        checkpoint_frequency=-1,
+    )
+
+    torch.save(
+        Checkpoint(
+            run_config.num_epochs,
+            model.state_dict(),
+            optimizer.state_dict(),
+        ),
+        "train_bg_final_state.pt"
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
