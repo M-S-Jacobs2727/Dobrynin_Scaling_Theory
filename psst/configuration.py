@@ -18,10 +18,17 @@ Parameter = Literal["Bg", "Bth"]
 """
 
 
-def getDictFromFile(filepath: str | Path):
+def getDictFromFile(filepath: str | Path) -> dict[str]:
     """Reads a YAML or JSON file and returns the contents as a dictionary.
 
     Raises a `ValueError` if the extension is incorrect.
+
+    :param filepath: Path to a YAML or JSON file
+    :type filepath: str | Path
+    :raises ValueError: If the filename extension is not one of '.json',
+        '.yaml', or '.yml'
+    :return: Nested dictionary based on the contents of the file
+    :rtype: dict[str, Any]
     """
     log = logging.getLogger("psst.main")
 
@@ -121,6 +128,15 @@ class GeneratorConfig:
 
 
 def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
+    """Convenience class for creating a GeneratorConfig from a nested dictionary
+    of settings.
+
+    :param config_dict: A nested dictionary with keys of type string
+    :type config_dict: dict[str]
+    :return: An instance of :class:`GeneratorConfig` based on the given dictionary
+        of settings
+    :rtype: GeneratorConfig
+    """
     phi_range = Range(**(config_dict.pop("phi_range")))
     nw_range = Range(**(config_dict.pop("nw_range")))
     visc_range = Range(**(config_dict.pop("visc_range")))
@@ -138,14 +154,25 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
     )
 
 
-@define
-class Config:
+class Config(NamedTuple):
+    """A NamedTuple with parameters `run_config`, `adam_config`, and
+    `generator_config`, each of type :class:`RunConfig`, :class:`AdamConfig`,
+    and :class:`GeneratorConfig`, respectively.
+    """
+
     run_config: RunConfig
     adam_config: AdamConfig
     generator_config: GeneratorConfig
 
 
 def getConfig(filename: str | Path) -> Config:
+    """Get configuration settings from a YAML or JSON file (see examples).
+
+    :param filename: Path to a YAML or JSON file from which to read the configurtion
+    :type filename: str | Path
+    :return: Instance of :class:`Config`
+    :rtype: Config
+    """
     config_dict = getDictFromFile(filename)
 
     run_dict = config_dict.get("run", dict())
