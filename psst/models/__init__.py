@@ -1,2 +1,2 @@
-from .Inception3 import Inception3
-from .Vgg13 import Vgg13
+from models.Inception3 import Inception3
+from models.Vgg13 import Vgg13
