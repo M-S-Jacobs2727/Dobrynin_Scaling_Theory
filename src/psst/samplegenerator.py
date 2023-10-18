@@ -6,6 +6,7 @@ parameters, and yield the normalized values (between 0 and 1).
 from __future__ import annotations
 import logging
 from math import log10
+from typing import Optional
 
 import torch
 
@@ -26,17 +27,16 @@ def normalize(
     ..math::
         y = (\log_{10}(x) - \log_{10}(min)) / (\log_{10}(max) - \log_{10}(min))
 
-    :param arr: The Tensor to be normalized
-    :type arr: torch.Tensor
-    :param min: The value to map to 0
-    :type min: float
-    :param max: The value to map to 1
-    :type max: float
-    :param log_scale: When True, the base-10 logarithm of the values of `arr`, `min`,
-    and `max` are used instead of the given values, defaults to False
-    :type log_scale: bool, optional
-    :return: The normalized Tensor
-    :rtype: torch.Tensor
+    Args:
+        arr (torch.Tensor): The Tensor to be normalized.
+        min (float): The value to map to 0.
+        max (float): The value to map to 1.
+        log_scale (bool, optional): When True, the base-10 logarithm of the values of
+          `arr`, `min`, and `max` are used instead of the given values. Defaults to
+          False.
+
+    Returns:
+        torch.Tensor: The normalized Tensor.
     """
     out_arr = arr.clone()
     if log_scale:
@@ -52,29 +52,30 @@ def normalize(
 def unnormalize(
     arr: torch.Tensor, min: float, max: float, log_scale: bool = False
 ) -> torch.Tensor:
-    r"""Unnormalize a Tensor from the [0, 1] scale to its true values using given minimum
-    and maximum values following the equation for each value of :math:`x` in `arr`:
+    r"""Unnormalize a Tensor from the [0, 1] scale to its true values using given
+    minimum and maximum values following the equation for each value of :math:`x` in
+    `arr`:
 
     ..math::
-        y = x (max - min) + min
+        y = (max - min) x + min
 
     If `log_scale` is `True`, the equation is instead
 
     ..math::
-        y^\prime = x (\log_{10}(max) - \log_{10}(min)) + \log_{10}(min)
+        y^\prime = (\log_{10}(max) - \log_{10}(min)) x + \log_{10}(min)
+
         y = 10^{y^\prime}
 
-    :param arr: The Tensor to be unnormalized
-    :type arr: torch.Tensor
-    :param min: The value to map to from 0
-    :type min: float
-    :param max: The value to map to from 1
-    :type max: float
-    :param log_scale: When True, the base-10 logarithm of the values of `arr`, `min`,
-    and `max` are used instead of the given values, defaults to False
-    :type log_scale: bool, optional
-    :return: The unnormalized Tensor
-    :rtype: torch.Tensor
+    Args:
+        arr (torch.Tensor): The Tensor to be unnormalized.
+        min (float): The value to map to from 0.
+        max (float): The value to map to from 1.
+        log_scale (bool, optional): When True, the base-10 logarithm of the values of
+          `arr`, `min`, and `max` are used instead of the given values. Defaults to
+          False.
+
+    Returns:
+        torch.Tensor: The unnormalized Tensor.
     """
     out_arr = arr.clone()
     if log_scale:
@@ -90,44 +91,45 @@ def unnormalize(
 
 
 class SampleGenerator:
-    """Creates a callable, iterable object to procedurally generate viscosity
-    curves as functions of concentration (`phi`) and chain degree of polymerization
-    (`nw`).
+    """Procedurally generates viscosity curves as functions of concentration (`phi`)
+    and chain degree of polymerization (`nw`).
 
-    Usage:
+    Example:
 
-    >>> generator = SampleGenerator("Bg", batch_size=64, device=torch.device("cuda"))
-    >>> for viscosity, bg, bth, pe in generator(512000):
+    >>> import psst
+    >>> from psst.models import Inception3
+    >>> model = Inception3()
+    >>> config = psst.getConfig("config.yaml")
+    >>> gen_samples = psst.SampleGenerator(
+            device=torch.device("cuda"),
+            **config.generator_config
+        )
+    >>> for viscosity, bg, bth, pe in gen_samples(512000):
     >>>     pred_bg = model(viscosity)
-    >>>     loss = loss_fn(bg, pred_bg)
 
-    :param parameter: Either "Bg" or "Bth" for good solvent behavior for thermal
-        behavior, respectively
-    :type parameter: :class:`psst.configuration.Parameter`
-    :param phi_range: The min, max and number of reduced concentration values to use
-        for the viscosity curves
-    :type phi_range: :class:`psst.configuration.Range`
-    :param nw_range: As with `phi_range`, but for values of degree of polymerization
-    :type nw_range: :class:`psst.configuration.Range`
-    :param visc_range: The minimum and maximum values of viscosity to use for
-    normalization
-    :type visc_range: :class:`psst.configuration.Range`
-    :param bg_range: The minimum and maximum values of the good solvent blob
-        parameter to use for normalization and generation.
-    :type bg_range: :class:`psst.configuration.Range`
-    :param bth_range: The minimum and maximum values of the thermal blob
-        parameter to use for normalization and generation.
-    :type bth_range: :class:`psst.configuration.Range`
-    :param pe_range: The minimum and maximum values of the entanglement packing
-        number to use for normalization and generation.
-    :type pe_range: :class:`psst.configuration.Range`
-    :param batch_size: The number of values of Bg, Bth, and Pe (and thus the number
-        of viscosity curves) to generate, defaults to 1.
-    :type batch_size: int, optional
-    :param device: _description_, defaults to torch.device("cpu")
-    :type device: `torch.device`, optional
-    :param generator: _description_, defaults to None
-    :type generator: `torch.Generator`, optional
+    Keyword Args:
+        parameter (psst.Parameter): Either "Bg" or "Bth" for good solvent behavior or
+          thermal behavior, respectively.
+        phi_range (psst.Range): The min, max and number of reduced concentration values
+          to use for the viscosity curves.
+        nw_range (psst.Range): As with `phi_range`, but for values of degree of
+          polymerization.
+        visc_range (psst.Range): The minimum and maximum values of viscosity to use for
+          normalization.
+        bg_range (psst.Range): The minimum and maximum values of the good solvent blob
+          parameter to use for normalization and generation.
+        bth_range (psst.Range): The minimum and maximum values of the thermal blob
+            parameter to use for normalization and generation.
+        pe_range (psst.Range): The minimum and maximum values of the entanglement
+          packing number to use for normalization and generation.
+        batch_size (int): The number of values of Bg, Bth, and Pe (and thus
+          the number of viscosity curves) to generate.
+        device (torch.device, optional): Device on which to create batches and compute
+          samples. Defaults to torch.device("cpu").
+        generator (torch.Generator, optional): Random number generator to use for
+          values of Bg, Bth, and Pe. Most useful during testing, allowing a fixed seed
+          to be used. A value of `None` creates a generic torch.Generator instance.
+          Defaults to None.
     """
 
     def __init__(
@@ -140,9 +142,9 @@ class SampleGenerator:
         bg_range: psst.Range,
         bth_range: psst.Range,
         pe_range: psst.Range,
-        batch_size: int = 1,
+        batch_size: int,
         device: torch.device = torch.device("cpu"),
-        generator: torch.Generator | None = None,
+        generator: Optional[torch.Generator] = None,
     ) -> None:
         self._log = logging.getLogger("psst.main")
         self._log.info("Initializing SampleGenerator")
@@ -179,9 +181,9 @@ class SampleGenerator:
             self.denominator = self.nw * self.phi**2
             self._log.debug("Initialized Bth-specific members")
 
-        # Create tensors for phi (concentration) and Nw (number of repeat units per chain)
-        # Both are broadcastable to size (batch_size, phi_range.shape[0], nw_range.shape[0])
-        # for simple, element-wise operations
+        # Create tensors for phi (concentration) and Nw (number of repeat units per
+        # chain). Both are broadcastable to size
+        # (batch_size, phi_range.num, nw_range.num) for element-wise operations
         if phi_range.log_scale:
             self.phi = torch.logspace(
                 log10(phi_range.min),
@@ -221,7 +223,7 @@ class SampleGenerator:
             visc_range.max / self.denominator.min(),
         )
 
-        self.num_batches: int = 0
+        self._num_batches: int = 0
         self._index: int = 0
 
         self.bg = torch.zeros(
@@ -237,23 +239,23 @@ class SampleGenerator:
         self._log.debug("Completed initialization")
 
     def __call__(self, num_batches: int):
-        self.num_batches = num_batches
+        self._num_batches = num_batches
         return self
 
     def __iter__(self):
         self._index = 0
-        self._log.info("Starting %d iterations", self.num_batches)
+        self._log.info("Starting %d iterations", self._num_batches)
         return self
 
     def __next__(
         self,
     ) -> tuple[int, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        if self._index >= self.num_batches:
+        if self._index >= self._num_batches:
             self._log.info("Completed all batches")
             raise StopIteration
 
         self._index += 1
-        self._log.debug("Generating batch %6d/%d", self._index, self.num_batches)
+        self._log.debug("Generating batch %6d/%d", self._index, self._num_batches)
 
         if self.visc.ndim == 4:
             self.visc.squeeze_()

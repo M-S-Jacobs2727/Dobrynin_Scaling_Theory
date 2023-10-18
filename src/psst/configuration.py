@@ -1,33 +1,38 @@
-"""This module defines three configuration classes: RunConfig, AdamConfig, and
-GeneratorConfig, which are used to configure the machine learning run settings,
-the Adam optimizer settings, and the settings for the SurfaceGenerator class.
-Use the getConfig function to easily create a NamedTuple of the three config classes object from a YAML or JSON file (see examples directory).
+"""Configuration classes for the training cycle, Adam optimizer, and SampleGenerator.
+
+Defines three configuration classes: :class:`RunConfig`, :class:`AdamConfig`, and
+:class:`GeneratorConfig`, which are used to configure the machine learning run
+settings, the Adam optimizer settings, and the settings for the SurfaceGenerator class.
+The getConfig function reads a YAML or JSON file and returns a :class:`Config` object,
+a NamedTuple of the three config classes (see examples directory).
 """
 from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Optional
 
 from ruamel.yaml import YAML
 
 
 Parameter = Literal["Bg", "Bth"]
-"""Selects either 'Bg' (good solvent parameter) or 'Bth' (thermal blob parameter).
+"""Represents either the good solvent parameter ('Bg') or the thermal blob parameter
+('Bth').
 """
 
 
 def getDictFromFile(filepath: str | Path) -> dict[str]:
     """Reads a YAML or JSON file and returns the contents as a dictionary.
 
-    Raises a `ValueError` if the extension is incorrect.
+    Args:
+        filepath (str | Path): The YAML or JSON file to interpret.
 
-    :param filepath: Path to a YAML or JSON file
-    :type filepath: str | Path
-    :raises ValueError: If the filename extension is not one of '.json',
-        '.yaml', or '.yml'
-    :return: Nested dictionary based on the contents of the file
-    :rtype: dict[str, Any]
+    Raises:
+        ValueError: If the extension in the filename is not one of ".yaml", ".yml", or
+          ".json".
+
+    Returns:
+        dict[str]: The contents of the file in dictionary form.
     """
     log = logging.getLogger("psst.main")
 
@@ -58,13 +63,20 @@ def getDictFromFile(filepath: str | Path) -> dict[str]:
 class Range(NamedTuple):
     """Specifies a range of values between :code:`min` and :code:`max`,
     optionally specifying :code:`num` for number of points and :code:`log_scale`
-    for logarithmic spacing. For use in, e.g., `torch.linspace`,
-    `torch.logspace`.
+    for logarithmic spacing. For use in, e.g., `torch.linspace`, `torch.logspace`.
 
     Usage:
       >>> Range(1.0, 1e6, num = 100, log_scale = True)
-    """
 
+    Attributes:
+        min (float): Minimum value of the range.
+        max (float): Maximum value of the range.
+        num (int): Number of values in the range, including endpoints, default is 0.
+        log_scale (bool): If False (the default), the :code:`num` values are evenly
+          spaced between :code:`min` and :code:`max`. If True, the values are spaced
+          geometrically, such that the respecitve quotients of any two pairs of
+          adjacent elements are equal.
+    """
     min: float
     max: float
     num: int = 0
@@ -73,21 +85,18 @@ class Range(NamedTuple):
 
 # @define(kw_only=True)
 class RunConfig(NamedTuple):
-    """
-    :param num_epochs: Number of epochs to run
-    :type num_epochs: int
-    :param num_samples_train: Number of samples to run through model training per epoch
-    :type num_samples_train: int
-    :param num_samples_test: Number of samples to run through model testing/validation
-    per epoch
-    :type num_samples_test: int
-    :param checkpoint_frequency: Frequency with which to save the model and optimizer.
-        Positive values are number of epochs. Negative values indicate to save when
-        the value of the loss function hits a new minimum. Defaults to 0, never saving.
-    :type checkpoint_frequency: int, optional
-    :param checkpoint_filename: Name of checkpoint file into which to save the model
-        and optimizer. Defaults to `"chk.pt"`.
-    :type checkpoint_filename: str, optional
+    """Configuration settings for the training/testing cycle.
+
+    Attributes:
+        num_epochs (int): Number of epochs to run
+        num_samples_train (int): Number of samples to run through model training per epoch
+        num_samples_test (int): Number of samples to run through model testing/validation
+          per epoch
+        checkpoint_frequency (int): Frequency with which to save the model and optimizer.
+          Positive values are number of epochs. Negative values indicate to save when
+          the value of the loss function hits a new minimum. Defaults to 0, never saving.
+        checkpoint_filename (str): Name of checkpoint file into which to save the model
+          and optimizer. Defaults to `"chk.pt"`.
     """
 
     num_epochs: int
@@ -104,10 +113,19 @@ class RunConfig(NamedTuple):
 
 
 class AdamConfig(NamedTuple):
+    """Configuration settings for the Adam optimizer. See torch.optim.Adam
+    documentation for details.
+    """
     lr: float = 0.001
     betas: tuple[float, float] = (0.9, 0.999)
     eps: float = 1e-8
     weight_decay: float = 0.0
+    amsgrad: bool = False
+    foreach: Optional[bool] = None
+    maximize: bool = False
+    capturable: bool = False
+    differentiable: bool = False
+    fused: Optional[bool] = None
 
     def keys(self):
         return self._fields
@@ -118,6 +136,25 @@ class AdamConfig(NamedTuple):
 
 # TODO: Include stripping/trimming
 class GeneratorConfig(NamedTuple):
+    """Configuration settings for the :class:`SampleGenerator` class.
+
+    Attributes:
+        parameter (psst.Parameter): Either 'Bg' or 'Bth' to generate viscosity samples
+          for the good solvent parameter or the thermal blob parameter, respectively.
+        batch_size (int): Number of samples generated per batch.
+        phi_range (:class:`psst.Range`): The range of values for the normalized
+          concentration :math:`cl^3`.
+        nw_range (:class:`psst.Range`): The range of values for the weight-average
+          degree of polymerization of the polymers.
+        visc_range (:class:`psst.Range`): The range of values for the specific
+          viscosity. This is only used for normalization, so `num=0` is fine.
+        bg_range (:class:`psst.Range`): The range of values for the good solvent
+          parameter. This is only used for normalization, so `num=0` is fine.
+        bth_range (:class:`psst.Range`): The range of values for the thermal blob
+          parameter. This is only used for normalization, so `num=0` is fine.
+        bg_range (:class:`psst.Range`): The range of values for the entanglement
+          packing number. This is only used for normalization, so `num=0` is fine.
+    """
     parameter: Parameter
 
     batch_size: int
@@ -141,11 +178,15 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
     """Convenience class for creating a GeneratorConfig from a nested dictionary
     of settings.
 
-    :param config_dict: A nested dictionary with keys of type string
-    :type config_dict: dict[str]
-    :return: An instance of :class:`GeneratorConfig` based on the given dictionary
-        of settings
-    :rtype: GeneratorConfig
+    Args:
+        config_dict (dict[str]): A nested dictionary with keys of type string
+
+    Raises:
+        ValueError: If :code:`config_dict['parameter']` is not either 'Bg' or 'Bth'.
+
+    Returns:
+        :class:`GeneratorConfig`: An instance of :class:`GeneratorConfig` based on the
+          given dictionary of settings.
     """
     parameter = config_dict["parameter"]
     if parameter not in ("Bg", "Bth"):
@@ -173,7 +214,7 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
 
 class Config(NamedTuple):
     """A NamedTuple with parameters `run_config`, `adam_config`, and
-    `generator_config`, each of type :class:`RunConfig`, :class:`AdamConfig`,
+    `generator_config`, of types :class:`RunConfig`, :class:`AdamConfig`,
     and :class:`GeneratorConfig`, respectively.
     """
 
@@ -185,10 +226,11 @@ class Config(NamedTuple):
 def loadConfig(filename: str | Path) -> Config:
     """Get configuration settings from a YAML or JSON file (see examples).
 
-    :param filename: Path to a YAML or JSON file from which to read the configurtion
-    :type filename: str | Path
-    :return: Instance of :class:`Config`
-    :rtype: Config
+    Args:
+        filename (str | Path): Path to a YAML or JSON file.
+
+    Returns:
+        :class:`Config`: _description_
     """
     config_dict = getDictFromFile(filename)
 
