@@ -104,10 +104,10 @@ class RunConfig(NamedTuple):
 
 
 class AdamConfig(NamedTuple):
-    lr: float
-    betas: tuple[float, float]
-    eps: float
-    weight_decay: float
+    lr: float = 0.001
+    betas: tuple[float, float] = (0.9, 0.999)
+    eps: float = 1e-8
+    weight_decay: float = 0.0
 
     def keys(self):
         return self._fields
