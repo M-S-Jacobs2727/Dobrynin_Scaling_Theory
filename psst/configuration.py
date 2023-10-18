@@ -165,7 +165,7 @@ class Config(NamedTuple):
     generator_config: GeneratorConfig
 
 
-def getConfig(filename: str | Path) -> Config:
+def loadConfig(filename: str | Path) -> Config:
     """Get configuration settings from a YAML or JSON file (see examples).
 
     :param filename: Path to a YAML or JSON file from which to read the configurtion
