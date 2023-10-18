@@ -1,3 +1,3 @@
-from configuration import *
-from samplegenerator import *
-from training import *
+from .configuration import *
+from .samplegenerator import *
+from .training import *
