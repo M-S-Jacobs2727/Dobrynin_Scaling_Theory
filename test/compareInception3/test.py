@@ -6,9 +6,9 @@ from old_Inception3 import Inception3 as old_Inception3
 
 def main():
     newmodel = Inception3()
-    newdict = newmodel.state_dict()
+    newdict: dict[str, torch.Tensor] = newmodel.state_dict()
     oldmodel = old_Inception3()
-    olddict = oldmodel.state_dict()
+    olddict: dict[str, torch.Tensor] = oldmodel.state_dict()
 
     newsizes = [p.shape for p in newdict.values()]
     oldsizes = [p.shape for p in olddict.values()]
@@ -27,8 +27,8 @@ def main():
 
     a = torch.rand((1, 1, 224, 224))
 
-    o = oldmodel(a)
-    n = newmodel(a)
+    o: torch.Tensor = oldmodel(a)
+    n: torch.Tensor = newmodel(a)
 
     print(o.shape, o)
     print(n.shape, n)
