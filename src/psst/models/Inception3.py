@@ -3,8 +3,11 @@ from torch.nn import *
 
 
 class BasicConv2d(Module):
+    """Custom Conv2d Module with :code:`bias=False` by default.
+    """
     def __init__(self, in_channels: int, out_channels: int, **kwargs):
         super().__init__()
+
         self.conv = Conv2d(in_channels, out_channels, bias=False, **kwargs)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -13,6 +16,21 @@ class BasicConv2d(Module):
 
 
 class Conv2dTo2Channels(Module):
+    """Custom Module that creates two channels, one each from a pass of a 
+    :class:`BasicConv2d` with orthogonal, asymmetric kernels. Equivalent to:
+
+    Example:
+        This code:
+        >>> x = torch.rand((8, 8))
+        >>> model = Conv2dTo2Channels(4, 4, kernel_size=(1, 3), padding=(0, 1))
+        >>> y = model(x)
+
+        should be equivalent to:
+        >>> x = torch.rand((8, 8))
+        >>> model1 = BasicConv2d(4, 4, kernel_size=(1, 3), padding=(0, 1))
+        >>> model2 = BasicConv2d(4, 4, kernel_size=(3, 1), padding=(1, 0))
+        >>> y = torch.cat((model1(x), model2(x)), 1)
+    """
     def __init__(
         self,
         in_channels: int,
@@ -22,6 +40,7 @@ class Conv2dTo2Channels(Module):
         padding: tuple[int, int]
     ):
         super().__init__()
+
         self.channel1 = BasicConv2d(
             in_channels, out_channels, kernel_size=kernel_size, padding=padding
         )
@@ -37,6 +56,12 @@ class Conv2dTo2Channels(Module):
 
 
 class InceptionA(Module):
+    """An inception block containing four branches: 
+    1. kernel_size=1
+    2. kernel_size=1 -> kernel_size=5
+    3. kernel_size=1 -> kernel_size=3 -> kernel_size=3
+    4. AvgPool2d(kernel_size=3) -> kernel_size=1
+    """
     def __init__(self, in_channels: int, pool_features: int):
         super().__init__()
 
@@ -68,10 +93,15 @@ class InceptionA(Module):
 
 
 class InceptionB(Module):
+    """An inception block containing three branches: 
+    1. kernel_size=3
+    2. kernel_size=1 -> kernel_size=3 -> kernel_size=3
+    3. AvgPool2d(kernel_size=3)
+    """
     def __init__(self, in_channels: int):
         super().__init__()
-        self.branch3x3 = BasicConv2d(in_channels, 384, kernel_size=3, stride=2)
 
+        self.branch3x3 = BasicConv2d(in_channels, 384, kernel_size=3, stride=2)
         self.branch3x3dbl = Sequential(
             BasicConv2d(in_channels, 64, kernel_size=1),
             BasicConv2d(64, 96, kernel_size=3, padding=1),
@@ -84,16 +114,23 @@ class InceptionB(Module):
 
 
 class InceptionC(Module):
+    """An inception block containing four branches: 
+    1. kernel_size=1
+    2. kernel_size=1 -> kernel_size=(1, 7) -> kernel_size=(7, 1)
+    3. kernel_size=1 -> kernel_size=(7, 1) -> kernel_size=(1, 7)
+       -> kernel_size=(7, 1) -> kernel_size=(1, 7)
+    3. kernel_size=1 -> kernel_size=3 -> kernel_size=3
+    4. AvgPool2d(kernel_size=3) -> kernel_size=1
+    """
     def __init__(self, in_channels: int, channels_7x7: int):
         super().__init__()
-        self.branch1x1 = BasicConv2d(in_channels, 192, kernel_size=1)
 
+        self.branch1x1 = BasicConv2d(in_channels, 192, kernel_size=1)
         self.branch7x7 = Sequential(
             BasicConv2d(in_channels, channels_7x7, kernel_size=1),
             BasicConv2d(channels_7x7, channels_7x7, kernel_size=(1, 7), padding=(0, 3)),
             BasicConv2d(channels_7x7, 192, kernel_size=(7, 1), padding=(3, 0)),
         )
-
         self.branch7x7dbl = Sequential(
             BasicConv2d(in_channels, channels_7x7, kernel_size=1),
             BasicConv2d(channels_7x7, channels_7x7, kernel_size=(7, 1), padding=(3, 0)),
@@ -101,7 +138,6 @@ class InceptionC(Module):
             BasicConv2d(channels_7x7, channels_7x7, kernel_size=(7, 1), padding=(3, 0)),
             BasicConv2d(channels_7x7, 192, kernel_size=(1, 7), padding=(0, 3)),
         )
-
         self.branch_pool = Sequential(
             AvgPool2d(kernel_size=3, stride=1, padding=1),
             BasicConv2d(in_channels, 192, kernel_size=1),
@@ -120,8 +156,15 @@ class InceptionC(Module):
 
 
 class InceptionD(Module):
+    """An inception block containing three branches: 
+    1. kernel_size=1 -> kernel_size=3
+    2. kernel_size=1 -> kernel_size=(1, 7) -> kernel_size=(7, 1)
+       -> kernel_size=3
+    3. AvgPool2d(kernel_size=3)
+    """
     def __init__(self, in_channels: int):
         super().__init__()
+
         self.branch3x3 = Sequential(
             BasicConv2d(in_channels, 192, kernel_size=1),
             BasicConv2d(192, 320, kernel_size=3, stride=2),
@@ -139,21 +182,25 @@ class InceptionD(Module):
 
 
 class InceptionE(Module):
+    """An inception block containing four branches: 
+    1. kernel_size=1
+    2. kernel_size=1 -> Conv2dTo2Channels(kernel_size=(1, 3))
+    3. kernel_size=1 -> kernel_size=3 -> Conv2dTo2Channels(kernel_size=(1, 3))
+    4. AvgPool2d(kernel_size=3) -> kernel_size=1
+    """
     def __init__(self, in_channels: int):
         super().__init__()
-        self.branch1x1 = BasicConv2d(in_channels, 320, kernel_size=1)
 
+        self.branch1x1 = BasicConv2d(in_channels, 320, kernel_size=1)
         self.branch3x3 = Sequential(
             BasicConv2d(in_channels, 384, kernel_size=1),
             Conv2dTo2Channels(384, 384, kernel_size=(1, 3), padding=(0, 1)),
         )
-
         self.branch3x3dbl = Sequential(
             BasicConv2d(in_channels, 448, kernel_size=1),
             BasicConv2d(448, 384, kernel_size=3, padding=1),
             Conv2dTo2Channels(384, 384, kernel_size=(1, 3), padding=(0, 1)),
         )
-
         self.branch_pool = Sequential(
             AvgPool2d(kernel_size=3, stride=1, padding=1),
             BasicConv2d(in_channels, 192, kernel_size=1),
@@ -172,6 +219,8 @@ class InceptionE(Module):
 
 
 class Inception3(Module):
+    """Inception-block-based neural network for training on 2D images.
+    """
     def __init__(self):
         super().__init__()
 
