@@ -2,3 +2,6 @@ psst/.test_psst
 __pycache__
 *.pyc
 psst.egg-info
+build-test
+build
+.pytest_cache
