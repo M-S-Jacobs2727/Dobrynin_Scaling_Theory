@@ -18,25 +18,26 @@ def main():
 
     model = Inception3()
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), **adam_config.asdict())
+    optimizer = torch.optim.Adam(model.parameters(), **adam_config)
+    start_epoch = 0
     if checkpoint_file:
         chkpt: psst.Checkpoint = torch.load(checkpoint_file)
         start_epoch = chkpt.epoch
         model.load_state_dict(chkpt.model_state)
         optimizer.load_state_dict(chkpt.optimizer_state)
-        run_config.num_epochs -= start_epoch
 
     loss_fn = torch.nn.MSELoss()
-    generator = psst.SampleGenerator(**generator_config.asdict(), device=device)
+    generator = psst.SampleGenerator(**generator_config, device=device)
 
     psst.train_model(
         model,
         optimizer,
         loss_fn,
         generator,
-        num_epochs=run_config.num_epochs,
-        num_samples_train=run_config.train_size,
-        num_samples_test=run_config.test_size,
+        start_epoch=start_epoch,
+        total_num_epochs=run_config.num_epochs,
+        num_samples_train=run_config.num_samples_train,
+        num_samples_test=run_config.num_samples_test,
         checkpoint_filename=run_config.checkpoint_filename,
         checkpoint_frequency=-1,
     )
