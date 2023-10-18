@@ -3,6 +3,7 @@ distribution, construct specific viscosity as a function of concentration and
 degree of polymerization of the polymer solution from the samples of molecular
 parameters, and yield the normalized values (between 0 and 1).
 """
+from __future__ import annotations
 import logging
 from math import log10
 
