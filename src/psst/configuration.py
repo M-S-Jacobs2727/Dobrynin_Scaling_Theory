@@ -1,8 +1,7 @@
 """This module defines three configuration classes: RunConfig, AdamConfig, and
 GeneratorConfig, which are used to configure the machine learning run settings,
 the Adam optimizer settings, and the settings for the SurfaceGenerator class.
-Each one has a respective `get*ConfigFromFile()` function to easily create a
-config object from a YAML or JSON file (see examples directory).
+Use the getConfig function to easily create a NamedTuple of the three config classes object from a YAML or JSON file (see examples directory).
 """
 from __future__ import annotations
 import json
@@ -10,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Literal, NamedTuple
 
-import yaml
+from ruamel.yaml import YAML
 
 
 Parameter = Literal["Bg", "Bth"]
@@ -39,7 +38,8 @@ def getDictFromFile(filepath: str | Path) -> dict[str]:
     if ext == ".json":
         load = json.load
     elif ext in [".yaml", ".yml"]:
-        load = yaml.safe_load
+        yaml = YAML(typ="safe", pure=True)
+        load = yaml.load
     else:
         raise ValueError(
             f"Invalid file extension for config file: {ext}\n"
@@ -195,7 +195,7 @@ def loadConfig(filename: str | Path) -> Config:
     run_dict = config_dict.get("run")
     run_config = RunConfig(**run_dict)
 
-    adam_dict = config_dict.get("adam")
+    adam_dict = config_dict.get("adam", dict())
     adam_config = AdamConfig(**adam_dict)
 
     generator_dict = config_dict.get("generator")
