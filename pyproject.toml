@@ -12,7 +12,6 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["test",]
 minversion = "6.0"
 addopts = [
     "--import-mode=importlib",
