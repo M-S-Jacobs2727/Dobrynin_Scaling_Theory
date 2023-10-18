@@ -4,12 +4,12 @@ the Adam optimizer settings, and the settings for the SurfaceGenerator class.
 Each one has a respective `get*ConfigFromFile()` function to easily create a
 config object from a YAML or JSON file (see examples directory).
 """
+from __future__ import annotations
 import json
 import logging
 from pathlib import Path
 from typing import Literal, NamedTuple
 
-from attrs import define, field, asdict
 import yaml
 
 
@@ -71,8 +71,8 @@ class Range(NamedTuple):
     log_scale: bool = False
 
 
-@define(kw_only=True)
-class RunConfig:
+# @define(kw_only=True)
+class RunConfig(NamedTuple):
     """
     :param num_epochs: Number of epochs to run
     :type num_epochs: int
@@ -96,24 +96,31 @@ class RunConfig:
     checkpoint_frequency: int = 0
     checkpoint_filename: str = "chk.pt"
 
+    def keys(self):
+        return self._fields
+    
+    def __getitem__(self, key: str):
+        return getattr(self, key)
 
-@define(kw_only=True)
-class AdamConfig:
-    lr: float = field(converter=float, default=1e-3)
-    betas: tuple[float, float] = field(default=(0.7, 0.9))
-    eps: float = field(converter=float, default=1e-9)
-    weight_decay: float = field(converter=float, default=0.0)
 
-    def asdict(self):
-        return asdict(self)
+class AdamConfig(NamedTuple):
+    lr: float
+    betas: tuple[float, float]
+    eps: float
+    weight_decay: float
+
+    def keys(self):
+        return self._fields
+    
+    def __getitem__(self, key: str):
+        return getattr(self, key)
 
 
 # TODO: Include stripping/trimming
-@define(kw_only=True)
-class GeneratorConfig:
+class GeneratorConfig(NamedTuple):
     parameter: Parameter
 
-    batch_size: int = 64
+    batch_size: int
 
     phi_range: Range
     nw_range: Range
@@ -123,8 +130,11 @@ class GeneratorConfig:
     bth_range: Range
     pe_range: Range
 
-    def asdict(self) -> dict[str]:
-        return asdict(self)
+    def keys(self):
+        return self._fields
+    
+    def __getitem__(self, key: str):
+        return getattr(self, key)
 
 
 def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
@@ -137,6 +147,12 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
         of settings
     :rtype: GeneratorConfig
     """
+    parameter = config_dict["parameter"]
+    if parameter not in ("Bg", "Bth"):
+        raise ValueError("GeneratorConfig.parameter must be either 'Bg' or 'Bth'.")
+    
+    batch_size = int(config_dict["batch_size"])
+
     phi_range = Range(**(config_dict.pop("phi_range")))
     nw_range = Range(**(config_dict.pop("nw_range")))
     visc_range = Range(**(config_dict.pop("visc_range")))
@@ -144,13 +160,14 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
     bth_range = Range(**(config_dict.pop("bth_range")))
     pe_range = Range(**(config_dict.pop("pe_range")))
     return GeneratorConfig(
+        parameter=parameter,
+        batch_size=batch_size,
         phi_range=phi_range,
         nw_range=nw_range,
         visc_range=visc_range,
         bg_range=bg_range,
         bth_range=bth_range,
         pe_range=pe_range,
-        **config_dict,
     )
 
 
@@ -175,13 +192,13 @@ def loadConfig(filename: str | Path) -> Config:
     """
     config_dict = getDictFromFile(filename)
 
-    run_dict = config_dict.get("run", dict())
+    run_dict = config_dict.get("run")
     run_config = RunConfig(**run_dict)
 
-    adam_dict = config_dict.get("adam", dict())
+    adam_dict = config_dict.get("adam")
     adam_config = AdamConfig(**adam_dict)
 
-    generator_dict = config_dict.get("generator", dict())
+    generator_dict = config_dict.get("generator")
     generator_config = getGeneratorConfig(generator_dict)
 
     return Config(run_config, adam_config, generator_config)
