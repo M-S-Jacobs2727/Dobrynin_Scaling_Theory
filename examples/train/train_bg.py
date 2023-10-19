@@ -30,12 +30,12 @@ def main():
     generator = psst.SampleGenerator(**generator_config, device=device)
 
     psst.train_model(
-        model,
-        optimizer,
-        loss_fn,
-        generator,
+        model=model,
+        optimizer=optimizer,
+        loss_fn=loss_fn,
+        generator=generator,
         start_epoch=start_epoch,
-        total_num_epochs=run_config.num_epochs,
+        num_epochs=run_config.num_epochs,
         num_samples_train=run_config.num_samples_train,
         num_samples_test=run_config.num_samples_test,
         checkpoint_filename=run_config.checkpoint_filename,
