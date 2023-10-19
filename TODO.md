@@ -1,6 +1,32 @@
 # To-Do
 
-- Make tests for core library
-- Complete and debug train_bg.py, train_bth.py
-- Complete and debug optimized_bg.py, optimize_bth.py
-- Complete and debug evaluate.py (evaluate experimental data; to be used in production code)
+- Implementation
+  - [ ] Add random noise to SampleGenerator (add settings for the noise?)
+  - [ ] Add trimming to generator settings
+  - [ ] Add Optuna optimization helper functions?
+  - [ ] Move normalize, Range, Parameter, etc. to separate file(s).
+- Testing
+  - [x] configuration
+  - [ ] samplegenerator
+  - [ ] training
+  - [ ] models
+- Examples
+  - Training
+    - [x] Complete train_bg.py
+    - [ ] Debug train_bg.py
+    - [ ] Complete train_bth.py
+    - [ ] Debug train_bth.py
+  - Optimization
+    - [x] Complete optimize_bg.py
+    - [ ] Debug optimize_bg.py
+    - [ ] Complete optimize_bth.py
+    - [ ] Debug optimize_bth.py
+  - Evaluation
+    - [ ] Complete evaluate.py (including fitting Pe value for each surfaces)
+    - [ ] Debug evaluate.py
+- Documentation
+  - [x] API (autodoc)
+  - [x] Installation
+  - [x] Basic usage
+  - [ ] Examples
+  - [ ] Theory Notes
