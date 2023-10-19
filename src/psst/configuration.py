@@ -16,8 +16,8 @@ from ruamel.yaml import YAML
 
 
 Parameter = Literal["Bg", "Bth"]
-"""Represents either the good solvent parameter ('Bg') or the thermal blob parameter
-('Bth').
+"""Represents either the good solvent parameter (``'Bg'``) or the thermal blob
+parameter (``'Bth'``).
 """
 
 
@@ -61,19 +61,22 @@ def getDictFromFile(filepath: str | Path) -> dict[str]:
 
 
 class Range(NamedTuple):
-    """Specifies a range of values between :code:`min` and :code:`max`,
-    optionally specifying :code:`num` for number of points and :code:`log_scale`
-    for logarithmic spacing. For use in, e.g., `torch.linspace`, `torch.logspace`.
+    """Specifies a range of values between ``min`` and ``max``,
+    optionally specifying ``num`` for number of points and ``log_scale``
+    for logarithmic spacing. For use in, e.g., PyTorch's
+    `torch.linspace <https://pytorch.org/docs/stable/generated/torch.linspace.html>`_,
+    or `torch.logspace <https://pytorch.org/docs/stable/generated/torch.logspace.html>`_.
 
     Usage:
-      >>> Range(1.0, 1e6, num = 100, log_scale = True)
+        >>> r = Range(1.0, 1e6, num = 100, log_scale = True)
+        >>> values = torch.logspace(log10(r.min), log10(r.max), r.num)
 
-    Attributes:
+    Args:
         min (float): Minimum value of the range.
         max (float): Maximum value of the range.
         num (int): Number of values in the range, including endpoints, default is 0.
-        log_scale (bool): If False (the default), the :code:`num` values are evenly
-          spaced between :code:`min` and :code:`max`. If True, the values are spaced
+        log_scale (bool): If False (the default), the ``num`` values are evenly
+          spaced between ``min`` and ``max``. If True, the values are spaced
           geometrically, such that the respecitve quotients of any two pairs of
           adjacent elements are equal.
     """
@@ -87,7 +90,7 @@ class Range(NamedTuple):
 class RunConfig(NamedTuple):
     """Configuration settings for the training/testing cycle.
 
-    Attributes:
+    Args:
         num_epochs (int): Number of epochs to run
         num_samples_train (int): Number of samples to run through model training per epoch
         num_samples_test (int): Number of samples to run through model testing/validation
@@ -96,7 +99,7 @@ class RunConfig(NamedTuple):
           Positive values are number of epochs. Negative values indicate to save when
           the value of the loss function hits a new minimum. Defaults to 0, never saving.
         checkpoint_filename (str): Name of checkpoint file into which to save the model
-          and optimizer. Defaults to `"chk.pt"`.
+          and optimizer. Defaults to ``"chk.pt"``.
     """
 
     num_epochs: int
@@ -113,7 +116,8 @@ class RunConfig(NamedTuple):
 
 
 class AdamConfig(NamedTuple):
-    """Configuration settings for the Adam optimizer. See torch.optim.Adam
+    """Configuration settings for the Adam optimizer. See PyTorch's
+    `Adam optimizer <https://pytorch.org/docs/stable/generated/torch.optim.Adam.html>`_
     documentation for details.
     """
     lr: float = 0.001
@@ -138,21 +142,22 @@ class AdamConfig(NamedTuple):
 class GeneratorConfig(NamedTuple):
     """Configuration settings for the :class:`SampleGenerator` class.
 
-    Attributes:
-        parameter (psst.Parameter): Either 'Bg' or 'Bth' to generate viscosity samples
-          for the good solvent parameter or the thermal blob parameter, respectively.
+    Args:
+        parameter (Parameter): Either 'Bg' or 'Bth' to generate
+          viscosity samples for the good solvent parameter or the thermal blob
+          parameter, respectively.
         batch_size (int): Number of samples generated per batch.
-        phi_range (:class:`psst.Range`): The range of values for the normalized
+        phi_range (Range): The range of values for the normalized
           concentration :math:`cl^3`.
-        nw_range (:class:`psst.Range`): The range of values for the weight-average
+        nw_range (Range): The range of values for the weight-average
           degree of polymerization of the polymers.
-        visc_range (:class:`psst.Range`): The range of values for the specific
+        visc_range (Range): The range of values for the specific
           viscosity. This is only used for normalization, so `num=0` is fine.
-        bg_range (:class:`psst.Range`): The range of values for the good solvent
+        bg_range (Range): The range of values for the good solvent
           parameter. This is only used for normalization, so `num=0` is fine.
-        bth_range (:class:`psst.Range`): The range of values for the thermal blob
+        bth_range (Range): The range of values for the thermal blob
           parameter. This is only used for normalization, so `num=0` is fine.
-        bg_range (:class:`psst.Range`): The range of values for the entanglement
+        pe_range (Range): The range of values for the entanglement
           packing number. This is only used for normalization, so `num=0` is fine.
     """
     parameter: Parameter
@@ -182,10 +187,11 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
         config_dict (dict[str]): A nested dictionary with keys of type string
 
     Raises:
-        ValueError: If :code:`config_dict['parameter']` is not either 'Bg' or 'Bth'.
+        ValueError: If ``config_dict['parameter']`` is not either ``'Bg'`` or
+          ``'Bth'``.
 
     Returns:
-        :class:`GeneratorConfig`: An instance of :class:`GeneratorConfig` based on the
+        GeneratorConfig: An instance of :class:`GeneratorConfig` based on the
           given dictionary of settings.
     """
     parameter = config_dict["parameter"]
@@ -213,9 +219,14 @@ def getGeneratorConfig(config_dict: dict[str]) -> GeneratorConfig:
 
 
 class Config(NamedTuple):
-    """A NamedTuple with parameters `run_config`, `adam_config`, and
-    `generator_config`, of types :class:`RunConfig`, :class:`AdamConfig`,
+    """A NamedTuple with parameters ``run_config``, ``adam_config``, and
+    ``generator_config``, of types :class:`RunConfig`, :class:`AdamConfig`,
     and :class:`GeneratorConfig`, respectively.
+
+    Args:
+        run_config (RunConfig): Settings for the train/test cycles.
+        adam_config (AdamConfig): Settings for the Adam optimizer.
+        generator_config (GeneratorConfig): Settings for the :class:`SampleGenerator`.
     """
 
     run_config: RunConfig
@@ -230,7 +241,7 @@ def loadConfig(filename: str | Path) -> Config:
         filename (str | Path): Path to a YAML or JSON file.
 
     Returns:
-        :class:`Config`: _description_
+        :class:`Config`: Settings read from the config file.
     """
     config_dict = getDictFromFile(filename)
 

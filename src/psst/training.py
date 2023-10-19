@@ -14,12 +14,12 @@ class Checkpoint(NamedTuple):
     >>> chkpt = psst.Checkpoint(epoch, model.state_dict(), optimizer.state_dict())
     >>> torch.save(chkpt, filepath)
 
-    Attributes:
+    Args:
         epoch (int): How many cycles of training have been completed.
         model_state (dict): The state of the neural network model as given by
-          torch.nn.Module.state_dict()
+          ``torch.nn.Module.state_dict()``.
         optimizer_state (dict): The state of the training optimizer as given by
-          torch.optim.Optimizer.state_dict()
+          ``torch.optim.Optimizer.state_dict()``.
     """
     epoch: int
     model_state: dict
@@ -132,13 +132,13 @@ def validate(
 
 
 def train_model(
+    *,
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
     generator: SampleGenerator,
-    *,
     start_epoch: int = 0,
-    total_num_epochs: int,
+    num_epochs: int,
     num_samples_train: int,
     num_samples_test: int,
     checkpoint_filename: str | Path,
@@ -150,12 +150,11 @@ def train_model(
         model (torch.nn.Module): Machine learning model to be trained.
         optimizer (torch.optim.Optimizer): Optimizer used to train the model.
         loss_fn (torch.nn.Module): Loss function to evaluate model accuracy
-        generator (SampleGenerator): Procedurally generates data for model training.
-    
-    Keyword Arguments:
+        generator (:class:`SampleGenerator`): Procedurally generates data for model
+          training.
         start_epoch (int): The index of the first epoch to run (useful for continuing
           training from a checkpoint).
-        total_num_epochs (int): Total number of training/testing cycles to run.
+        num_epochs (int): Total number of training/testing cycles to run.
         num_samples_train (int): Number of samples to generate during a single
           training session.
         num_samples_test (int): Number of samples to generate during a single
@@ -170,7 +169,7 @@ def train_model(
     chkpt = Checkpoint(start_epoch, model.state_dict(), optimizer.state_dict())
     min_loss = 1e6
 
-    for epoch in range(start_epoch, total_num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         train(model, optimizer, loss_fn, generator, num_samples_train)
         loss = validate(model, loss_fn, generator, num_samples_test)
         if (checkpoint_frequency < 0 and loss < min_loss) or (

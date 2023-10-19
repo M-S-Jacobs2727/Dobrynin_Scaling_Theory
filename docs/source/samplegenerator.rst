@@ -1,0 +1,4 @@
+SampleGenerator
+===============
+
+.. autoclass:: psst.SampleGenerator
