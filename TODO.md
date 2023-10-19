@@ -7,8 +7,9 @@
   - [ ] Move normalize, Range, Parameter, etc. to separate file(s).
 - Testing
   - [x] configuration
-  - [ ] samplegenerator
-  - [ ] training
+  - [ ] SampleGenerator (mostly shapes, members, methods)
+  - [ ] normalize/unnormalize (negative values with log scale, etc.)
+  - [ ] train/validate/train_model (irregular sample sizes, compatibility of model and generator)
   - [ ] models
 - Examples
   - Training
@@ -30,3 +31,6 @@
   - [x] Basic usage
   - [ ] Examples
   - [ ] Theory Notes
+- Continuous Integration
+  - [ ] Setup action for building documentation and updating GitHub wiki on push
+  - [ ] Setup action for testing on push (can use Ryan's tower or Mike's server)
