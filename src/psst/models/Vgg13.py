@@ -3,7 +3,22 @@ from torch.nn import *
 
 
 class Vgg13(Module):
-    """Visualization Geometry Group neural network for training on 2D images.
+    """VGG-13 architecture for processing 2D images.
+
+    The VGG-13 name denotes that it contains 13 layers with trainable weights: 10 convolutional layers and 3 fully connected layers.
+
+    This model expects an input of size (batch_size, 1, 224, 224)
+
+    Reference:
+    Simonyan, K., & Zisserman, A. (2014). Very deep convolutional networks for large-scale image recognition.
+    arXiv preprint arXiv:1409.1556.
+
+    Usage:
+        >>> model = Vgg13()
+        >>> output = model(torch.randn(1, 1, 224, 224))
+
+    Attributes:
+        conv_stack (:class:`torch.nn.Sequential`): The sequence of layers in the VGG-13 network.
     """
     def __init__(self):
         super().__init__()
@@ -47,4 +62,13 @@ class Vgg13(Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
+        """Forward pass through the VGG-13 network.
+
+        Args:
+            x (:class:`torch.Tensor`): A 4D tensor with shape (batch_size, 1, 224, 224).
+
+        Returns:
+            :classL`torch.Tensor`: A 2D tensor with shape (batch_size, 1) representing the output of the network:
+            A prediction of Bg or Bth.
+        """
         return self.conv_stack(x)
